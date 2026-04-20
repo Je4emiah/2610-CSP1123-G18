@@ -54,7 +54,7 @@ def login():
             return redirect(url_for('dashboard')), 302 
         else:
             # Fix Moustafa's Test 1 (Wrong Password)
-            return "Access Denied", 401 
+            return "Access Denied", 401
             
     return render_template('login.html')
 
