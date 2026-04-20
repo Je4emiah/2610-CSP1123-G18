@@ -1,5 +1,5 @@
 import sqlite3
-from flask import Flask, render_template, request, redirect, url_to_for, jsonify
+from flask import Flask, render_template, request, redirect, jsonify
 
 app = Flask(__name__)
 
@@ -41,6 +41,7 @@ def get_mood_trends(student_id):
 def index():
     return render_template('index.html')
 
+# Route to login.html
 @app.route('/login', methods=['Get', 'Post'])
 def login():
     if request.method == 'Post':
