@@ -1,5 +1,5 @@
 import sqlite3
-from flask import Flask, render_template, request, redirect, jsonify
+from flask import Flask, render_template, request, url_for, redirect, jsonify
 
 app = Flask(__name__)
 
@@ -42,13 +42,20 @@ def index():
     return render_template('index.html')
 
 # Route to login.html
-@app.route('/login', methods=['Get', 'Post'])
+@app.route('/login', methods=['GET', 'POST']) # Capitelized
 def login():
-    if request.method == 'Post':
+    if request.method == 'POST': # Capitalized
         username = request.form.get('username')
         password = request.form.get('password')
-        print(f"Login attempt: {username}")
-        return ("Logic is being built!")
+        
+        # Simple Logic for Moustafa's Test 4
+        if username == "jeremiah" and password == "password123":
+            # Redirection error fix: 'dashboard.html' changed to 'dashboard'
+            return redirect(url_for('dashboard')), 302 
+        else:
+            # Fix Moustafa's Test 1 (Wrong Password)
+            return "Access Denied", 401 
+            
     return render_template('login.html')
 
 @app.route('/dashboard')
