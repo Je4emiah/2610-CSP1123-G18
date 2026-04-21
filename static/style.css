@@ -41,3 +41,17 @@ input {
 }
 
 .btn-login:hover { background-color: #5750d8; }
+
+.helper-links {
+    margin-top: 15px;
+    font-size: 0.85rem;
+}
+
+.forgot-password {
+    color: #6c63ff;
+    text-decoration: none;
+}
+
+.forgot-password:hover {
+    text-decoration: underline;
+}
