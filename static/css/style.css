@@ -1,0 +1,56 @@
+/* Global Styles */
+body { 
+    font-family: 'Inter', sans-serif; 
+    background: #f8f9fa; 
+    margin: 0;
+}
+
+.navbar-brand { 
+    font-weight: 800; 
+    color: #00D4FF !important; 
+}
+
+/* Hero Section (Index) */
+.hero-section { 
+    padding: 100px 0; 
+    background: white; 
+    border-bottom: 1px solid #eee; 
+}
+
+/* Login Page */
+.login-body { 
+    background: #f0f2f5; 
+    height: 100vh; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+
+.login-card { 
+    background: white; 
+    padding: 40px; 
+    border-radius: 20px; 
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
+    width: 100%; 
+    max-width: 400px; 
+}
+
+/* Dashboard */
+.card { 
+    border: none; 
+    border-radius: 15px; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
+}
+
+.chart-placeholder {
+    height: 250px; 
+    background: #eee; 
+    border-radius: 10px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+}
+
+footer {
+    background: white;
+}
