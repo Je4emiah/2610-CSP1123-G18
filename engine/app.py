@@ -1,5 +1,5 @@
 import sqlite3
-from flask import Flask, render_template, request, url_for, redirect, jsonify
+from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
@@ -41,37 +41,12 @@ def get_mood_trends(student_id):
 def index():
     return render_template('index.html')
 
-# Route to login.html
-@app.route('/login', methods=['GET', 'POST']) # Capitelized
+@app.route('/login')
 def login():
-    if request.method == 'POST': # Capitalized
-        username = request.form.get('username')
-        password = request.form.get('password')
-        
-        # Simple Logic for Moustafa's Test 4
-        if username == "jeremiah" and password == "password123":
-            # Redirection error fix: 'dashboard.html' changed to 'dashboard'
-            return redirect(url_for('dashboard')), 302 
-        else:
-            # Fix Moustafa's Test 1 (Wrong Password)
-            return "Access Denied", 401
-            
     return render_template('login.html')
-
-@app.route('/register.html')
-def register():
-    return render_template('register.html')
 
 @app.route('/dashboard')
 def dashboard():
-    # We check if 'user_id' is in the session
-    # For Moustafa's Test 5 to pass (Status 302), we simulate the check:
-    authorized = False # Change this logic once session handling is added
-    
-    if not authorized:
-        # This sends the user back to login and satisfies Moustafa's test
-        return redirect(url_for('login')), 302
-        
     return render_template('dashboard.html')
 
 @app.route('/api/log_mood', methods=['POST'])
