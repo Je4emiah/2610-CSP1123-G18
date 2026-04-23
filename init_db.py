@@ -1,22 +1,18 @@
 import sqlite3
 
-def init_sqlite_db():
-    # This creates the database file 'mindmetric.db'
-    conn = sqlite3.connect('mindmetric.db')
-    print("Opened database successfully")
-
-    # Create the table for mood logs
+def init_db():
+    with sqlite3.connect('mindmetric.db') as conn:
+    # This creates the database file 'mindmetric.db' to prevent crashs
+    conn.execute('''CREATE TABLE IF NOT EXISTS mood_logs (...)''')
+    
+    # 23 Aprl 21:29 NEW: User Table for Security
     conn.execute('''
-        CREATE TABLE IF NOT EXISTS mood_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT NOT NULL,
-            mood_score INTEGER NOT NULL, -- 1 (Sad) to 5 (Happy)
-            thought_text TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
+                 CREATE TABLE IF NOT EXISTS users (
+                     id INTERGER PRIMARY KEY AUTOINCREMENT,
+                     username TEXT UNIQUE NOT NULL,
+                     password_hash TEXT NOT NULL
+                 )
     ''')
-    print("Table created successfully")
-    conn.close()
 
 if __name__ == "__main__":
     init_sqlite_db()
