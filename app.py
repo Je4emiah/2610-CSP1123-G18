@@ -58,8 +58,26 @@ def login():
             
     return render_template('login.html')
 
-@app.route('/register.html')
+# 23 April 21:45 UPDATE: Added (GET and (POST) to show page and save user
+@app.route('/register.html', method=['GET', 'POST'])
 def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        # 1. Hash the password
+        hashed_pw = generate_password_hash(password)
+        
+        try:
+            with sqlite3.connect('mindmetric.db') as conn:
+                cur = conn.cursor()
+                cur.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)"
+                            (username, hashed_pw))
+                conn.commit()
+            return redirect(url_for('login')) # If success then go to login
+        except sqlite3.IntegrityError:
+            return "Username already exists!", 400
+                
     return render_template('register.html')
 
 @app.route('/dashboard')
