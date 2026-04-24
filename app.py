@@ -1,8 +1,11 @@
 import sqlite3
 from flask import Flask, render_template, request, url_for, redirect, jsonify, session
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import timedelta
 
 app = Flask(__name__)
+app.secret_key = 'mmu_project_secret_key'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 # --- DATABASE HELPERS (Put them here) ---
 
@@ -48,6 +51,7 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        remember = request.form.get('remember')
         
         with sqlite3.connect('mindmetric.db') as conn:
             cur = conn.cursor()
@@ -58,6 +62,7 @@ def login():
         # check_password_hash compares the typed password with the scrambled hash
         if user and check_password_hash(user[0], password):
             session['user_id'] = username #This is the logs of users
+            session.permanent = True if remember else False
             return redirect(url_for('dashboard'))
         else:
             return "Invalid username or password", 401
