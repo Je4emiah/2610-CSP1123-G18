@@ -1,5 +1,5 @@
 import sqlite3
-from flask import Flask, render_template, request, url_for, redirect, jsonify
+from flask import Flask, render_template, request, url_for, redirect, jsonify, session
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -42,25 +42,35 @@ def get_mood_trends(student_id):
 def index():
     return render_template('index.html')
 
-# Route to login.html
-@app.route('/login', methods=['GET', 'POST']) # Capitelized
+# 24 April 21:08 UPDATE: Remove the checks for password123, added hash
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST': # Capitalized
+    if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
         
-        # Simple Logic for Moustafa's Test 4
-        if username == "jeremiah" and password == "password123":
-            # Redirection error fix: 'dashboard.html' changed to 'dashboard'
-            return redirect(url_for('dashboard')), 302 
+        with sqlite3.connect('mindmetric.db') as conn:
+            cur = conn.cursor()
+            #Find the user in the database
+            cur.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
+            user = cur.fetchone()
+        
+        # check_password_hash compares the typed password with the scrambled hash
+        if user and check_password_hash(user[0], password):
+            session['user_id'] = username #This is the logs of users
+            return redirect(url_for('dashboard'))
         else:
-            # Fix Moustafa's Test 1 (Wrong Password)
-            return "Access Denied", 401
+            return "Invalid username or password", 401
             
     return render_template('login.html')
 
+@app.route('/logout')
+def logout():
+    session.clear() # Deletes all session data when user logs out
+    return redirect(url_for('login'))
+
 # 23 April 21:45 UPDATE: Added (GET and (POST) to show page and save user
-@app.route('/register.html', method=['GET', 'POST'])
+@app.route('/register.html', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
