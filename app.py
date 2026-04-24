@@ -1,5 +1,6 @@
 import sqlite3
 from flask import Flask, render_template, request, url_for, redirect, jsonify
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
