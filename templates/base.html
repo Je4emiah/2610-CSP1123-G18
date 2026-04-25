@@ -25,6 +25,7 @@
                             Hi, {{ current_user }}
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow">
+                            <li><a class="dropdown-item" href="{{ url_for('profile') }}">👤 My Profile</a></li>
                             <li>
                                 <button class="dropdown-item" id="themeToggle">
                                     <span id="themeIcon">🌙</span> Switch Theme

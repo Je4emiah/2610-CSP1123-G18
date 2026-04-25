@@ -182,6 +182,8 @@ def dashboard():
         return redirect(url_for('login')), 302
     return render_template('dashboard.html')
 
+
+
 # --- DATABASE INIT ---
 
 def init_db():
