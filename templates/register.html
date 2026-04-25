@@ -24,6 +24,24 @@
                 <label class="form-label">Confirm Password</label>
                 <input type="password" name="confirm_password" class="form-control" required>
             </div>
+            <div class="mt-4 p-3 bg-light rounded border shadow-sm">
+    <p class="text-primary fw-bold small mb-3">Password Recovery Questions</p>
+    
+    <div class="mb-3">
+        <label class="form-label small text-muted">1. What was the name of your first pet?</label>
+        <input type="text" name="q1" class="form-control form-control-sm" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label small text-muted">2. What is your mother's maiden name?</label>
+        <input type="text" name="q2" class="form-control form-control-sm" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label small text-muted">3. What was the name of your primary school?</label>
+        <input type="text" name="q3" class="form-control form-control-sm" required>
+    </div>
+</div>
             <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill mb-3">Create Account</button>
             <div class="text-center mt-3">
                 <a href="{{ url_for('index') }}" class="text-decoration-none small text-muted">← Back to Home</a>
