@@ -112,7 +112,7 @@ def delete_account():
         print(f"Error deleting account: {e}")
         return "Error deleting account", 500
 
-@app.route('/register.html', methods=['GET', 'POST'])
+@app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
@@ -162,7 +162,7 @@ def mood_data_route(username):
 
 def init_db():
     with sqlite3.connect('mindmetric.db') as conn:
-        # Create mood_logs
+        # 1. Create mood_logs (The Data Table)
         conn.execute('''CREATE TABLE IF NOT EXISTS mood_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL,
@@ -171,13 +171,13 @@ def init_db():
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )''')
         
-        # Create users
+        # 2. Create users (The Identity Table)
         conn.execute('''CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL
         )''')
-    print("Database refreshed and ready!")
+    print("Database synced and ready!")
 
 if __name__ == '__main__':
     init_db()
