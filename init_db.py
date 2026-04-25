@@ -8,7 +8,7 @@ def init_db():
     
         conn.execute('''
             CREATE TABLE IF NOT EXISTS users (
-                id INTERGER PRIMARY KEY AUTOINCREMENT,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL
             )
