@@ -160,6 +160,15 @@ def mood_data_route(username):
     trends = get_mood_trends(username)
     return jsonify(trends)
 
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        # For now, we just tell the user we're looking for their account
+        username = request.form.get('username')
+        return f"Searching for {username}... (Logic coming soon!)"
+    
+    return render_template('forgot_password.html')
+
 def init_db():
     with sqlite3.connect('mindmetric.db') as conn:
         # Create mood_logs

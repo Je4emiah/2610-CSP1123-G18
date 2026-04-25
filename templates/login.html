@@ -20,6 +20,11 @@
                 <label class="form-label">Password</label>
                 <input type="password" name="password" class="form-control" required>
             </div>
+
+            <div class="text-end mb-3">
+                <a href="{{ url_for('forgot_password') }}" class="small text-decoration-none">Forgot Password?</a>
+            </div>
+            
             <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill mb-3">Sign In</button>
             <div class="text-center mb-3">
                 <span class="text-muted small">or</span>
