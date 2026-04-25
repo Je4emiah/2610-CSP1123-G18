@@ -8,27 +8,27 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
-<body>
-    <div class="container d-flex justify-content-center align-items-center vh-100">
-        <div class="card p-4 shadow-sm" style="width: 400px; border-radius: 20px;">
-            <h2 class="text-center mb-4 fw-bold">Register</h2>
-            <form action="{{ url_for('register') }}" method="POST">
-                <div class="mb-3">
-                    <label class="form-label">Username</label>
-                    <input type="text" name="username" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Confirm Password</label>
-                    <input type="password" name="confirm_password" class="form-control" required>
-                </div>
-                <button type="submit" class="btn btn-dark w-100 py-2 rounded-pill">Create Account</button>
+<body class="login-body">
+    <div class="login-card">
+        <h2 class="text-center mb-4 fw-bold">Register</h2>
+        <form action="{{ url_for('register') }}" method="POST">
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                <input type="text" name="username" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Confirm Password</label>
+                <input type="password" name="confirm_password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill mb-3">Create Account</button>
+            <div class="text-center mt-3">
                 <a href="{{ url_for('index') }}" class="text-decoration-none small text-muted">← Back to Home</a>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 </body>
 

@@ -9,13 +9,13 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 # --- DATABASE HELPERS (Put them here) ---
 
-def save_mood_entry(student_id, score, thought):
+def save_mood_entry(username, score, thought):
     try:
         with sqlite3.connect('mindmetric.db') as conn:
             cur = conn.cursor()
             cur.execute(
-                "INSERT INTO mood_logs (student_id, mood_score, thought_text) VALUES (?, ?, ?)",
-                (student_id, score, thought)
+                "INSERT INTO mood_logs (username, mood_score, thought_text) VALUES (?, ?, ?)",
+                (username, score, thought)
             )
             conn.commit()
             return True
@@ -23,16 +23,16 @@ def save_mood_entry(student_id, score, thought):
         print(f"Database error: {e}")
         return False
 
-def get_mood_trends(student_id):
+def get_mood_trends(username):
     with sqlite3.connect('mindmetric.db') as conn:
         cur = conn.cursor()
         cur.execute('''
             SELECT date(timestamp), AVG(mood_score) 
             FROM mood_logs 
-            WHERE student_id = ? 
+            WHERE username = ? 
             GROUP BY date(timestamp)
             ORDER BY date(timestamp) ASC
-        ''', (student_id,))
+        ''', (username,))
         rows = cur.fetchall()
         return {
             "labels": [row[0] for row in rows],
@@ -40,6 +40,11 @@ def get_mood_trends(student_id):
         }
 
 # --- ROUTES (The bridges between HTML and Python) ---
+@app.context_processor
+def inject_user():
+    # This pulls the username from the session and 
+    # makes 'current_user' available to ALL HTML files
+    return dict(current_user=session.get('user_id'))
 
 @app.route('/')
 def index():
@@ -86,11 +91,36 @@ def logout():
     session.clear() # Deletes all session data when user logs out
     return redirect(url_for('login'))
 
+@app.route('/delete_account', methods=['POST'])
+def delete_account():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    username = session['user_id']
+    try:
+        with sqlite3.connect('mindmetric.db') as conn:
+            cur = conn.cursor()
+            # 1. Clear their logs first
+            cur.execute("DELETE FROM mood_logs WHERE username = ?", (username,))
+            # 2. Delete the user profile
+            cur.execute("DELETE FROM users WHERE username = ?", (username,))
+            conn.commit()
+        
+        session.clear() # Log them out after deleting
+        return redirect(url_for('index'))
+    except Exception as e:
+        print(f"Error deleting account: {e}")
+        return "Error deleting account", 500
+
 @app.route('/register.html', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if password != confirm_password:
+            return "Passwords do not match!", 400
         
         # 1. Hash the password
         hashed_pw = generate_password_hash(password)
@@ -112,22 +142,22 @@ def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login')), 302
         
-    return render_template('dashboard.html', user=session['user_id'])
+    return render_template('dashboard.html')
 
 @app.route('/api/log_mood', methods=['POST'])
 def log_mood_route():
     data = request.json
     success = save_mood_entry(
-        data.get('student_id'), 
+        data.get('username'), 
         data.get('mood_score'), 
         data.get('thought_text')
     )
     return jsonify({"status": "success" if success else "error"})
 
-@app.route('/api/mood_data/<student_id>')
-def mood_data_route(student_id):
+@app.route('/api/mood_data/<username>')
+def mood_data_route(username):
     # This sends the trends directly to Chart.js
-    trends = get_mood_trends(student_id)
+    trends = get_mood_trends(username)
     return jsonify(trends)
 
 def init_db():
@@ -135,7 +165,7 @@ def init_db():
         # Create mood_logs
         conn.execute('''CREATE TABLE IF NOT EXISTS mood_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT NOT NULL,
+            username TEXT NOT NULL,
             mood_score INTEGER NOT NULL,
             thought_text TEXT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP

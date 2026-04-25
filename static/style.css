@@ -12,12 +12,15 @@ body {
     background: white;
     padding: 40px;
     border-radius: 15px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     text-align: center;
     width: 350px;
 }
 
-h2 { color: #444; margin-bottom: 10px; }
+h2 {
+    color: #444;
+    margin-bottom: 10px;
+}
 
 input {
     width: 100%;
@@ -25,7 +28,8 @@ input {
     margin: 10px 0;
     border: 1px solid #ddd;
     border-radius: 5px;
-    box-sizing: border-box; /* Important for alignment */
+    box-sizing: border-box;
+    /* Important for alignment */
 }
 
 .btn-login {
@@ -40,7 +44,9 @@ input {
     margin-top: 10px;
 }
 
-.btn-login:hover { background-color: #5750d8; }
+.btn-login:hover {
+    background-color: #5750d8;
+}
 
 .helper-links {
     margin-top: 15px;

@@ -24,7 +24,7 @@
                             data-bs-toggle="dropdown">
                             Hi, {{ current_user }}
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
+                        <ul class="dropdown-menu dropdown-menu-end shadow">
                             <li>
                                 <button class="dropdown-item" id="themeToggle">
                                     <span id="themeIcon">🌙</span> Switch Theme
@@ -33,7 +33,16 @@
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
-                            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">Logout</a></li>
+
+                            <li>
+                                <form action="{{ url_for('delete_account') }}" method="POST" id="deleteForm"
+                                    class="d-none"></form>
+                                <button type="button" class="dropdown-item text-danger" onclick="handleDelete()">
+                                    <strong>Delete Account</strong>
+                                </button>
+                            </li>
+
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
                         </ul>
                     </div>
                     {% else %}
@@ -48,7 +57,18 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-    {% block scripts %}{% endblock %}
+    {% block scripts %}
+    <script>
+        function handleDelete() {
+            // This creates the native browser popup
+            const confirmed = confirm("Warning! This will permanently delete your account and all mood data. Are you sure?");
+
+            if (confirmed) {
+                document.getElementById('deleteForm').submit();
+            }
+        }
+    </script>
+    {% endblock %}
 </body>
 
 </html>

@@ -1,95 +1,106 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
 
-<head>
-    <meta charset="UTF-8" />
-    <title>MindMetric | Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-</head>
-
-<body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">MindMetric</a>
-            <div class="ms-auto d-flex align-items-center">
-                <a class="nav-link px-3" href="{{ url_for('index') }}">Home</a>
-                <a class="nav-link px-3" href="{{ url_for('dashboard') }}">Dashboard</a>
-                <div class="ms-auto">
-                    {% if user %}
-                    <div class="dropdown">
-                        <button class="btn btn-outline-primary dropdown-toggle rounded-pill" type="button"
-                            data-bs-toggle="dropdown">
-                            Hi, {{ user }}
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">Profile Settings</a></li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">Logout</a></li>
-                        </ul>
-                    </div>
-                    {% else %}
-                    <a href="{{ url_for('login') }}" class="btn btn-primary rounded-pill">Sign In</a>
-                    {% endif %}
-                </div>
+{% block content %}
+<div class="container my-5">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card p-4 shadow-sm border-0">
+                <h5 class="fw-bold mb-3">Log Your Mood</h5>
+                <select class="form-select mb-3" id="moodScore">
+                    <option value="5">🔥 Great</option>
+                    <option value="4">😊 Good</option>
+                    <option value="3" selected>😐 Neutral</option>
+                    <option value="2">☹️ Bad</option>
+                    <option value="1">😫 Terrible</option>
+                </select>
+                <textarea class="form-control mb-3" id="thoughtText" rows="3"
+                    placeholder="What happened today?"></textarea>
+                <button class="btn btn-primary w-100 rounded-pill" onclick="saveMood()">Save Entry</button>
             </div>
         </div>
-    </nav>
-
-    <div class="container my-5">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card p-4">
-                    <h5 class="fw-bold mb-3">Log Your Mood</h5>
-                    <select class="form-select mb-3" id="moodScore">
-                        <option value="5">🔥 Great</option>
-                        <option value="4">😊 Good</option>
-                        <option value="3">😐 Neutral</option>
-                        <option value="2">☹️ Bad</option>
-                        <option value="1">😫 Terrible</option>
-                    </select>
-                    <textarea class="form-control mb-3" id="thoughtText" rows="3"
-                        placeholder="What happened today?"></textarea>
-                    <button class="btn btn-primary w-100" onclick="testLog()">Save Entry</button>
-                </div>
-            </div>
-            <div class="col-md-8">
-                <div class="card p-4 text-center">
+        <div class="col-md-8">
+            <div class="card p-4 text-center shadow-sm border-0 h-100">
+                <h5 class="fw-bold mb-4">Your Emotional Trend</h5>
+                <div class="card p-4 text-center shadow-sm border-0 h-100">
                     <h5 class="fw-bold mb-4">Your Emotional Trend</h5>
-                    <div class="chart-placeholder">
-                        <p class="text-muted">[ Chart.js Logic Goes Here ]</p>
+                    <div style="position: relative; height:300px; width:100%">
+                        <canvas id="moodChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <script>
-        async function testLog() {
-            const score = document.getElementById('moodScore').value
-            const thought = document.getElementById('thoughtText').value
+{% block scripts %}
+{{ super() }}
+<script>
+    // 1. The function to fetch data and draw the chart
+    async function loadChart() {
+        try {
+            const response = await fetch('/api/mood_data/{{ current_user }}');
+            const data = await response.json();
 
-            try {
-                const response = await fetch('http://127.0.0.1:5000/api/log_mood', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ student_id: 'Jeremiah', mood_score: parseInt(score), thought_text: thought })
-                })
+            const ctx = document.getElementById('moodChart').getContext('2d');
+            
+            if (window.myChart) { window.myChart.destroy(); }
 
-                const result = await response.json()
-                if (result.status === 'success') {
-                    alert('Success! Entry saved to database.')
-                    document.getElementById('thoughtText').value = ''
-                } else {
-                    alert('Database Error.')
+            window.myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Mood Score',
+                        data: data.data,
+                        borderColor: '#00D4FF',
+                        backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { min: 1, max: 5, ticks: { stepSize: 1 } }
+                    }
                 }
-            } catch (error) {
-                alert('Could not connect to Flask server.')
-            }
+            });
+        } catch (error) {
+            console.error('Error loading chart:', error);
         }
-    </script>
-</body>
+    }
 
-</html>
+    // 2. The function to save a new mood
+    async function saveMood() {
+        const score = document.getElementById('moodScore').value;
+        const thought = document.getElementById('thoughtText').value;
+
+        try {
+            const response = await fetch('/api/log_mood', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    username: '{{ current_user }}', // Updated from student_id
+                    mood_score: parseInt(score), 
+                    thought_text: thought 
+                })
+            });
+
+            const result = await response.json();
+            if (result.status === 'success') {
+                document.getElementById('thoughtText').value = '';
+                loadChart(); // This calls the function above to refresh the graph
+            }
+        } catch (error) {
+            console.error('Connection failed:', error);
+        }
+    }
+
+    // 3. Run this automatically when the page loads
+    document.addEventListener('DOMContentLoaded', loadChart);
+</script>
+{% endblock %}
