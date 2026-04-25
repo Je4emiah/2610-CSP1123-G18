@@ -45,28 +45,25 @@ def get_mood_trends(student_id):
 def index():
     return render_template('index.html')
 
-# 24 April 21:08 UPDATE: Remove the checks for password123, added hash
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        remember = request.form.get('remember')
         
         with sqlite3.connect('mindmetric.db') as conn:
             cur = conn.cursor()
-            #Find the user in the database
             cur.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
             user = cur.fetchone()
-        
-        # check_password_hash compares the typed password with the scrambled hash
+
+        # Check password and move on - NO loops here
         if user and check_password_hash(user[0], password):
-            session['user_id'] = username #This is the logs of users
-            session.permanent = True if remember else False
-            return redirect(url_for('dashboard'))
+            session['user_id'] = username
+            return redirect(url_for('dashboard')) # Go straight to dashboard
         else:
             return "Invalid username or password", 401
             
+    # If it's a GET request, just show the page
     return render_template('login.html')
 
 @app.route('/reset_password', methods=['GET', 'POST'])
@@ -89,7 +86,6 @@ def logout():
     session.clear() # Deletes all session data when user logs out
     return redirect(url_for('login'))
 
-# 23 April 21:45 UPDATE: Added (GET and (POST) to show page and save user
 @app.route('/register.html', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -136,16 +132,22 @@ def mood_data_route(student_id):
 
 def init_db():
     with sqlite3.connect('mindmetric.db') as conn:
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS mood_logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student_id TEXT NOT NULL,
-                mood_score INTEGER NOT NULL,
-                thought_text TEXT,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-    print("Database initialized!")
+        # Create mood_logs
+        conn.execute('''CREATE TABLE IF NOT EXISTS mood_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            mood_score INTEGER NOT NULL,
+            thought_text TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )''')
+        
+        # Create users
+        conn.execute('''CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL
+        )''')
+    print("Database refreshed and ready!")
 
 if __name__ == '__main__':
     init_db()
