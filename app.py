@@ -69,6 +69,21 @@ def login():
             
     return render_template('login.html')
 
+@app.route('/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        new_password = request.form.get('new_password')
+        hashed_pw = generate_password_hash(new_password)
+        
+        with sqlite3.connect('mindmetric.db') as conn:
+            cur = conn.cursor()
+            # This updates the password for the existing user
+            cur.execute("UPDATE users SET password_hash = ? WHERE username = ?", (hashed_pw, username))
+            conn.commit()
+        return redirect(url_for('login'))
+    return render_template('reset_password.html')
+
 @app.route('/logout')
 def logout():
     session.clear() # Deletes all session data when user logs out
@@ -87,8 +102,7 @@ def register():
         try:
             with sqlite3.connect('mindmetric.db') as conn:
                 cur = conn.cursor()
-                cur.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)"
-                            (username, hashed_pw))
+                cur.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, hashed_pw))
                 conn.commit()
             return redirect(url_for('login')) # If success then go to login
         except sqlite3.IntegrityError:
@@ -98,15 +112,11 @@ def register():
 
 @app.route('/dashboard')
 def dashboard():
-    # We check if 'user_id' is in the session
-    # For Moustafa's Test 5 to pass (Status 302), we simulate the check:
-    authorized = False # Change this logic once session handling is added
-    
-    if not authorized:
-        # This sends the user back to login and satisfies Moustafa's test
+    # Check if the user is actually logged in via session
+    if 'user_id' not in session:
         return redirect(url_for('login')), 302
         
-    return render_template('dashboard.html')
+    return render_template('dashboard.html', user=session['user_id'])
 
 @app.route('/api/log_mood', methods=['POST'])
 def log_mood_route():
