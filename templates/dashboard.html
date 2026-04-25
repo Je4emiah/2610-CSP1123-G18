@@ -13,8 +13,27 @@
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">MindMetric</a>
             <div class="ms-auto d-flex align-items-center">
-                <a class="nav-link px-3 active" href="{{ url_for('dashboard') }}">Dashboard</a>
-                <span class="ms-3 fw-bold text-dark">Jeremiah</span>
+                <a class="nav-link px-3" href="{{ url_for('index') }}">Home</a>
+                <a class="nav-link px-3" href="{{ url_for('dashboard') }}">Dashboard</a>
+                <div class="ms-auto">
+                    {% if user %}
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary dropdown-toggle rounded-pill" type="button"
+                            data-bs-toggle="dropdown">
+                            Hi, {{ user }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#">Profile Settings</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">Logout</a></li>
+                        </ul>
+                    </div>
+                    {% else %}
+                    <a href="{{ url_for('login') }}" class="btn btn-primary rounded-pill">Sign In</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </nav>
