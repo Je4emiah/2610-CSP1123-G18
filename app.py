@@ -182,6 +182,25 @@ def dashboard():
         return redirect(url_for('login')), 302
     return render_template('dashboard.html')
 
+@app.route('/history')
+def history():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    username = session['user_id']
+    
+    with sqlite3.connect('mindmetric.db') as conn:
+        conn.row_factory = sqlite3.Row
+        # Requirement: Sort by date (Newest first)
+        logs = conn.execute('''
+            SELECT mood_score, thought_text, timestamp 
+            FROM mood_logs 
+            WHERE username = ? 
+            ORDER BY timestamp DESC
+        ''', (username,)).fetchall()
+        
+    return render_template('history.html', logs=logs)
+
 
 
 # --- DATABASE INIT ---
@@ -211,3 +230,5 @@ def init_db():
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
+
+    
