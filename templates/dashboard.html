@@ -22,11 +22,8 @@
         <div class="col-md-8">
             <div class="card p-4 text-center shadow-sm border-0 h-100">
                 <h5 class="fw-bold mb-4">Your Emotional Trend</h5>
-                <div class="card p-4 text-center shadow-sm border-0 h-100">
-                    <h5 class="fw-bold mb-4">Your Emotional Trend</h5>
-                    <div style="position: relative; height:300px; width:100%">
-                        <canvas id="moodChart"></canvas>
-                    </div>
+                <div style="position: relative; height:300px; width:100%">
+                    <canvas id="moodChart"></canvas>
                 </div>
             </div>
         </div>
@@ -44,7 +41,7 @@
             const data = await response.json();
 
             const ctx = document.getElementById('moodChart').getContext('2d');
-            
+
             if (window.myChart) { window.myChart.destroy(); }
 
             window.myChart = new Chart(ctx, {
@@ -83,10 +80,10 @@
             const response = await fetch('/api/log_mood', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     username: '{{ current_user }}', // Updated from student_id
-                    mood_score: parseInt(score), 
-                    thought_text: thought 
+                    mood_score: parseInt(score),
+                    thought_text: thought
                 })
             });
 
