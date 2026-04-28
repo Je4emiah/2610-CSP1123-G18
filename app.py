@@ -55,6 +55,7 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        remember = request.form.get('remember_me')
         
         with sqlite3.connect('mindmetric.db') as conn:
             cur = conn.cursor()
@@ -64,6 +65,10 @@ def login():
         # Check password and move on - NO loops here
         if user and check_password_hash(user[0], password):
             session['user_id'] = username
+            
+            if remember:
+                session.permanent = True
+                
             return redirect(url_for('dashboard')) # Go straight to dashboard
         else:
             return "Invalid username or password", 401
