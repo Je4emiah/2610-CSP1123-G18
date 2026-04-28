@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MindMetric | Profile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        /* Navbar */
+        .navbar {
+            background: white;
+            border-bottom: 1px solid #ddd;
+            padding: 15px 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .nav-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .brand {
+            font-size: 20px;
+            font-weight: bold;
+            text-decoration: none;
+            color: #333;
+        }
+        
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: #666;
+        }
+        
+        .nav-links a.active {
+            color: #007bff;
+            font-weight: bold;
+        }
+        
+        /* Cards */
+        .cards-wrapper {
+            display: flex;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            flex: 1;
+        }
+        
+        .card h4 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .card hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid #eee;
+        }
+        
+        /* Form elements */
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        .btn-block {
+            width: 100%;
+        }
+        
+        .badge {
+            background: #007bff;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 18px;
+            display: inline-block;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .mt-3 {
+            margin-top: 15px;
+        }
+        
+        .mb-2 {
+            margin-bottom: 10px;
+        }
+        
+        .profile-info {
+            margin-bottom: 15px;
+        }
+        
+        .profile-info strong {
+            display: inline-block;
+            width: 60px;
+        }
+        
+        @media (max-width: 768px) {
+            .cards-wrapper {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container nav-flex">
+        <a class="brand" href="{{ url_for('index') }}">MindMetric</a>
+        <div class="nav-links">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('profile') }}" class="active">Profile</a>
+            <span id="navbarUsername">Jeremiah</span>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="cards-wrapper">
+        <!-- Left Card - Profile -->
+        <div class="card">
+            <h4>Profile</h4>
+            <div class="profile-info">
+                <strong>Name:</strong> <span id="displayNameText">Jeremiah</span>
+            </div>
+            <div class="profile-info">
+                <strong>ID:</strong> <span id="profileStudentId">Jeremiah</span>@mmu.edu
+            </div>
+            
+            <hr>
+            
+            <h5>Edit Name</h5>
+            <input type="text" id="editNameInput" value="Jeremiah">
+            <button id="saveNameBtn">Save</button>
+            
+            <hr>
+            
+            <h5>Total Moods</h5>
+            <p><span class="badge" id="totalMoodsCount">—</span> entries</p>
+        </div>
+        
+        <!-- Right Card - Change Password -->
+        <div class="card">
+            <h4>Change Password</h4>
+            <input type="password" id="newPassword" placeholder="New Password">
+            <input type="password" id="confirmPassword" placeholder="Confirm Password">
+            <button class="btn-block" id="updatePasswordBtn">Update Password</button>
+        </div>
+    </div>
+    
+    <div class="text-center mt-3">
+        <a href="{{ url_for('login') }}" style="color: #666;">Sign out</a>
+    </div>
+</div>
+
+<script>
+    const studentId = "Jeremiah";
+    
+    // Load data
+    async function loadData() {
+        let res = await fetch(`/api/profile/${studentId}`);
+        let data = await res.json();
+        if (data.display_name) {
+            document.getElementById('displayNameText').innerText = data.display_name;
+            document.getElementById('editNameInput').value = data.display_name;
+            document.getElementById('navbarUsername').innerText = data.display_name;
+        }
+        
+        res = await fetch(`/api/mood_stats/${studentId}`);
+        data = await res.json();
+        document.getElementById('totalMoodsCount').innerText = data.total_entries || 0;
+    }
+    
+    // Save name
+    document.getElementById('saveNameBtn').onclick = async () => {
+        let newName = document.getElementById('editNameInput').value;
+        if (!newName) {
+            alert('Name cannot be empty');
+            return;
+        }
+        let res = await fetch('/api/update_name', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({student_id: studentId, display_name: newName})
+        });
+        let result = await res.json();
+        if (result.status === 'success') {
+            alert('Name updated!');
+            loadData();
+        } else {
+            alert('Error');
+        }
+    };
+    
+    // Update password
+    document.getElementById('updatePasswordBtn').onclick = async () => {
+        let pwd = document.getElementById('newPassword').value;
+        let confirm = document.getElementById('confirmPassword').value;
+        
+        if (pwd !== confirm) {
+            alert('Passwords do not match');
+            return;
+        }
+        if (pwd.length < 4) {
+            alert('Password must be at least 4 characters');
+            return;
+        }
+        
+        let res = await fetch('/api/update_password', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({student_id: studentId, new_password: pwd})
+        });
+        let result = await res.json();
+        if (result.status === 'success') {
+            alert('Password updated!');
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+        } else {
+            alert('Error');
+        }
+    };
+    
+    loadData();
+</script>
+
+</body>
+</html>
