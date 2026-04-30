@@ -22,6 +22,12 @@
         <div class="col-md-8">
             <div class="card p-4 text-center shadow-sm border-0 h-100">
                 <h5 class="fw-bold mb-4">Your Emotional Trend</h5>
+                <div class="btn-group mb-3" role="group">
+                    <button class="btn btn-outline-primary btn-sm" onclick="loadChart('6h')">6 Hours</button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="loadChart('day')">Day</button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="loadChart('week')">Week</button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="loadChart('month')">Month</button>
+                </div>
                 <div style="position: relative; height:300px; width:100%">
                     <canvas id="moodChart"></canvas>
                 </div>
