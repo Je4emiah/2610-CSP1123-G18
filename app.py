@@ -221,11 +221,11 @@ def api_mood_data(username):
     time_range = request.args.get('range,', 'all')
     
     ranges = {
-        '6h,' = '-6 hours',
-        'day,' = '-1 day',
-        'week,' = '-7 days',
-        'month,' = '-30 days',
-        'year,' = '-1 year',        
+        '6h': '-6 hours',
+        'day': '-1 day',
+        'week': '-7 days',
+        'month': '-30 days',
+        'year': '-1 year',        
     }
     
     with sqlite3.connect('mindmetric') as conn:
