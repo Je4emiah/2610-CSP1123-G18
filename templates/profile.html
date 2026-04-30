@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}User Profile{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-primary text-white text-center p-4 rounded-top-4">
+                    <div class="rounded-circle bg-white text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px; font-size: 2rem; font-weight: bold;">
+                        {{ user['username'][0] | upper }}
+                    </div>
+                    <h3 class="mb-0">{{ user['username'] }}</h3>
+                    <p class="small opacity-75">MindMetric Student Account</p>
+                </div>
+                <div class="card-body p-4">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-3">Account Details</h6>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>User ID:</span>
+                        <span class="fw-bold">#{{ user['id'] }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-4">
+                        <span>Status:</span>
+                        <span class="badge bg-success">Active</span>
+                    </div>
+
+                    <h6 class="text-uppercase text-muted small fw-bold mb-3">Security Settings</h6>
+                    <div class="p-3 bg-light rounded shadow-sm mb-4">
+                        <div class="small mb-1 text-muted">Verification Method:</div>
+                        <div class="fw-bold text-dark"><i class="fas fa-check-circle text-success"></i> 3 Security Questions Set</div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('forgot_password') }}" class="btn btn-outline-primary rounded-pill">Update Password</a>
+                        <form action="{{ url_for('delete_account') }}" method="POST" onsubmit="return confirm('Are you sure you want to delete your account?');">
+                            <button type="submit" class="btn btn-link text-danger w-100 text-decoration-none small">Delete My Account</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
