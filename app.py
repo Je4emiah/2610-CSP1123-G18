@@ -216,9 +216,41 @@ def history():
 # API: Fetch data for the Chart
 @app.route('/api/mood_data/<username>')
 def api_mood_data(username):
-    # Use the helper function you already wrote!
-    data = get_mood_trends(username)
-    return jsonify(data)
+    
+    # Time range
+    time_range = request.args.get('range,', 'all')
+    
+    ranges = {
+        '6h,' = '-6 hours',
+        'day,' = '-1 day',
+        'week,' = '-7 days',
+        'month,' = '-30 days',
+        'year,' = '-1 year',        
+    }
+    
+    with sqlite3.connect('mindmetric') as conn:
+        cur = conn.cursor()
+        
+        if time_range in range:
+            cur.execute(f'''
+                SELECT timestamp, mood_score
+                FROM mood_logs
+                WHERE username = ? AND timestamp >= datetime('now', '{ranges[time_range]}')
+                ORDER BY timestamp ASC
+            ''', (username,))
+        else:
+            cur.execute(f'''
+                SELECT timestamp, mood_score
+                FROM mood_logs
+                WHERE username = ?
+                ORDER BY timestamp ASC
+            ''', (username,))
+        
+        rows = cur.fetchall()
+        return jsonify({
+            "labels": [row[0] for row in rows],
+            "data": [row[1] for row in rows]
+        })
 
 # API: Save mood from the Dashboard
 @app.route('/api/log_mood', methods=['POST'])
@@ -227,8 +259,6 @@ def api_log_mood():
     username = data.get('username')
     score = data.get('mood_score')
     thought = data.get('thought_text')
-    
-    # Use the helper function you already wrote!
     success = save_mood_entry(username, score, thought)
     
     if success:
