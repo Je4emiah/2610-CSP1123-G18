@@ -218,7 +218,7 @@ def history():
 def api_mood_data(username):
     
     # Time range
-    time_range = request.args.get('range,', 'all')
+    time_range = request.args.get('range', 'all')
     
     ranges = {
         '6h': '-6 hours',
@@ -228,10 +228,10 @@ def api_mood_data(username):
         'year': '-1 year',        
     }
     
-    with sqlite3.connect('mindmetric') as conn:
+    with sqlite3.connect('mindmetric.db') as conn:
         cur = conn.cursor()
         
-        if time_range in range:
+        if time_range in ranges:
             cur.execute(f'''
                 SELECT timestamp, mood_score
                 FROM mood_logs
