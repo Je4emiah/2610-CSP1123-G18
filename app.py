@@ -13,7 +13,7 @@ def save_mood_entry(username, score, thought):
         with sqlite3.connect('mindmetric.db') as conn:
             cur = conn.cursor()
             cur.execute(
-                "INSERT INTO mood_logs (username, mood_score, thought_text) VALUES (?, ?, ?)",
+                "INSERT INTO mood_logs (username, mood_score, thought_text, timestamp) VALUES (?, ?, ?, datetime('now', 'localtime'))",
                 (username, score, thought)
             )
             conn.commit()
@@ -235,7 +235,8 @@ def api_mood_data(username):
             cur.execute(f'''
                 SELECT timestamp, mood_score
                 FROM mood_logs
-                WHERE username = ? AND timestamp >= datetime('now', '{ranges[time_range]}')
+                WHERE username = ?
+                AND timestamp >= datetime('now', 'localtime', '{ranges[time_range]}')
                 ORDER BY timestamp ASC
             ''', (username,))
         else:
