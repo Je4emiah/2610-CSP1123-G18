@@ -1,13 +1,17 @@
 import sqlite3
-from flask import Flask, render_template, request, url_for, redirect, jsonify, session, flash
+from flask import Flask, render_template, request, url_for, redirect, jsonify, session, flash, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import timedelta
 
 app = Flask(__name__)
 app.secret_key = 'mmu_project_secret_key'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+DATABASE = 'mindmetric.db'
 
 # --- DATABASE HELPERS ---
+def get_db();
+    # Check if a database connection already exists for this request
+
 def save_mood_entry(username, score, thought):
     try:
         with sqlite3.connect('mindmetric.db') as conn:
@@ -219,14 +223,24 @@ def api_mood_data(username):
     
     # Time range
     time_range = request.args.get('range', 'all')
+    offset = int(request.args.get('offset', 0)) # 0 = current, 1 = previous, etc.
     
+    # Define the jump size for each range
     ranges = {
-        '6h': '-6 hours',
-        'day': '-1 day',
-        'week': '-7 days',
-        'month': '-30 days',
-        'year': '-1 year',        
+        '6h': '6 hours',
+        'day': '1 day',
+        'week': '7 days',
+        'month': '30 days',
     }
+    
+    unit = ranges.get(time_range, '1 day')
+    
+    # Logic:
+    # Start point = now - (offset * 1 periods)
+    # End point = now - (offset periods)
+    start_time = f"datetime('now', 'localtime', '-{(offset + 1)} {unit}')"
+    end_time = f"datetime('now', 'localtime', '-{(offset)} {unit}')"
+
     
     with sqlite3.connect('mindmetric.db') as conn:
         cur = conn.cursor()
