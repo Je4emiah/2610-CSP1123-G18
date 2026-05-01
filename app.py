@@ -1,42 +1,58 @@
 import sqlite3
-from flask import Flask, render_template, request, url_for, redirect, jsonify, session, flash
+from flask import Flask, render_template, request, url_for, redirect, jsonify, session, flash, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import timedelta
 
 app = Flask(__name__)
 app.secret_key = 'mmu_project_secret_key'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+DATABASE = 'mindmetric.db'
 
 # --- DATABASE HELPERS ---
+def get_db():
+    # Check if a database connection already exists for this request
+    db = getattr(g, '_database', None)
+    if db is None:
+        # If not, create one and store it in 'g' for global object
+        db = g._database = sqlite3.connect(DATABASE)
+        # This allows us to access columns by name (e.g., row['username'])
+        db.row_factory = sqlite3.Row
+    return db
+
+@app.teardown_appcontext
+def close_connection(exception):
+    # This automatically closes the databse when the user's request ends
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
+
 def save_mood_entry(username, score, thought):
     try:
-        with sqlite3.connect('mindmetric.db') as conn:
-            cur = conn.cursor()
-            cur.execute(
-                "INSERT INTO mood_logs (username, mood_score, thought_text, timestamp) VALUES (?, ?, ?, datetime('now', 'localtime'))",
-                (username, score, thought)
-            )
-            conn.commit()
-            return True
+        db = get_db() # Simplified: use the new helper get_db()
+        db.execute('''
+            INSERT INTO mood_logs (username, mood_score, thought_text, timestamp)
+            VALUES (?, ?, ?, datetime('now','localtime'))
+        ''', (username, score, thought))
+        db.commit()
+        return True
     except Exception as e:
         print(f"Database error: {e}")
         return False
 
 def get_mood_trends(username):
-    with sqlite3.connect('mindmetric.db') as conn:
-        cur = conn.cursor()
-        cur.execute('''
+    db = get_db()
+    db.execute('''
             SELECT date(timestamp), AVG(mood_score) 
             FROM mood_logs 
             WHERE username = ? 
             GROUP BY date(timestamp)
             ORDER BY date(timestamp) ASC
-        ''', (username,))
-        rows = cur.fetchall()
-        return {
-            "labels": [row[0] for row in rows],
-            "data": [row[1] for row in rows]
-        }
+    ''', (username,))
+    rows = db.fetchall()
+    return {
+        "labels": [row[0] for row in rows],
+        "data": [row[1] for row in rows]
+    }
 
 # --- CONTEXT PROCESSOR ---
 @app.context_processor
@@ -56,10 +72,9 @@ def login():
         password = request.form.get('password')
         remember = request.form.get('remember_me')
         
-        with sqlite3.connect('mindmetric.db') as conn:
-            cur = conn.cursor()
-            cur.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
-            user = cur.fetchone()
+        db = get_db()
+        db.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
+        user = db.fetchone()
 
         if user and check_password_hash(user[0], password):
             session['user_id'] = username
@@ -82,9 +97,9 @@ def forgot_password():
         a2 = request.form.get('q2', '').lower().strip()
         a3 = request.form.get('q3', '').lower().strip()
         
-        with sqlite3.connect('mindmetric.db') as conn:
-            conn.row_factory = sqlite3.Row
-            user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+        db = get_db()
+        db.row_factory = sqlite3.Row
+        user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
         
         # Security Verification
         if user and user['q1_answer'] == a1 and user['q2_answer'] == a2 and user['q3_answer'] == a3:
@@ -107,9 +122,10 @@ def reset_password():
 
     hashed_pw = generate_password_hash(new_password)
 
-    with sqlite3.connect('mindmetric.db') as conn:
-        conn.execute('UPDATE users SET password_hash = ? WHERE username = ?', (hashed_pw, username))
-        conn.commit()
+    db = get_db()
+    db.execute('UPDATE users SET password_hash = ? WHERE username = ?',
+               (hashed_pw, username))
+    db.commit()
 
     return "<h2>Success!</h2><p>Password updated.</p><a href='/login'>Login now</a>"
 
@@ -120,10 +136,10 @@ def profile():
         return redirect(url_for('login'))
         
     username = session['user_id']
-    with sqlite3.connect('mindmetric.db') as conn:
-        conn.row_factory = sqlite3.Row
-        # We query by username because that's what's stored in your session
-        user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+    db = get_db()
+    db.row_factory = sqlite3.Row
+    # We query by username because that's what's stored in your session
+    user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
         
     return render_template('profile.html', user=user)
 
@@ -141,11 +157,10 @@ def delete_account():
 
     username = session['user_id']
     try:
-        with sqlite3.connect('mindmetric.db') as conn:
-            cur = conn.cursor()
-            cur.execute("DELETE FROM mood_logs WHERE username = ?", (username,))
-            cur.execute("DELETE FROM users WHERE username = ?", (username,))
-            conn.commit()
+        db = get_db()
+        db.execute("DELETE FROM mood_logs WHERE username = ?", (username,))
+        db.execute("DELETE FROM users WHERE username = ?", (username,))
+        db.commit()
         
         session.clear()
         return redirect(url_for('index'))
@@ -172,14 +187,13 @@ def register():
         hashed_pw = generate_password_hash(password)
         
         try:
-            with sqlite3.connect('mindmetric.db') as conn:
-                cur = conn.cursor()
+            db = get_db()
                 # Updated SQL to include questions
-                cur.execute("""
-                    INSERT INTO users (username, password_hash, q1_answer, q2_answer, q3_answer) 
-                    VALUES (?, ?, ?, ?, ?)
-                """, (username, hashed_pw, q1, q2, q3))
-                conn.commit()
+            db.execute("""
+                INSERT INTO users (username, password_hash, q1_answer, q2_answer, q3_answer) 
+                VALUES (?, ?, ?, ?, ?)
+            """, (username, hashed_pw, q1, q2, q3))
+            db.commit()
             return redirect(url_for('login'))
         except sqlite3.IntegrityError:
             return "Username already exists!", 400
@@ -201,58 +215,20 @@ def history():
         
     username = session['user_id']
     
-    with sqlite3.connect('mindmetric.db') as conn:
-        conn.row_factory = sqlite3.Row
-        # Requirement: Sort by date (Newest first)
-        logs = conn.execute('''
-            SELECT mood_score, thought_text, timestamp 
-            FROM mood_logs 
-            WHERE username = ? 
-            ORDER BY timestamp DESC
-        ''', (username,)).fetchall()
+    db = get_db()
+    db.row_factory = sqlite3.Row
+    # Requirement: Sort by date (Newest first)
+    logs = db.execute('''
+        SELECT mood_score, thought_text, timestamp 
+        FROM mood_logs 
+        WHERE username = ? 
+        ORDER BY timestamp DESC
+    ''', (username,)).fetchall()
         
     return render_template('history.html', logs=logs)
 
 # API: Fetch data for the Chart
-@app.route('/api/mood_data/<username>')
-def api_mood_data(username):
-    
-    # Time range
-    time_range = request.args.get('range', 'all')
-    
-    ranges = {
-        '6h': '-6 hours',
-        'day': '-1 day',
-        'week': '-7 days',
-        'month': '-30 days',
-        'year': '-1 year',        
-    }
-    
-    with sqlite3.connect('mindmetric.db') as conn:
-        cur = conn.cursor()
-        
-        if time_range in ranges:
-            cur.execute(f'''
-                SELECT timestamp, mood_score
-                FROM mood_logs
-                WHERE username = ?
-                AND timestamp >= datetime('now', 'localtime', '{ranges[time_range]}')
-                ORDER BY timestamp ASC
-            ''', (username,))
-        else:
-            cur.execute(f'''
-                SELECT timestamp, mood_score
-                FROM mood_logs
-                WHERE username = ?
-                ORDER BY timestamp ASC
-            ''', (username,))
-        
-        rows = cur.fetchall()
-        return jsonify({
-            "labels": [row[0] for row in rows],
-            "data": [row[1] for row in rows]
-        })
-
+gi
 # API: Save mood from the Dashboard
 @app.route('/api/log_mood', methods=['POST'])
 def api_log_mood():
@@ -268,27 +244,29 @@ def api_log_mood():
 
 # --- DATABASE INIT ---
 def init_db():
-    with sqlite3.connect('mindmetric.db') as conn:
-        # 1. Mood Logs Table
-        conn.execute('''CREATE TABLE IF NOT EXISTS mood_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL,
-            mood_score INTEGER NOT NULL,
-            thought_text TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )''')
-        
-        # 2. Updated Users Table with Security Questions
-        conn.execute('''CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            q1_answer TEXT,
-            q2_answer TEXT,
-            q3_answer TEXT
-        )''')
+    db = get_db()
+    # 1. Mood Logs Table
+    db.execute('''CREATE TABLE IF NOT EXISTS mood_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        mood_score INTEGER NOT NULL,
+        thought_text TEXT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
+
+    # 2. Updated Users Table with Security Questions
+    db.execute('''CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        q1_answer TEXT,
+        q2_answer TEXT,
+        q3_answer TEXT
+    )''')
+    
     print("Database refreshed and ready with Security Questions!")
 
 if __name__ == '__main__':
-    init_db()
+    with app.app.context():
+        init_db()
     app.run(debug=True)
