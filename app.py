@@ -31,7 +31,7 @@ def save_mood_entry(username, score, thought):
         db = get_db() # Simplified: use the new helper get_db()
         db.execute('''
             INSERT INTO mood_logs (username, mood_score, thought_text, timestamp)
-            VALUES (?, ?, ?, datetime('now','localtime'))
+            VALUES (?, ?, ?, datetime('now', 'localtime'))
         ''', (username, score, thought))
         db.commit()
         return True
@@ -41,14 +41,14 @@ def save_mood_entry(username, score, thought):
 
 def get_mood_trends(username):
     db = get_db()
-    db.execute('''
+    cursor = db.execute('''
             SELECT date(timestamp), AVG(mood_score) 
             FROM mood_logs 
             WHERE username = ? 
             GROUP BY date(timestamp)
             ORDER BY date(timestamp) ASC
     ''', (username,))
-    rows = db.fetchall()
+    rows = cursor.fetchall()
     return {
         "labels": [row[0] for row in rows],
         "data": [row[1] for row in rows]
@@ -228,7 +228,55 @@ def history():
     return render_template('history.html', logs=logs)
 
 # API: Fetch data for the Chart
-gi
+@app.route('/api/mood_data/<username>')
+def api_mood_data(username):
+    
+    # Time range
+    time_range = request.args.get('range', 'day')
+    offset = int(request.args.get('offset', 0)) # 0 = current, 1 = previous, etc.
+    
+    # Define the jump size for each range
+    ranges = {
+        '6h': '6 hours',
+        'day': '1 day',
+        'week': '7 days',
+        'month': '30 days',
+    }
+    
+    unit = ranges.get(time_range, '1 day')
+    
+    # Logic:
+    # Start point = now - (offset * 1 periods)
+    # End point = now - (offset periods)
+    start_time = f"datetime('now', '-{(offset + 1)} {unit}')"
+    end_time = f"datetime('now', -{(offset)} {unit}')"
+
+    db = get_db()
+        
+    if time_range in ranges:
+        cursor = db.execute(f'''
+            SELECT timestamp, mood_score
+            FROM mood_logs
+            WHERE username = ?
+            AND timestamp >= {start_time}
+            AND timestamp < {end_time}
+            ORDER BY timestamp ASC
+        ''', (username,))
+    else:
+        cursor = db.execute(f'''
+            SELECT timestamp, mood_score
+            FROM mood_logs
+            WHERE username = ?
+            ORDER BY timestamp ASC
+        ''', (username,))
+    
+    rows = cursor.fetchall()
+    print(f"DEBUG: Found {len(rows)} rows for {username} in range {time_range}") # Debug tool
+    return jsonify({
+        "labels": [row[0] for row in rows],
+        "data": [row[1] for row in rows]
+    })
+
 # API: Save mood from the Dashboard
 @app.route('/api/log_mood', methods=['POST'])
 def api_log_mood():
@@ -267,6 +315,6 @@ def init_db():
     print("Database refreshed and ready with Security Questions!")
 
 if __name__ == '__main__':
-    with app.app.context():
+    with app.app_context():
         init_db()
     app.run(debug=True)
