@@ -212,23 +212,29 @@ def dashboard():
 def history():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-        
-    username = session['user_id']
-    db = get_db()
     
-    # Sort by timestamp DESC so the latest diary entry is first
+    db = get_db()
+    # Logic: ORDER BY ensures 'Sort by Date' subtask is complete
     logs = db.execute('''
         SELECT id, mood_score, thought_text, timestamp 
         FROM mood_logs 
         WHERE username = ? 
         ORDER BY timestamp DESC
-    ''', (username,)).fetchall()
-        
+    ''', (session['user_id'],)).fetchall()
+    
     return render_template('history.html', logs=logs)
 
 # API: Fetch data for the Chart
 @app.route('/api/mood_data/<username>')
-def api_mood_data(username):
+def mood_data(username):
+    db = get_db()
+    # Check if this query returns anything
+    logs = db.execute('SELECT mood_score, timestamp FROM mood_logs WHERE username = ?', (username,)).fetchall()
+    
+    return jsonify({
+        "labels": [log['timestamp'] for log in logs],
+        "data": [log['mood_score'] for log in logs]
+    })
     
     # Time range
     time_range = request.args.get('range', 'day')

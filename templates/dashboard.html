@@ -45,12 +45,19 @@
 {% block scripts %}
 {{ super() }}
 <script>
-    // 1. The function to fetch data and draw the chart
-    async function loadChart(range = 'all') {
-        try {
-            const response = await fetch(`/api/mood_data/{{ current_user }}?range=${range}`);
-            const data = await response.json();
-            const ctx = document.getElementById('moodChart').getContext('2d');
+    // 1. Function to fetch data and draw the theme-aware chart
+async function loadChart(range = 'day') {
+    try {
+        // Change {{ current_user }} to {{ session['user_id'] }}
+        const response = await fetch(`/api/mood_data/{{ session['user_id'] }}?range=${range}`);
+        
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const data = await response.json();
+        const ctx = document.getElementById('moodChart').getContext('2d');
+
+            // THEME LOGIC: Fetch current text color so labels are visible in dark mode
+            const textColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-body-color');
 
             if (window.myChart) { window.myChart.destroy(); }
 
@@ -72,12 +79,27 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { min: 1, max: 5, ticks: { stepSize: 1 } }
+                        y: { 
+                            min: 1, max: 5, 
+                            ticks: { color: textColor, stepSize: 1 }, // Dynamic color
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: { 
+                            ticks: { color: textColor } // Dynamic color
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: textColor } }
                     }
                 }
             });
+
+            // TOAST: Notify the user the range changed
+            if(range !== 'all') showToast(`Trend updated for: ${range}`, 'info');
+
         } catch (error) {
             console.error('Error loading chart:', error);
+            showToast("Could not load chart data.", "danger");
         }
     }
 
@@ -100,14 +122,18 @@
             const result = await response.json();
             if (result.status === 'success') {
                 document.getElementById('thoughtText').value = '';
-                loadChart(); // This calls the function above to refresh the graph
+                
+                // FEEDBACK: Trigger the toast system
+                showToast("Mood logged! Chart updated.", "success");
+                
+                loadChart(); 
             }
-        } catch (error) {
-            console.error('Connection failed:', error);
-        }
+  } catch (error) {
+        console.error('Error loading chart:', error);
+        showToast("Could not load chart data.", "danger");
     }
+}
 
-    // 3. Run this automatically when the page loads
-    document.addEventListener('DOMContentLoaded', loadChart);
+    document.addEventListener('DOMContentLoaded', () => loadChart('day'));
 </script>
 {% endblock %}
