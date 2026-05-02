@@ -45,8 +45,13 @@
                 </div>
                 {% endfor %}
             {% else %}
-                <div class="text-center py-5">
+                <div class="text-center py-5 bg-light rounded-3 shadow-sm border">
+                    <i class="fas fa-feather-alt text-muted mb-3" style="font-size: 3rem;"></i>
                     <h4 class="text-muted">No entries yet.</h4>
+                    <p class="text-secondary mb-4">Your "Reflection Archive" is currently empty. Start logging to see your history!</p>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary rounded-pill px-4">
+                        Log My First Entry
+                    </a>
                 </div>
             {% endif %}
         </div>
