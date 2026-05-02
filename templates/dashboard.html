@@ -62,21 +62,28 @@ async function loadChart(range = 'day') {
     type: 'line',
     data: {
         labels: data.labels,
-        datasets: [{
-            label: 'Mood Score',
-            data: data.data,
-            borderColor: '#00D4FF',
-            backgroundColor: 'rgba(0, 212, 255, 0.1)',
-            borderWidth: 3,
-            fill: true,
-            // Safe-Mode settings to ensure visibility and no bumps
-            tension: 0.1, 
-            pointRadius: 5,
-            pointBackgroundColor: '#00D4FF',
-            pointBorderColor: '#fff',
-            pointBorderWidth: 2,
-            spanGaps: true
-        }]
+datasets: [{
+    label: 'Mood Score',
+    data: data.data,
+    borderColor: '#00D4FF',
+    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+    borderWidth: 3,
+    fill: true,
+    
+    // THE ULTIMATE SMOOTHING FIX:
+    tension: 0.4, 
+    cubicInterpolationMode: 'default', // Reset to default to allow tension to work
+    borderCapStyle: 'round',
+    borderJoinStyle: 'round',
+    
+    pointRadius: 4,
+    pointBackgroundColor: '#00D4FF',
+    pointBorderColor: '#ffffff',
+    pointBorderWidth: 2,
+    
+    // Prevents "clipping" at the edges of the dots
+    clip: {left: 5, top: 5, right: 5, bottom: 5}
+}]
     },
     options: {
         responsive: true,
