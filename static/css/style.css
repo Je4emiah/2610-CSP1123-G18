@@ -1,7 +1,16 @@
 /* Global Styles */
 body {
     font-family: 'Inter', sans-serif;
-    background: #f8f9fa;
+body { 
+    background-color: var(--bs-body-bg); 
+    color: var(--bs-body-color); 
+}
+
+/* Fix for the "faded grey" on cards */
+.card {
+    background-color: var(--bs-body-tertiary);
+    border: 1px solid var(--bs-border-color);
+}
     margin: 0;
 }
 
