@@ -54,3 +54,13 @@ body {
 footer {
     background: white;
 }
+
+/* This ensures that when the theme is dark, the text adapts correctly */
+[data-bs-theme="dark"] .text-muted {
+    color: #adb5bd !important; /* A lighter grey for better contrast */
+}
+
+[data-bs-theme="dark"] .card {
+    background-color: #2b3035; /* Standard Bootstrap dark card color */
+    border: 1px solid #495057;
+}

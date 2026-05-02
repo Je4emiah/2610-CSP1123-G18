@@ -68,24 +68,27 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
+        # Added .strip() to prevent accidental spaces in the form
+        username = request.form.get('username').strip()
         password = request.form.get('password')
-        remember = request.form.get('remember_me')
         
         db = get_db()
-        db.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
-        user = db.fetchone()
+        # Fetch the user
+        user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
 
-        if user and check_password_hash(user[0], password):
-            session['user_id'] = username
-            
-            if remember:
-                session.permanent = True
-                
-            return redirect(url_for('dashboard'))
+        # Debugging: Print to console to see what is happening
+        if user:
+            print(f"User found: {user['username']}")
+            # Crucial: verify the hash matches the plaintext password
+            if check_password_hash(user['password_hash'], password):
+                session['user_id'] = user['username']
+                return redirect(url_for('dashboard'))
+            else:
+                print("Password mismatch")
         else:
-            return "Invalid username or password", 401
-            
+            print(f"User {username} not found in DB")
+
+        flash("Invalid username or password", "danger")
     return render_template('login.html')
 
 # Forget password
@@ -172,31 +175,28 @@ def delete_account():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form.get('username')
+        username = request.form.get('username').strip()
         password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
         
-        # Capture Security Answers
+        # Consistent formatting for security answers
         q1 = request.form.get('q1', '').lower().strip()
         q2 = request.form.get('q2', '').lower().strip()
         q3 = request.form.get('q3', '').lower().strip()
         
-        if password != confirm_password:
-            return "Passwords do not match!", 400
-        
         hashed_pw = generate_password_hash(password)
         
+        db = get_db()
         try:
-            db = get_db()
-                # Updated SQL to include questions
             db.execute("""
                 INSERT INTO users (username, password_hash, q1_answer, q2_answer, q3_answer) 
                 VALUES (?, ?, ?, ?, ?)
             """, (username, hashed_pw, q1, q2, q3))
             db.commit()
+            flash("Registration successful! Please login.", "success")
             return redirect(url_for('login'))
         except sqlite3.IntegrityError:
-            return "Username already exists!", 400
+            flash("Username already exists!", "danger")
+            return redirect(url_for('register'))
                 
     return render_template('register.html')
 
@@ -214,12 +214,11 @@ def history():
         return redirect(url_for('login'))
         
     username = session['user_id']
-    
     db = get_db()
-    db.row_factory = sqlite3.Row
-    # Requirement: Sort by date (Newest first)
+    
+    # Sort by timestamp DESC so the latest diary entry is first
     logs = db.execute('''
-        SELECT mood_score, thought_text, timestamp 
+        SELECT id, mood_score, thought_text, timestamp 
         FROM mood_logs 
         WHERE username = ? 
         ORDER BY timestamp DESC
