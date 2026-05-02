@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<section class="hero-section text-center py-5">
+    <div class="container my-5">
+        <h1 class="display-4 fw-bold">Track Your Mind, <span class="text-info">Metric by Metric.</span></h1>
+        <p class="lead text-muted mb-4">A simple way for MMU students to monitor emotional trends.</p>
+        {% if not current_user %}
+            <a href="{{ url_for('login') }}" class="btn btn-dark btn-lg px-5 rounded-pill shadow">Get Started</a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
