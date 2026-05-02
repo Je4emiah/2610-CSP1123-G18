@@ -93,11 +93,10 @@ def login():
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
-        # Match these to the 'name' attributes in your HTML form
         username = request.form.get('username', '').strip()
-        ans1 = request.form.get('q1', '').strip().lower() # Changed from 'ans1' to 'q1'
-        ans2 = request.form.get('q2', '').strip().lower() # Changed from 'ans2' to 'q2'
-        ans3 = request.form.get('q3', '').strip().lower() # Changed from 'ans3' to 'q3'
+        ans1 = request.form.get('q1', '').strip().lower()
+        ans2 = request.form.get('q2', '').strip().lower()
+        ans3 = request.form.get('q3', '').strip().lower()
 
         db = get_db()
         user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
@@ -106,36 +105,34 @@ def forgot_password():
             flash("Account not found. Please check the username.", "danger")
             return render_template('forgot_password.html', user_found=False)
 
-        # Ensure your database columns are named correctly (e.g., ans1, ans2, ans3)
-        if (user['ans1'].lower() != ans1 or 
-            user['ans2'].lower() != ans2 or 
-            user['ans3'].lower() != ans3):
+        # Ensure column names match your DB (ans1, ans2, ans3)
+        if (user['q1_answer'].lower() != ans1 or 
+            user['q2_answer'].lower() != ans2 or 
+            user['q3_answer'].lower() != ans3):
             flash("One or more security answers are incorrect.", "danger")
             return render_template('forgot_password.html', user_found=False)
 
-        # If correct, show the reset password form
         return render_template('forgot_password.html', user_found=True, username=username)
 
     return render_template('forgot_password.html', user_found=False)
 # Reset Password
-@app.route('/reset_password', methods=['POST'])
-def reset_password():
+@app.route('/reset-password-action', methods=['POST'])
+def reset_password_action(): # RENAME THIS to avoid AssertionError
     username = request.form.get('username')
     new_password = request.form.get('new_password')
     confirm_password = request.form.get('confirm_password')
 
     if new_password != confirm_password:
-        return "Passwords do not match! <a href='/forgot_password'>Try again</a>"
+        flash("Passwords do not match!", "danger")
+        return render_template('forgot_password.html', user_found=True, username=username)
 
     hashed_pw = generate_password_hash(new_password)
-
     db = get_db()
-    db.execute('UPDATE users SET password_hash = ? WHERE username = ?',
-               (hashed_pw, username))
+    db.execute('UPDATE users SET password_hash = ? WHERE username = ?', (hashed_pw, username))
     db.commit()
 
-    return "<h2>Success!</h2><p>Password updated.</p><a href='/login'>Login now</a>"
-
+    flash("Success! Password updated. You can now login.", "success")
+    return redirect(url_for('login'))
 # Profile
 @app.route('/profile')
 def profile():
