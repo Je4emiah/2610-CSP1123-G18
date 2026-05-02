@@ -68,51 +68,55 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # Added .strip() to prevent accidental spaces in the form
         username = request.form.get('username').strip()
         password = request.form.get('password')
         
         db = get_db()
-        # Fetch the user
         user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
 
-        # Debugging: Print to console to see what is happening
         if user:
             print(f"User found: {user['username']}")
-            # Crucial: verify the hash matches the plaintext password
             if check_password_hash(user['password_hash'], password):
                 session['user_id'] = user['username']
                 return redirect(url_for('dashboard'))
             else:
                 print("Password mismatch")
+                # Error message for wrong password
+                flash("Invalid username or password", "danger")
         else:
             print(f"User {username} not found in DB")
+            # Error message for non-existent username
+            flash("Invalid username or password", "danger")
 
-        flash("Invalid username or password", "danger")
     return render_template('login.html')
 
-# Forget password
-@app.route('/forgot_password', methods=['GET', 'POST'])
+@app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
-        username = request.form.get('username')
-        a1 = request.form.get('q1', '').lower().strip()
-        a2 = request.form.get('q2', '').lower().strip()
-        a3 = request.form.get('q3', '').lower().strip()
-        
-        db = get_db()
-        db.row_factory = sqlite3.Row
-        user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
-        
-        # Security Verification
-        if user and user['q1_answer'] == a1 and user['q2_answer'] == a2 and user['q3_answer'] == a3:
-            return render_template('forgot_password.html', user_found=True, username=username)
-        else:
-            flash("Incorrect answers or username not found.", "danger")
-            return redirect(url_for('forgot_password'))
-            
-    return render_template('forgot_password.html', user_found=False)
+        # Match these to the 'name' attributes in your HTML form
+        username = request.form.get('username', '').strip()
+        ans1 = request.form.get('q1', '').strip().lower() # Changed from 'ans1' to 'q1'
+        ans2 = request.form.get('q2', '').strip().lower() # Changed from 'ans2' to 'q2'
+        ans3 = request.form.get('q3', '').strip().lower() # Changed from 'ans3' to 'q3'
 
+        db = get_db()
+        user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+
+        if not user:
+            flash("Account not found. Please check the username.", "danger")
+            return render_template('forgot_password.html', user_found=False)
+
+        # Ensure your database columns are named correctly (e.g., ans1, ans2, ans3)
+        if (user['ans1'].lower() != ans1 or 
+            user['ans2'].lower() != ans2 or 
+            user['ans3'].lower() != ans3):
+            flash("One or more security answers are incorrect.", "danger")
+            return render_template('forgot_password.html', user_found=False)
+
+        # If correct, show the reset password form
+        return render_template('forgot_password.html', user_found=True, username=username)
+
+    return render_template('forgot_password.html', user_found=False)
 # Reset Password
 @app.route('/reset_password', methods=['POST'])
 def reset_password():
