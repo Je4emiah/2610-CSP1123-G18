@@ -282,6 +282,16 @@ def mood_data(username):
         "data": [row[1] for row in rows]
     })
 
+@app.route('/api/delete_entry/<int:entry_id>', methods=['POST'])
+def delete_entry(entry_id):
+    if 'user_id' not in session:
+        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
+    
+    db = get_db()
+    db.execute('DELETE FROM mood_logs WHERE id = ? AND username = ?', (entry_id, session['user_id']))
+    db.commit()
+    return jsonify({'status': 'success'})
+
 # API: Save mood from the Dashboard
 @app.route('/api/log_mood', methods=['POST'])
 def api_log_mood():
