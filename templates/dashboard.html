@@ -59,55 +59,54 @@ async function loadChart(range = 'day') {
         if (window.myChart) { window.myChart.destroy(); }
 
         window.myChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.labels,
-                datasets: [{
-                    label: 'Mood Score',
-                    data: data.data,
-                    borderColor: '#00D4FF',
-                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
-                    borderWidth: 3,
-                    tension: 0.4, // Smoother curves
-                    fill: true,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#00D4FF'
-                }]
+    type: 'line',
+    data: {
+        labels: data.labels,
+        datasets: [{
+            label: 'Mood Score',
+            data: data.data,
+            borderColor: '#00D4FF',
+            backgroundColor: 'rgba(0, 212, 255, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            // Safe-Mode settings to ensure visibility and no bumps
+            tension: 0.1, 
+            pointRadius: 5,
+            pointBackgroundColor: '#00D4FF',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            spanGaps: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: { 
+                min: 1, 
+                max: 5, 
+                ticks: { color: textColor, stepSize: 1 },
+                grid: { color: 'rgba(255, 255, 255, 0.05)' }
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { 
-                        min: 1, 
-                        max: 5, 
-                        ticks: { color: textColor, stepSize: 1 },
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
-                    },
-                    x: { 
-                        ticks: { 
-                            color: textColor,
-                            maxRotation: 0, // Keep labels horizontal
-                            autoSkip: true, // Automatically hide overlapping labels
-                            maxTicksLimit: 6, // Show a maximum of 6 time markers
-                            callback: function(val, index) {
-                                // Logic: Trims "2026-05-03 01:40:46" down to just "01:40"
-                                const fullLabel = this.getLabelForValue(val);
-                                if (fullLabel.includes(' ')) {
-                                    const timePart = fullLabel.split(' ')[1];
-                                    return timePart.substring(0, 5); 
-                                }
-                                return fullLabel;
-                            }
-                        },
-                        grid: { display: false } // Cleaner look without vertical lines
+            x: { 
+                ticks: { 
+                    color: textColor,
+                    maxRotation: 0,
+                    autoSkip: true,
+                    maxTicksLimit: 6,
+                    callback: function(val) {
+                        const fullLabel = this.getLabelForValue(val);
+                        return fullLabel.includes(' ') ? fullLabel.split(' ')[1].substring(0, 5) : fullLabel;
                     }
                 },
-                plugins: {
-                    legend: { display: false } // Hide legend to give the chart more room
-                }
+                grid: { display: false }
             }
-        });
+        },
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
 
         if(range !== 'day') showToast(`Trend updated for: ${range}`, 'info');
 
