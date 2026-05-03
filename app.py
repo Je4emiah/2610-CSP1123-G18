@@ -230,53 +230,44 @@ def history():
 # API: Fetch data for the Chart
 @app.route('/api/mood_data/<username>')
 def api_mood_data(username):
-    
-    # Time range
+    # Default to 'day' if no range is specified
     time_range = request.args.get('range', 'day')
-    offset = int(request.args.get('offset', 0)) # 0 = current, 1 = previous, etc.
+    offset = int(request.args.get('offset', 0))
     
-    # Define the jump size for each range
+    # Valid paging ranges
     ranges = {
-        '6h': '6 hours',
         'day': '1 day',
         'week': '7 days',
-        'month': '30 days',
+        'month': '30 days'
     }
     
-    unit = ranges.get(time_range, '1 day')
-    
-    # Logic:
-    # Start point = now - (offset * 1 periods)
-    # End point = now - (offset periods)
-    start_time = f"datetime('now', '-{(offset + 1)} {unit}')"
-    end_time = f"datetime('now', -{(offset)} {unit}')"
-
     db = get_db()
-        
+    
     if time_range in ranges:
+        unit = ranges[time_range]
+        # Cleaned SQL window logic: no 'localtime' to avoid timezone drift
+        start_time = f"datetime('now', '-{(offset + 1)} {unit}')"
+        end_time = f"datetime('now', '-{offset} {unit}')"
+        
         cursor = db.execute(f'''
-            SELECT timestamp, mood_score
-            FROM mood_logs
-            WHERE username = ?
-            AND timestamp >= {start_time}
-            AND timestamp < {end_time}
+            SELECT timestamp, mood_score FROM mood_logs
+            WHERE username = ? AND timestamp >= {start_time} AND timestamp < {end_time}
             ORDER BY timestamp ASC
         ''', (username,))
     else:
-        cursor = db.execute(f'''
-            SELECT timestamp, mood_score
-            FROM mood_logs
-            WHERE username = ?
-            ORDER BY timestamp ASC
+        # 'all' logic: simply grab every entry for this user
+        cursor = db.execute('''
+            SELECT timestamp, mood_score FROM mood_logs
+            WHERE username = ? ORDER BY timestamp ASC
         ''', (username,))
-    
+        
     rows = cursor.fetchall()
-    print(f"DEBUG: Found {len(rows)} rows for {username} in range {time_range}") # Debug tool
     return jsonify({
         "labels": [row[0] for row in rows],
-        "data": [row[1] for row in rows]
+        "data": [row[1] for row in rows],
+        "range_type": time_range
     })
-
+    
 # API: Save mood from the Dashboard
 @app.route('/api/log_mood', methods=['POST'])
 def api_log_mood():
