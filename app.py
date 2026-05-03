@@ -73,15 +73,13 @@ def login():
         remember = request.form.get('remember_me')
         
         db = get_db()
-        db.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
-        user = db.fetchone()
+        cursor = db.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
+        user = cursor.fetchone()
 
         if user and check_password_hash(user[0], password):
             session['user_id'] = username
-            
             if remember:
                 session.permanent = True
-                
             return redirect(url_for('dashboard'))
         else:
             return "Invalid username or password", 401
@@ -139,7 +137,8 @@ def profile():
     db = get_db()
     db.row_factory = sqlite3.Row
     # We query by username because that's what's stored in your session
-    user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+    cursor = db.execute('SELECT * FROM users WHERE username = ?', (username,))
+    user = cursor.fetchone()
         
     return render_template('profile.html', user=user)
 
@@ -218,12 +217,14 @@ def history():
     db = get_db()
     db.row_factory = sqlite3.Row
     # Requirement: Sort by date (Newest first)
-    logs = db.execute('''
+    cursor = db.execute('''
         SELECT mood_score, thought_text, timestamp 
         FROM mood_logs 
         WHERE username = ? 
         ORDER BY timestamp DESC
-    ''', (username,)).fetchall()
+    ''', (username,))
+    
+    logs = cursor.fetchall()
         
     return render_template('history.html', logs=logs)
 

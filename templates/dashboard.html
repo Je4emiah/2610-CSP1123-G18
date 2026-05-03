@@ -4,45 +4,52 @@
 {% endblock %}
 
 {% block content %}
-  <div class="container my-5">
-    <div class="row g-4">
-      <div class="col-md-4">
-        <div class="card p-4 shadow-sm border-0">
-          <h5 class="fw-bold mb-3">Log Your Mood</h5>
-          <select class="form-select mb-3" id="moodScore">
+  <div class="dashboard-container">
+    <div class="dashboard-grid">
+      <!-- Semantic name for the logging section -->
+      <aside class="input-sidebar">
+        <div class="data-card">
+          <h5 class="view-subtitle">Log Your Mood</h5>
+          <select class="form-input mb-3" id="moodScore">
             <option value="5">🔥 Great</option>
             <option value="4">😊 Good</option>
             <option value="3" selected>😐 Neutral</option>
             <option value="2">☹️ Bad</option>
             <option value="1">😫 Terrible</option>
           </select>
-          <textarea class="form-control mb-3" id="thoughtText" rows="3" placeholder="What happened today?"></textarea>
-          <button class="btn btn-primary w-100 rounded-pill" onclick="saveMood()">Save Entry</button>
+          <textarea class="form-input mb-3" id="thoughtText" rows="3" placeholder="What happened today?"></textarea>
+          <button class="auth-trigger w-100" onclick="saveMood()">Save Entry</button>
         </div>
-      </div>
-      <div class="col-md-8">
-        <div class="card p-4 text-center shadow-sm border-0 h-100">
-          <div class="btn-group mb-3">
-            <button onclick="changeRange('day')">Day</button>
-            <button onclick="changeRange('week')">Week</button>
-            <button onclick="changeRange('month')">Month</button>
-            <button onclick="changeRange('all')">All</button>
-          </div>
+      </aside>
 
-          <div id="pagingControls">
-            <button id="prevBtn" onclick="movePage(1)">← Previous</button>
-            <span id="rangeLabel">Current Day</span>
-            <button id="nextBtn" onclick="movePage(-1)" disabled>Next →</button>
-          </div>
+      <!-- Main chart section -->
+      <section class="dashboard-view">
+        <div class="data-card">
+          <header class="view-header">
+            <h3 class="view-title">Mood Insights</h3>
+            <div class="controls-bar">
+              <button class="nav-item" onclick="changeRange('day')">Day</button>
+              <button class="nav-item" onclick="changeRange('week')">Week</button>
+              <button class="nav-item" onclick="changeRange('month')">Month</button>
+              <button class="nav-item" onclick="changeRange('all')">All</button>
+            </div>
+          </header>
 
-          <div class="chart-container" style="height: 300px;">
+          <div class="chart-view">
             <canvas id="moodChart" data-username="{{ session.user_id }}"></canvas>
           </div>
+
+          <footer id="pagingControls" class="view-footer">
+            <button id="prevBtn" class="nav-item" onclick="movePage(1)">← Previous</button>
+            <span id="rangeLabel" class="fw-bold">Current Day</span>
+            <button id="nextBtn" class="nav-item" onclick="movePage(-1)" disabled>Next →</button>
+          </footer>
         </div>
-      </div>
+      </section>
     </div>
   </div>
-  <div class="text-center mt-4">
-    <a href="{{ url_for('history') }}" class="btn btn-primary rounded-pill px-4 shadow">View My Full Diary History</a>
+
+  <div class="history-anchor">
+    <a href="{{ url_for('history') }}" class="secondary-link">View My Full Diary History →</a>
   </div>
 {% endblock %}
