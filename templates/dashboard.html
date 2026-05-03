@@ -6,7 +6,6 @@
 {% block content %}
   <div class="dashboard-container">
     <div class="dashboard-grid">
-      <!-- Semantic name for the logging section -->
       <aside class="input-sidebar">
         <div class="data-card">
           <h5 class="view-subtitle">Log Your Mood</h5>
@@ -28,10 +27,10 @@
           <header class="view-header">
             <h3 class="view-title">Mood Insights</h3>
             <div class="controls-bar">
-              <button class="nav-item" onclick="changeRange('day')">Day</button>
+              <button class="nav-item" onclick="changeRange('day')">24h</button>
               <button class="nav-item" onclick="changeRange('week')">Week</button>
-              <button class="nav-item" onclick="changeRange('month')">Month</button>
               <button class="nav-item" onclick="changeRange('all')">All</button>
+              <span id="dataCounter">Loading...</span>
             </div>
           </header>
 
@@ -46,10 +45,18 @@
           </footer>
         </div>
       </section>
+
+      <!-- Insight Box -->
+      <div class="data-card mb-4" id="insightBox" style="display: none;">
+        <h5 class="view-subtitle">💡 Daily Insight</h5>
+        <p i  d="insightText" class="mb-0">Analyzing your trends...</p>
+      </div>
     </div>
   </div>
 
   <div class="history-anchor">
     <a href="{{ url_for('history') }}" class="secondary-link">View My Full Diary History →</a>
   </div>
+
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

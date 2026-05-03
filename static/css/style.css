@@ -63,7 +63,13 @@ body {
 
 /* --- Dashboard Specifics --- */
 .chart-view { height: 400px; margin-top: 2rem; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; }
-.controls-bar { display: flex; justify-content: center; gap: 10px; margin: 1.5rem 0; }
+.controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
 .view-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }
 
 /* --- Footer --- */
@@ -78,28 +84,21 @@ body {
     align-items: start;
 }
 
-/* Fix for Button Styling (Screenshot 2026-05-03 at 11.22.11 AM.png) */
 .nav-item {
     background: #ffffff;
-    border: 1px solid var(--border-color);
-    padding: 6px 14px;
-    border-radius: 6px;
-    color: var(--text-dark);
-    font-size: 0.9rem;
+    border: 1px solid #e2e8f0;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #64748b;
     transition: all 0.2s ease;
 }
 
-.nav-item:hover {
-    background: #f1f5f9;
-    border-color: var(--primary-main);
-    color: var(--primary-main) !important;
-}
-
-/* Active State for the current range */
-.nav-item.active {
-    background: var(--primary-main);
-    color: white !important;
-    border-color: var(--primary-main);
+.nav-item:hover, .nav-item.active {
+    border-color: #2563eb;
+    color: #2563eb;
+    background: #eff6ff;
 }
 
 /* Header/Subtitle Styling */
@@ -112,3 +111,19 @@ body {
 }
 
 .history-anchor { text-align: center; margin-top: 2rem; }
+
+/* Styling for the entry feedback counter */
+#dataCounter {
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 4px 10px;
+    background: #f1f5f9;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+/* Red alert state if no data is found */
+#dataCounter.no-data {
+    color: #ef4444;
+    background: #fee2e2;
+}

@@ -231,36 +231,39 @@ def history():
 # API: Fetch data for the Chart
 @app.route('/api/mood_data/<username>')
 def api_mood_data(username):
-    # Default to 'day' if no range is specified
     time_range = request.args.get('range', 'day')
     offset = int(request.args.get('offset', 0))
     
-    # Valid paging ranges
     ranges = {
         'day': '1 day',
-        'week': '7 days',
-        'month': '30 days'
+        'week': '7 days'
     }
     
     db = get_db()
     
     if time_range in ranges:
         unit = ranges[time_range]
-        start_time = f"datetime('now', 'localtime', '-{(offset + 1)} {unit}')"
-        end_time = f"datetime('now', 'localtime', '-{offset} {unit}')"
+        start_time = f"datetime('now', '-{(offset + 1)} {unit}')"
+        end_time = f"datetime('now', '-{offset} {unit}')"
         
-        cursor = db.execute(f'''
-            SELECT timestamp, mood_score FROM mood_logs
-            WHERE username = ? AND timestamp >= {start_time} AND timestamp < {end_time}
-            ORDER BY timestamp ASC
-        ''', (username,))
+        query = f"""
+                    SELECT timestamp, mood_score 
+                    FROM mood_logs 
+                    WHERE username = ? 
+                    AND datetime(timestamp) >= {start_time} 
+                    AND datetime(timestamp) < {end_time} 
+                    ORDER BY timestamp ASC
+                """
     else:
-        # 'all' logic: simply grab every entry for this user
-        cursor = db.execute('''
-            SELECT timestamp, mood_score FROM mood_logs
-            WHERE username = ? ORDER BY timestamp ASC
-        ''', (username,))
+        query = f"""
+                    SELECT timestamp, mood_score
+                    FROM mood_logs
+                    WHERE username = ?
+                    ORDER BY timestamp ASC
+                """
         
+    cursor = db.execute(query, (username,))
+    
     rows = cursor.fetchall()
     return jsonify({
         "labels": [row[0] for row in rows],

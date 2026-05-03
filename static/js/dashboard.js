@@ -1,21 +1,31 @@
+// Global State Management
 let currentOffset = 0;
 let currentRange = 'day';
-let myChart = null; // Store the chart instance globally
+let myChart = null; 
 
-// 1. Logic for moving between "pages" (Previous/Next)
+//1. Logic for moving between "pages" (Previous/Next)
 function movePage(step) {
     currentOffset += step;
     if (currentOffset < 0) currentOffset = 0;
+    
+    // Disable "Next" if users are at the most recent page
     document.getElementById('nextBtn').disabled = (currentOffset === 0);
     updateDashboard();
 }
 
-// 2. Logic for changing the time scale (Day/Week/Month/All)
+//2. Logic for changing the time scale (24h / Week / All)
 function changeRange(range) {
     currentRange = range;
     currentOffset = 0; 
     
+    const label = document.getElementById('rangeLabel');
     const pagingControls = document.getElementById('pagingControls');
+
+    // Update the sub-header text
+    const labels = { 'day': 'Last 24 Hours', 'week': 'This Week', 'all': 'Full History' };
+    label.innerText = labels[range] || 'Overview';
+
+    // Disable paging buttons if viewing "All" data
     if (range === 'all') {
         pagingControls.style.opacity = '0.3';
         pagingControls.style.pointerEvents = 'none';
@@ -27,58 +37,92 @@ function changeRange(range) {
     updateDashboard();
 }
 
-// 3. The "Master" function that fetches data and draws/updates the chart
+//Master function to fetch data and render the Cha0rt
 async function updateDashboard() {
     const canvas = document.getElementById('moodChart');
+    const counterElement = document.getElementById('dataCounter');
     const username = canvas.dataset.username;
-    const label = document.getElementById('rangeLabel');
+    const ctx = canvas.getContext('2d');
 
-    // Update the UI Title
-    if (currentRange === 'all') {
-        label.innerText = "Total History";
-    } else {
-        const unit = currentRange.charAt(0).toUpperCase() + currentRange.slice(1);
-        label.innerText = currentOffset === 0 ? `Current ${unit}` : `${currentOffset} ${unit}(s) Ago`;
-    }
+    // Visual feedback
+    if (counterElement) counterElement.innerText = "Refreshing...";
 
     try {
         const response = await fetch(`/api/mood_data/${username}?range=${currentRange}&offset=${currentOffset}`);
         const data = await response.json();
-        const ctx = canvas.getContext('2d');
 
-        // Destroy old chart to prevent "ghosting" when hovering
-        if (myChart) {
-            myChart.destroy();
+        // Update Counter
+        if (counterElement) {
+            const count = data.data.length;
+            counterElement.innerText = `${count} entries found`;
+            
+            // Toggle red color if empty
+            if (count === 0) {
+                counterElement.style.color = "#ef4444";
+            } else {
+                counterElement.style.color = "#94a3b8";
+            }
         }
+
+        if (myChart) { myChart.destroy(); }
+
+        // Create a vertical gradient for the line area
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(0, 212, 255, 0.4)');
+        gradient.addColorStop(1, 'rgba(0, 212, 255, 0)');
 
         myChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: data.labels,
+                // Shorten labels (e.g., "2026-05-05 08:00" -> "08:00")
+                labels: data.labels.map(label => label.split(' ')[1] || label),
                 datasets: [{
-                    label: 'Mood Score',
+                    label: 'Mood Level',
                     data: data.data,
                     borderColor: '#00D4FF',
-                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
-                    borderWidth: 3,
-                    tension: 0.3,
+                    backgroundColor: gradient,
+                    borderWidth: 4,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#00D4FF',
+                    pointRadius: 5,
+                    pointHoverRadius: 8,
+                    tension: 0.4, 
                     fill: true
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleColor: '#00D4FF',
+                        bodyColor: '#f8fafc',
+                        cornerRadius: 8,
+                        padding: 12
+                    }
+                },
                 scales: {
-                    y: { min: 1, max: 5, ticks: { stepSize: 1 } }
+                    y: { 
+                        min: 0, max: 6,
+                        ticks: { stepSize: 1, color: '#94a3b8' },
+                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                    },
+                    x: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { display: false }
+                    }
                 }
             }
         });
     } catch (error) {
-        console.error('Error loading chart:', error);
+        console.error('Chart failed to load:', error);
+        if (counterElement) counterElement.innerText = "Error loading data";
     }
 }
 
-// 4. Function to save a new mood
+// 4. Logic for the Mood Input Form
 async function saveMood() {
     const score = document.getElementById('moodScore').value;
     const thought = document.getElementById('thoughtText').value;
@@ -98,15 +142,46 @@ async function saveMood() {
         const result = await response.json();
         if (result.status === 'success') {
             document.getElementById('thoughtText').value = '';
-            // Refresh the current view
+            // Immediately refresh the current view
             updateDashboard();
         }
     } catch (error) {
-        console.error('Connection failed:', error);
+        console.error('Submission failed:', error);
     }
 }
 
-// 5. Initialize when page loads
+// 5. Auto-Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     updateDashboard();
 });
+
+function generateInsight(data) {
+    if (data.length === 0) return "Start logging to see insights!";
+
+    // Calculate the average score
+    const avg = data.reduce((a, b) => a + b, 0) / data.length;
+    
+    // The "Dictionary" logic
+    const insights = {
+        5: "You're on fire! Keep doing what makes you happy. 🌟",
+        4: "Looking good! A steady week so far. 👍",
+        3: "A bit of a neutral week. Maybe try a new hobby? ☕",
+        2: "Things seem tough. Don't forget to take a break. 🌿",
+        1: "It's okay to have bad days. Reach out to a friend. ❤️"
+    };
+
+    // Round the average to the nearest whole number to match the dictionary keys
+    const scoreKey = Math.round(avg);
+    return insights[scoreKey] || "Keep tracking to find your pattern!";
+}
+
+// Then, inside updateDashboard, after fetching 'data':
+const insightBox = document.getElementById('insightBox');
+const insightText = document.getElementById('insightText');
+
+if (currentRange === 'week' && data.data.length > 0) {
+    insightBox.style.display = 'block';
+    insightText.innerText = generateInsight(data.data);
+} else {
+    insightBox.style.display = 'none';
+}
