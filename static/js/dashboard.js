@@ -31,50 +31,70 @@ function changeRange(range) {
 async function updateDashboard() {
     const canvas = document.getElementById('moodChart');
     const username = canvas.dataset.username;
-    const label = document.getElementById('rangeLabel');
-
-    // Update the UI Title
-    if (currentRange === 'all') {
-        label.innerText = "Total History";
-    } else {
-        const unit = currentRange.charAt(0).toUpperCase() + currentRange.slice(1);
-        label.innerText = currentOffset === 0 ? `Current ${unit}` : `${currentOffset} ${unit}(s) Ago`;
-    }
+    const ctx = canvas.getContext('2d');
 
     try {
         const response = await fetch(`/api/mood_data/${username}?range=${currentRange}&offset=${currentOffset}`);
         const data = await response.json();
-        const ctx = canvas.getContext('2d');
 
-        // Destroy old chart to prevent "ghosting" when hovering
-        if (myChart) {
-            myChart.destroy();
+        // Debugging: Check if data is actually coming through
+        if (data.data.length === 0) {
+            console.warn("No data found for this range. Check SQL timezones.");
         }
+
+        if (myChart) { myChart.destroy(); }
+
+        // Create a vertical gradient for the "Better Version" look
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(0, 212, 255, 0.4)');
+        gradient.addColorStop(1, 'rgba(0, 212, 255, 0)');
 
         myChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: data.labels,
+                labels: data.labels.map(label => label.split(' ')[1] || label), // Shorten timestamps
                 datasets: [{
-                    label: 'Mood Score',
+                    label: 'Mood Level',
                     data: data.data,
                     borderColor: '#00D4FF',
-                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
-                    borderWidth: 3,
-                    tension: 0.3,
+                    backgroundColor: gradient, // Use the gradient
+                    borderWidth: 4,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#00D4FF',
+                    pointRadius: 5,
+                    pointHoverRadius: 8,
+                    tension: 0.4, // Smooth curves
                     fill: true
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }, // Hide legend for cleaner look
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleColor: '#00D4FF',
+                        bodyColor: '#f8fafc',
+                        cornerRadius: 8,
+                        padding: 12
+                    }
+                },
                 scales: {
-                    y: { min: 1, max: 5, ticks: { stepSize: 1 } }
+                    y: { 
+                        min: 0, max: 6, // Padding at top and bottom
+                        ticks: { stepSize: 1, color: '#94a3b8' },
+                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                    },
+                    x: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { display: false }
+                    }
                 }
             }
         });
     } catch (error) {
-        console.error('Error loading chart:', error);
+        console.error('Chart failed to load:', error);
     }
 }
 
