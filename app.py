@@ -78,6 +78,7 @@ def login():
             print(f"User found: {user['username']}")
             if check_password_hash(user['password_hash'], password):
                 session['user_id'] = user['username']
+                session['name'] = user['name']
                 return redirect(url_for('dashboard'))
             else:
                 print("Password mismatch")
@@ -176,6 +177,7 @@ def delete_account():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        name = request.form.get('name').strip()
         username = request.form.get('username').strip()
         password = request.form.get('password')
         
@@ -189,9 +191,9 @@ def register():
         db = get_db()
         try:
             db.execute("""
-                INSERT INTO users (username, password_hash, q1_answer, q2_answer, q3_answer) 
-                VALUES (?, ?, ?, ?, ?)
-            """, (username, hashed_pw, q1, q2, q3))
+                INSERT INTO users (name, username, password_hash, q1_answer, q2_answer, q3_answer) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (name, username, hashed_pw, q1, q2, q3))
             db.commit()
             flash("Registration successful! Please login.", "success")
             return redirect(url_for('login'))
@@ -321,6 +323,7 @@ def init_db():
     # 2. Updated Users Table with Security Questions
     db.execute('''CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
         username TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         q1_answer TEXT,

@@ -22,7 +22,7 @@
                     <div class="dropdown">
                         <button class="btn btn-outline-primary dropdown-toggle rounded-pill" type="button"
                             data-bs-toggle="dropdown">
-                            Hi, {{ current_user }}
+                            Hi, {{ session['name'] if session['name'] else current_user }}
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow">
                             <li><a class="dropdown-item" href="{{ url_for('profile') }}">👤 My Profile</a></li>
