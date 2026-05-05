@@ -17,3 +17,12 @@ def init_db():
 
 if __name__ == "__main__":
     init_db()
+
+# Update init_db() or add a migration
+def add_display_name_column():
+    with sqlite3.connect('mindmetric.db') as conn:
+        try:
+            conn.execute('ALTER TABLE users ADD COLUMN display_name TEXT')
+            print("Added display_name column")
+        except sqlite3.OperationalError:
+            pass  # Column already exists

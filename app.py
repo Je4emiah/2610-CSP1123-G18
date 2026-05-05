@@ -191,9 +191,9 @@ def history():
     
     with sqlite3.connect('mindmetric.db') as conn:
         conn.row_factory = sqlite3.Row
-        # Requirement: Sort by date (Newest first)
+        # Include id for edit/delete operations
         logs = conn.execute('''
-            SELECT mood_score, thought_text, timestamp 
+            SELECT id, mood_score, thought_text, timestamp 
             FROM mood_logs 
             WHERE username = ? 
             ORDER BY timestamp DESC
@@ -231,4 +231,142 @@ if __name__ == '__main__':
     init_db()
     app.run(debug=True)
 
+# Add these routes to app.py
+
+@app.route('/api/mood_data/<username>')
+def api_mood_data(username):
+    """API endpoint for chart data"""
+    data = get_mood_trends(username)
+    return jsonify({
+        'labels': data['labels'],
+        'data': data['data']
+    })
+
+@app.route('/api/log_mood', methods=['POST'])
+def api_log_mood():
+    """API endpoint for saving mood entries"""
+    data = request.json
+    username = data.get('username')
+    mood_score = data.get('mood_score')
+    thought_text = data.get('thought_text', '')
     
+    if save_mood_entry(username, mood_score, thought_text):
+        return jsonify({'status': 'success'})
+    return jsonify({'status': 'error'}), 500
+
+@app.route('/api/profile/<username>')
+def api_profile(username):
+    """Get user profile info"""
+    with sqlite3.connect('mindmetric.db') as conn:
+        conn.row_factory = sqlite3.Row
+        user = conn.execute('SELECT username, display_name FROM users WHERE username = ?', (username,)).fetchone()
+    
+    return jsonify({
+        'username': user['username'],
+        'display_name': user['display_name'] if user['display_name'] else user['username']
+    })
+
+@app.route('/api/mood_stats/<username>')
+def api_mood_stats(username):
+    """Get mood statistics"""
+    with sqlite3.connect('mindmetric.db') as conn:
+        count = conn.execute('SELECT COUNT(*) FROM mood_logs WHERE username = ?', (username,)).fetchone()[0]
+    
+    return jsonify({'total_entries': count})
+
+@app.route('/api/update_name', methods=['POST'])
+def api_update_name():
+    """Update display name"""
+    data = request.json
+    username = data.get('student_id')
+    new_name = data.get('display_name')
+    
+    with sqlite3.connect('mindmetric.db') as conn:
+        conn.execute('UPDATE users SET display_name = ? WHERE username = ?', (new_name, username))
+        conn.commit()
+    
+    return jsonify({'status': 'success'})
+
+@app.route('/api/update_password', methods=['POST'])
+def api_update_password():
+    """Update user password"""
+    data = request.json
+    username = data.get('student_id')
+    new_password = data.get('new_password')
+    
+    hashed_pw = generate_password_hash(new_password)
+    
+    with sqlite3.connect('mindmetric.db') as conn:
+        conn.execute('UPDATE users SET password_hash = ? WHERE username = ?', (hashed_pw, username))
+        conn.commit()
+    
+    return jsonify({'status': 'success'})
+
+# Add these routes to app.py for CRUD operations
+
+@app.route('/api/update_entry', methods=['POST'])
+def api_update_entry():
+    """Update an existing mood entry"""
+    data = request.json
+    entry_id = data.get('entry_id')
+    mood_score = data.get('mood_score')
+    thought_text = data.get('thought_text', '')
+    
+    # Verify ownership
+    username = session.get('user_id')
+    if not username:
+        return jsonify({'status': 'error', 'message': 'Not logged in'}), 401
+    
+    try:
+        with sqlite3.connect('mindmetric.db') as conn:
+            # Check if entry belongs to user
+            cur = conn.cursor()
+            cur.execute('SELECT username FROM mood_logs WHERE id = ?', (entry_id,))
+            result = cur.fetchone()
+            
+            if not result or result[0] != username:
+                return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+            
+            # Update the entry
+            cur.execute('''
+                UPDATE mood_logs 
+                SET mood_score = ?, thought_text = ?, timestamp = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ''', (mood_score, thought_text, entry_id))
+            conn.commit()
+            
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        print(f"Error updating entry: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/delete_entry', methods=['POST'])
+def api_delete_entry():
+    """Delete a mood entry"""
+    data = request.json
+    entry_id = data.get('entry_id')
+    
+    # Verify ownership
+    username = session.get('user_id')
+    if not username:
+        return jsonify({'status': 'error', 'message': 'Not logged in'}), 401
+    
+    try:
+        with sqlite3.connect('mindmetric.db') as conn:
+            cur = conn.cursor()
+            # Check if entry belongs to user
+            cur.execute('SELECT username FROM mood_logs WHERE id = ?', (entry_id,))
+            result = cur.fetchone()
+            
+            if not result or result[0] != username:
+                return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+            
+            # Delete the entry
+            cur.execute('DELETE FROM mood_logs WHERE id = ?', (entry_id,))
+            conn.commit()
+            
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        print(f"Error deleting entry: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500

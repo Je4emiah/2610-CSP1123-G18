@@ -1,75 +1,146 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Critical for mobile responsiveness -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#00D4FF">
     <title>MindMetric | {% block title %}{% endblock %}</title>
+    
+    <!-- Preconnect for faster loading -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        /* Additional mobile optimizations */
+        @media (max-width: 768px) {
+            .container {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+            
+            /* Better touch targets */
+            .nav-link, 
+            .dropdown-item,
+            button,
+            .btn {
+                min-height: 44px;
+            }
+            
+            /* Adjust spacing */
+            .row.g-4 {
+                --bs-gutter-y: 1rem;
+            }
+        }
+        
+        /* Smooth scrolling for mobile */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg border-bottom shadow-sm">
+    <nav class="navbar navbar-expand-lg border-bottom shadow-sm sticky-top bg-white">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">MindMetric</a>
-            <div class="ms-auto d-flex align-items-center">
-                <a class="nav-link px-3" href="{{ url_for('index') }}">Home</a>
-                <a class="nav-link px-3" href="{{ url_for('dashboard') }}">Dashboard</a>
-
-                <div class="ms-2">
-                    {% if current_user %}
-                    <div class="dropdown">
-                        <button class="btn btn-outline-primary dropdown-toggle rounded-pill" type="button"
-                            data-bs-toggle="dropdown">
-                            Hi, {{ current_user }}
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow">
-                            <li><a class="dropdown-item" href="{{ url_for('profile') }}">👤 My Profile</a></li>
-                            <li>
-                                <button class="dropdown-item" id="themeToggle">
-                                    <span id="themeIcon">🌙</span> Switch Theme
-                                </button>
-                            </li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-
-                            <li>
-                                <form action="{{ url_for('delete_account') }}" method="POST" id="deleteForm"
-                                    class="d-none"></form>
-                                <button type="button" class="dropdown-item text-danger" onclick="handleDelete()">
-                                    <strong>Delete Account</strong>
-                                </button>
-                            </li>
-
-                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
-                        </ul>
-                    </div>
-                    {% else %}
-                    <a href="{{ url_for('login') }}" class="btn btn-primary rounded-pill px-4">Sign In</a>
-                    {% endif %}
-                </div>
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">🧠 MindMetric</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item">
+                        <a class="nav-link px-3" href="{{ url_for('index') }}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link px-3" href="{{ url_for('dashboard') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        {% if current_user %}
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary dropdown-toggle rounded-pill" type="button"
+                                data-bs-toggle="dropdown">
+                                👋 {{ current_user }}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow">
+                                <li><a class="dropdown-item" href="{{ url_for('profile') }}">👤 Profile</a></li>
+                                <li>
+                                    <button class="dropdown-item" id="themeToggle">
+                                        <span id="themeIcon">🌙</span> Theme
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form action="{{ url_for('delete_account') }}" method="POST" id="deleteForm" class="d-none"></form>
+                                    <button type="button" class="dropdown-item text-danger" onclick="handleDelete()">
+                                        🗑️ Delete Account
+                                    </button>
+                                </li>
+                                <li><a class="dropdown-item" href="{{ url_for('logout') }}">🚪 Logout</a></li>
+                            </ul>
+                        </div>
+                        {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-primary rounded-pill px-4">Sign In</a>
+                        {% endif %}
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
 
-    {% block content %}{% endblock %}
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="mt-5 py-3">
+        <div class="container text-center text-muted small">
+            © 2024 MindMetric | Track your mind, metric by metric
+        </div>
+    </footer>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-    {% block scripts %}
+    
     <script>
         function handleDelete() {
-            // This creates the native browser popup
-            const confirmed = confirm("Warning! This will permanently delete your account and all mood data. Are you sure?");
-
-            if (confirmed) {
+            if (confirm("⚠️ Warning! This will permanently delete your account and all mood data. Are you sure?")) {
                 document.getElementById('deleteForm').submit();
             }
         }
+        
+        // Close mobile menu after clicking (better UX)
+        document.querySelectorAll('.nav-link, .dropdown-item').forEach(link => {
+            link.addEventListener('click', () => {
+                const navbarCollapse = document.querySelector('.navbar-collapse');
+                if (navbarCollapse?.classList.contains('show')) {
+                    new bootstrap.Collapse(navbarCollapse).toggle();
+                }
+            });
+        });
     </script>
-    {% endblock %}
+    
+    {% block scripts %}{% endblock %}
 </body>
 
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

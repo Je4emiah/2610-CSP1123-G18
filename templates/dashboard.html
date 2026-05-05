@@ -2,52 +2,62 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card p-4 shadow-sm border-0">
-                <h5 class="fw-bold mb-3">Log Your Mood</h5>
-                <select class="form-select mb-3" id="moodScore">
-                    <option value="5">🔥 Great</option>
-                    <option value="4">😊 Good</option>
-                    <option value="3" selected>😐 Neutral</option>
-                    <option value="2">☹️ Bad</option>
-                    <option value="1">😫 Terrible</option>
+<div class="container dashboard-container my-3 my-md-5">
+    <div class="row g-3 g-md-4">
+        <!-- Mood Entry Card - Full width on mobile -->
+        <div class="col-12 col-md-4">
+            <div class="card p-3 p-md-4 shadow-sm border-0 h-100">
+                <h5 class="fw-bold mb-3">📝 Log Your Mood</h5>
+                <select class="form-select mb-3" id="moodScore" style="font-size: 16px;">
+                    <option value="5">🔥 Great (5)</option>
+                    <option value="4">😊 Good (4)</option>
+                    <option value="3" selected>😐 Neutral (3)</option>
+                    <option value="2">☹️ Bad (2)</option>
+                    <option value="1">😫 Terrible (1)</option>
                 </select>
-                <textarea class="form-control mb-3" id="thoughtText" rows="3"
-                    placeholder="What happened today?"></textarea>
-                <button class="btn btn-primary w-100 rounded-pill" onclick="saveMood()">Save Entry</button>
+                <textarea class="form-control mb-3" id="thoughtText" rows="4"
+                    placeholder="What happened today? How are you feeling?"></textarea>
+                <button class="btn btn-primary w-100 rounded-pill py-2" onclick="saveMood()">
+                    💾 Save Entry
+                </button>
             </div>
         </div>
-        <div class="col-md-8">
-            <div class="card p-4 text-center shadow-sm border-0 h-100">
-                <h5 class="fw-bold mb-4">Your Emotional Trend</h5>
-                <div style="position: relative; height:300px; width:100%">
+        
+        <!-- Chart Card - Full width on mobile -->
+        <div class="col-12 col-md-8">
+            <div class="card p-3 p-md-4 shadow-sm border-0 h-100">
+                <h5 class="fw-bold mb-3 text-center">📈 Your Emotional Trend</h5>
+                <div class="chart-container" style="position: relative; height: 250px; width: 100%;">
                     <canvas id="moodChart"></canvas>
                 </div>
+                <p class="text-muted small text-center mt-3 mb-0">
+                    Showing mood trends over time (1=lowest, 5=highest)
+                </p>
             </div>
         </div>
     </div>
-</div>
-<div class="text-center mt-4">
-    <a href="{{ url_for('history') }}" class="btn btn-primary rounded-pill px-4 shadow">
-        View My Full Diary History
-    </a>
+    
+    <!-- History Button - Touch friendly -->
+    <div class="text-center mt-4">
+        <a href="{{ url_for('history') }}" class="btn btn-primary rounded-pill px-4 py-2 shadow-sm">
+            📖 View Full History
+        </a>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script>
-    // 1. The function to fetch data and draw the chart
     async function loadChart() {
         try {
             const response = await fetch('/api/mood_data/{{ current_user }}');
             const data = await response.json();
-
             const ctx = document.getElementById('moodChart').getContext('2d');
 
-            if (window.myChart) { window.myChart.destroy(); }
+            if (window.myChart) { 
+                window.myChart.destroy(); 
+            }
 
             window.myChart = new Chart(ctx, {
                 type: 'line',
@@ -60,33 +70,64 @@
                         backgroundColor: 'rgba(0, 212, 255, 0.1)',
                         borderWidth: 3,
                         tension: 0.3,
-                        fill: true
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#00D4FF'
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { font: { size: window.innerWidth < 768 ? 10 : 12 } }
+                        },
+                        tooltip: {
+                            bodyFont: { size: window.innerWidth < 768 ? 10 : 12 }
+                        }
+                    },
                     scales: {
-                        y: { min: 1, max: 5, ticks: { stepSize: 1 } }
+                        y: { 
+                            min: 1, 
+                            max: 5, 
+                            ticks: { stepSize: 1, font: { size: window.innerWidth < 768 ? 10 : 12 } }
+                        },
+                        x: {
+                            ticks: { 
+                                maxRotation: 45,
+                                minRotation: 45,
+                                font: { size: window.innerWidth < 768 ? 9 : 11 }
+                            }
+                        }
                     }
                 }
             });
         } catch (error) {
             console.error('Error loading chart:', error);
+            document.getElementById('moodChart').innerHTML = 'Unable to load chart';
         }
     }
 
-    // 2. The function to save a new mood
     async function saveMood() {
         const score = document.getElementById('moodScore').value;
         const thought = document.getElementById('thoughtText').value;
+        
+        if (!thought.trim()) {
+            if (confirm('No note added. Save without a note?')) {
+                // Proceed with empty note
+            } else {
+                return;
+            }
+        }
 
         try {
             const response = await fetch('/api/log_mood', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    username: '{{ current_user }}', // Updated from student_id
+                    username: '{{ current_user }}',
                     mood_score: parseInt(score),
                     thought_text: thought
                 })
@@ -95,14 +136,30 @@
             const result = await response.json();
             if (result.status === 'success') {
                 document.getElementById('thoughtText').value = '';
-                loadChart(); // This calls the function above to refresh the graph
+                
+                // Show success feedback
+                const btn = event.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ Saved!';
+                setTimeout(() => { btn.innerHTML = originalText; }, 1500);
+                
+                loadChart();
+            } else {
+                alert('Error saving mood. Please try again.');
             }
         } catch (error) {
             console.error('Connection failed:', error);
+            alert('Network error. Please check your connection.');
         }
     }
 
-    // 3. Run this automatically when the page loads
     document.addEventListener('DOMContentLoaded', loadChart);
+    
+    // Re-apply chart sizing on orientation change
+    window.addEventListener('resize', () => {
+        if (window.myChart) {
+            window.myChart.resize();
+        }
+    });
 </script>
 {% endblock %}
