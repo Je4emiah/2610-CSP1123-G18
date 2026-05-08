@@ -154,6 +154,7 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+
 # Delete account
 @app.route('/delete_account', methods=['POST'])
 def delete_account():
@@ -209,6 +210,7 @@ def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login')), 302
     return render_template('dashboard.html')
+
 
 # History
 @app.route('/history')
