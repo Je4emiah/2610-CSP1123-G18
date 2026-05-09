@@ -74,19 +74,18 @@ async function updateDashboard() {
         myChart = new Chart(ctx, {
             type: 'line',
             data: {
-                // Shorten labels (e.g., "2026-05-05 08:00" -> "08:00")
-                labels: data.labels.map(label => label.split(' ')[1] || label),
+                labels: data.labels.map(label => label.split(' ')[1] || label), // Shorten timestamps
                 datasets: [{
                     label: 'Mood Level',
                     data: data.data,
                     borderColor: '#00D4FF',
-                    backgroundColor: gradient,
+                    backgroundColor: gradient, // Use the gradient
                     borderWidth: 4,
                     pointBackgroundColor: '#ffffff',
                     pointBorderColor: '#00D4FF',
                     pointRadius: 5,
                     pointHoverRadius: 8,
-                    tension: 0.4, 
+                    tension: 0.4, // Smooth curves
                     fill: true
                 }]
             },
@@ -94,7 +93,7 @@ async function updateDashboard() {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false },
+                    legend: { display: false }, // Hide legend for cleaner look
                     tooltip: {
                         backgroundColor: '#1e293b',
                         titleColor: '#00D4FF',
@@ -105,7 +104,7 @@ async function updateDashboard() {
                 },
                 scales: {
                     y: { 
-                        min: 0, max: 6,
+                        min: 0, max: 6, // Padding at top and bottom
                         ticks: { stepSize: 1, color: '#94a3b8' },
                         grid: { color: 'rgba(148, 163, 184, 0.1)' }
                     },
