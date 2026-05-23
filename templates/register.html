@@ -1,68 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
+{% block content %}
+<main class="page-container center-layout">
+    <div class="content-panel auth-panel">
+        <header class="panel-header">
+            <h1 class="panel-title">Register</h1>
+            <p class="panel-subtitle">Start tracking your mental data trends</p>
+        </header>
 
-<head>
-    <meta charset="UTF-8">
-    <title>MindMetric | Register</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-
-<body class="login-body">
-    <div class="login-card">
-        <h2 class="text-center mb-4 fw-bold">Register</h2>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} alert-dismissible fade show small py-2" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-        <form action="{{ url_for('register') }}" method="POST">
-            <div class="mb-3">
-                <label class="form-label">Name</label>
-                <input type="text" name="name" class="form-control" placeholder="Enter your name" required>
+        <form action="{{ url_for('register') }}" method="POST" class="semantic-form">
+            <div class="form-group">
+                <label class="section-label">Username</label>
+                <input type="text" name="username" class="input-field" required>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Username</label>
-                <input type="text" name="username" class="form-control" required>
+            <div class="form-group">
+                <label class="section-label">Password</label>
+                <input type="password" name="password" class="input-field" required>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Password</label>
-                <input type="password" name="password" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Confirm Password</label>
-                <input type="password" name="confirm_password" class="form-control" required>
-            </div>
-            <div class="mt-4 p-3 bg-light rounded border shadow-sm">
-                <p class="text-primary fw-bold small mb-3">Password Recovery Questions</p>
-
-                <div class="mb-3">
-                    <label class="form-label small text-muted">1. What was the name of your first pet?</label>
-                    <input type="text" name="q1" class="form-control form-control-sm" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label small text-muted">2. What is your mother's maiden name?</label>
-                    <input type="text" name="q2" class="form-control form-control-sm" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label small text-muted">3. What was the name of your primary school?</label>
-                    <input type="text" name="q3" class="form-control form-control-sm" required>
-                </div>
-            </div>
-            <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill mb-3">Create Account</button>
-            <div class="text-center mt-3">
-                <a href="{{ url_for('index') }}" class="text-decoration-none small text-muted">← Back to Home</a>
-            </div>
+            <button type="submit" class="action-btn block-btn">Create Account</button>
         </form>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
 
-</html>
+        <footer class="panel-footer">
+            <p class="panel-link-text">Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+        </footer>
+    </div>
+</main>
+{% endblock %}
