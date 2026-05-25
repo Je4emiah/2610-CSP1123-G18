@@ -1,44 +1,135 @@
-{% extends "base.html" %}
-{% block title %}User Profile{% endblock %}
+{% extends 'base.html' %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow border-0 rounded-4">
-                <div class="card-header bg-primary text-white text-center p-4 rounded-top-4">
-                    <div class="rounded-circle bg-white text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px; font-size: 2rem; font-weight: bold;">
-                        {{ user['username'][0] | upper }}
-                    </div>
-                    <h3 class="mb-0">{{ user['username'] }}</h3>
-                    <p class="small opacity-75">MindMetric Student Account</p>
+<div class="profile-view-wrapper">
+    <div class="profile-layout-container">
+
+        <div class="profile-panel profile-text-center profile-summary-card">
+            {% if user %}
+            <div class="profile-avatar-box">{{ user.username.0|upper }}</div>
+            <h2 class="profile-panel-title" id="displayNameText">{{ user.username }}</h2>
+            <p class="profile-panel-subtitle">Account Profile Identity</p>
+            {% else %}
+            <div class="profile-avatar-box fallback-avatar">?</div>
+            <h2 class="profile-panel-title" id="displayNameText">{{ session.user_id }}</h2>
+            <p class="profile-panel-subtitle state-warning">Development Seeder Session Identity</p>
+            <p class="profile-notice-text">Notice: Running on volatile context parameters. Register via the sign-up
+                gateway to commit structural changes.</p>
+            {% endif %}
+
+            <div class="profile-stats-divider">
+                <div class="stat-item">
+                    <p class="profile-field-label">Telemetry Logs</p>
+                    <p>
+                        <span class="profile-status-counter" id="totalMoodsCount">{{ entry_count }}</span> entries
+                    </p>
                 </div>
-                <div class="card-body p-4">
-                    <h6 class="text-uppercase text-muted small fw-bold mb-3">Account Details</h6>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>User ID:</span>
-                        <span class="fw-bold">#{{ user['id'] }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-4">
-                        <span>Status:</span>
-                        <span class="badge bg-success">Active</span>
-                    </div>
-
-                    <h6 class="text-uppercase text-muted small fw-bold mb-3">Security Settings</h6>
-                    <div class="p-3 bg-light rounded shadow-sm mb-4">
-                        <div class="small mb-1 text-muted">Verification Method:</div>
-                        <div class="fw-bold text-dark"><i class="fas fa-check-circle text-success"></i> 3 Security Questions Set</div>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <a href="{{ url_for('forgot_password') }}" class="btn btn-outline-primary rounded-pill">Update Password</a>
-                        <form action="{{ url_for('delete_account') }}" method="POST" onsubmit="return confirm('Are you sure you want to delete your account?');">
-                            <button type="submit" class="btn btn-link text-danger w-100 text-decoration-none small">Delete My Account</button>
-                        </form>
-                    </div>
+                <div class="stat-item">
+                    <p class="profile-field-label">Mean Evaluation</p>
+                    <p>
+                        <span class="profile-status-counter score-badge">{{ avg_score }}/5</span>
+                    </p>
                 </div>
             </div>
         </div>
+
+        <div class="profile-management-grid">
+
+            <div class="profile-panel">
+                <h4 class="profile-section-heading">👤 Profile Details</h4>
+
+                <div class="profile-form-group">
+                    <label class="profile-form-label" for="editNameInput">Active Account Identifier</label>
+                    <input type="text" id="editNameInput" class="profile-form-input static-input"
+                        value="{{ session.user_id }}" readonly />
+                    <p class="profile-input-hint">Unique primary database key values cannot be changed manually.</p>
+                </div>
+
+                <div class="profile-form-group input-spacer">
+                    <label class="profile-form-label">System Security Standard</label>
+                    <div class="security-badge-lock">🔒 3-Tier Reset Questions Set</div>
+                </div>
+            </div>
+
+            <div class="profile-panel">
+                <h4 class="profile-section-heading">🔑 Credentials Control</h4>
+
+                <form action="{{ url_for('reset_password') }}" method="POST" id="passwordUpdateForm">
+                    <input type="hidden" name="username" value="{{ session['user_id'] }}">
+
+                    <p class="profile-field-label"
+                        style="color: var(--text-main); font-size: 0.8rem; margin-bottom: 0.75rem;">
+                        Identity Verification
+                    </p>
+
+                    <div class="profile-form-group" style="margin-bottom: 0.75rem;">
+                        <label class="profile-form-label" style="font-size: 0.8rem;">1. First pet's name?</label>
+                        <input type="text" name="q1" class="profile-form-input" placeholder="Answer" required>
+                    </div>
+
+                    <div class="profile-form-group" style="margin-bottom: 0.75rem;">
+                        <label class="profile-form-label" style="font-size: 0.8rem;">2. Mother's maiden name?</label>
+                        <input type="text" name="q2" class="profile-form-input" placeholder="Answer" required>
+                    </div>
+
+                    <div class="profile-form-group" style="margin-bottom: 1.25rem;">
+                        <label class="profile-form-label" style="font-size: 0.8rem;">3. Primary school name?</label>
+                        <input type="text" name="q3" class="profile-form-input" placeholder="Answer" required>
+                    </div>
+
+                    <div style="border-top: 1px dashed var(--border); margin: 1rem 0; padding-top: 1rem;"></div>
+
+                    <p class="profile-field-label"
+                        style="color: var(--text-main); font-size: 0.8rem; margin-bottom: 0.75rem;">
+                        Password Modification
+                    </p>
+
+                    <div class="profile-form-group" style="margin-bottom: 0.75rem;">
+                        <label class="profile-form-label" for="current_password">Current Password</label>
+                        <input type="password" id="current_password" name="current_password" class="profile-form-input"
+                            placeholder="••••••••" required>
+                    </div>
+
+                    <div class="profile-form-group" style="margin-bottom: 0.75rem;">
+                        <label class="profile-form-label" for="new_password">New Password</label>
+                        <input type="password" id="new_password" name="new_password" class="profile-form-input"
+                            placeholder="••••••••" required>
+                    </div>
+
+                    <div class="profile-form-group" style="margin-bottom: 1rem;">
+                        <label class="profile-form-label" for="confirm_password">Confirm New Password</label>
+                        <input type="password" id="confirm_password" name="confirm_password" class="profile-form-input"
+                            placeholder="••••••••" required>
+                    </div>
+
+                    <button type="submit" class="profile-action-btn profile-block-btn">
+                        Verify & Update Credentials
+                    </button>
+                </form>
+            </div>
+
+        </div>
+
+        <div class="profile-panel purge-danger-zone">
+            <p class="profile-field-label text-danger">⚠️ System Hazard Controls</p>
+            <p class="profile-notice-text spacer-sm">
+                Purging completely drops user records and clears all tracking entries from the <code>mood_logs</code>
+                dataset permanently.
+            </p>
+
+            <div class="purge-actions-container">
+                <form action="{{ url_for('delete_account') }}" method="POST"
+                    onsubmit="return confirm('CRITICAL PROMPT: Are you absolutely certain you want to permanently delete your account and clear all analytics records from MindMetric? This action is non-reversible.');">
+                    <button type="submit" class="profile-delete-btn">Delete Account & Logs</button>
+                </form>
+                <a href="{{ url_for('dashboard') }}" class="profile-secondary-link"
+                    style="display: block; margin-top: 1rem; font-size: 0.85rem; text-decoration: none;">← Back to
+                    Dashboard</a>
+            </div>
+        </div>
+
     </div>
 </div>
+
+<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
 {% endblock %}

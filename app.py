@@ -10,25 +10,24 @@ DATABASE = 'mindmetric.db'
 
 # --- DATABASE HELPERS ---
 def get_db():
-    # Check if a database connection already exists for this request
+    """Establishes a thread-safe database connection cached within the request context."""
     db = getattr(g, '_database', None)
     if db is None:
-        # If not, create one and store it in 'g' for global object
         db = g._database = sqlite3.connect(DATABASE)
-        # This allows us to access columns by name (e.g., row['username'])
         db.row_factory = sqlite3.Row
     return db
 
 @app.teardown_appcontext
 def close_connection(exception):
-    # This automatically closes the databse when the user's request ends
+    """Automatically tears down and closes the database connection at the end of the request lifecycle."""
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
 
 def save_mood_entry(username, score, thought):
+    """Inserts a single mood log record into the database."""
     try:
-        db = get_db() # Simplified: use the new helper get_db()
+        db = get_db()
         db.execute('''
             INSERT INTO mood_logs (username, mood_score, thought_text, timestamp)
             VALUES (?, ?, ?, datetime('now', 'localtime'))
@@ -36,10 +35,11 @@ def save_mood_entry(username, score, thought):
         db.commit()
         return True
     except Exception as e:
-        print(f"Database error: {e}")
+        print(f"Database error in save_mood_entry: {e}")
         return False
 
 def get_mood_trends(username):
+    """Retrieves and aggregates chronological historical mood records for analytics rendering."""
     db = get_db()
     cursor = db.execute('''
             SELECT date(timestamp), AVG(mood_score) 
@@ -57,6 +57,7 @@ def get_mood_trends(username):
 # --- CONTEXT PROCESSOR ---
 @app.context_processor
 def inject_user():
+    """Exposes session tracking states globally across all HTML templates."""
     return dict(current_user=session.get('user_id'))
 
 # --- ROUTES ---
@@ -64,7 +65,6 @@ def inject_user():
 def index():
     return render_template('index.html')
 
-# Login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -86,7 +86,6 @@ def login():
             
     return render_template('login.html')
 
-# Forget password
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
@@ -96,10 +95,9 @@ def forgot_password():
         a3 = request.form.get('q3', '').lower().strip()
         
         db = get_db()
-        db.row_factory = sqlite3.Row
         user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
         
-        # Security Verification
+        # Verify 3-tier security answer strings
         if user and user['q1_answer'] == a1 and user['q2_answer'] == a2 and user['q3_answer'] == a3:
             return render_template('forgot_password.html', user_found=True, username=username)
         else:
@@ -108,26 +106,37 @@ def forgot_password():
             
     return render_template('forgot_password.html', user_found=False)
 
-# Reset Password
 @app.route('/reset_password', methods=['POST'])
 def reset_password():
     username = request.form.get('username')
+    a1 = request.form.get('q1', '').lower().strip()
+    a2 = request.form.get('q2', '').lower().strip()
+    a3 = request.form.get('q3', '').lower().strip()
     new_password = request.form.get('new_password')
     confirm_password = request.form.get('confirm_password')
 
+    # Guard 1: Validate frontend matching parameters
     if new_password != confirm_password:
-        return "Passwords do not match! <a href='/forgot_password'>Try again</a>"
-
-    hashed_pw = generate_password_hash(new_password)
+        return "Passwords do not match! <a href='/profile'>Try again</a>", 400
 
     db = get_db()
-    db.execute('UPDATE users SET password_hash = ? WHERE username = ?',
-               (hashed_pw, username))
+    user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+
+    # Guard 2: Safety check to confirm user profile row exists
+    if not user:
+        return "User profile data record not found. <a href='/profile'>Go back</a>", 404
+
+    # Guard 3: Authenticate security questions profile keys
+    if user['q1_answer'] != a1 or user['q2_answer'] != a2 or user['q3_answer'] != a3:
+        return "Identity Verification Failed: Security question answers are incorrect! <a href='/profile'>Try again</a>", 403
+
+    # Success Loop: Questions passed, apply secure hash and update database
+    hashed_pw = generate_password_hash(new_password)
+    db.execute('UPDATE users SET password_hash = ? WHERE username = ?', (hashed_pw, username))
     db.commit()
+    
+    return "<h2>Success!</h2><p>Identity confirmed and password updated securely.</p><a href='/profile'>Return to Profile</a>"
 
-    return "<h2>Success!</h2><p>Password updated.</p><a href='/login'>Login now</a>"
-
-# Profile
 @app.route('/profile')
 def profile():
     if 'user_id' not in session:
@@ -135,20 +144,14 @@ def profile():
         
     username = session['user_id']
     db = get_db()
-    db.row_factory = sqlite3.Row
-    # We query by username because that's what's stored in your session
-    cursor = db.execute('SELECT * FROM users WHERE username = ?', (username,))
-    user = cursor.fetchone()
-        
+    user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
     return render_template('profile.html', user=user)
 
-# Logout
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# Delete account
 @app.route('/delete_account', methods=['POST'])
 def delete_account():
     if 'user_id' not in session:
@@ -160,14 +163,12 @@ def delete_account():
         db.execute("DELETE FROM mood_logs WHERE username = ?", (username,))
         db.execute("DELETE FROM users WHERE username = ?", (username,))
         db.commit()
-        
         session.clear()
         return redirect(url_for('index'))
     except Exception as e:
         print(f"Error deleting account: {e}")
         return "Error deleting account", 500
 
-# Register account
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -175,7 +176,6 @@ def register():
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         
-        # Capture Security Answers
         q1 = request.form.get('q1', '').lower().strip()
         q2 = request.form.get('q2', '').lower().strip()
         q3 = request.form.get('q3', '').lower().strip()
@@ -187,7 +187,6 @@ def register():
         
         try:
             db = get_db()
-                # Updated SQL to include questions
             db.execute("""
                 INSERT INTO users (username, password_hash, q1_answer, q2_answer, q3_answer) 
                 VALUES (?, ?, ?, ?, ?)
@@ -199,38 +198,81 @@ def register():
                 
     return render_template('register.html')
 
-# Dashboard
-@app.route('/dashboard')
+@app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
     if 'user_id' not in session:
-        return redirect(url_for('login')), 302
-    return render_template('dashboard.html')
+        return redirect(url_for('login'))
+        
+    username = session['user_id']
+    db = get_db()
+    
+    # Process and commit newly submitted mood tracking forms
+    if request.method == 'POST':
+        mood_score = int(request.form['mood_score'])
+        thought = request.form['thought']
+        
+        db.execute('''
+            INSERT INTO mood_logs (username, mood_score, thought_text, timestamp)
+            VALUES (?, ?, ?, datetime('now', 'localtime'))
+        ''', (username, mood_score, thought))
+        db.commit()
+        return redirect(url_for('dashboard'))
 
-# History
+    # Calculate tracking entry volume and mean scoring over a sliding 7-day window
+    row = db.execute('''
+        SELECT COUNT(*) as entry_count, AVG(mood_score) as avg_score 
+        FROM mood_logs 
+        WHERE username = ? 
+        AND timestamp >= datetime('now', '-7 days', 'localtime')
+    ''', (username,)).fetchone()
+    
+    entry_count = row['entry_count'] if row['entry_count'] else 0
+    avg_score = round(row['avg_score'], 1) if row['avg_score'] else 0.0
+
+    # Localized static dictionary containing evaluations based on rounded average scores
+    insight_dictionary = {
+        5: {"emoji": "🔥", "review": "Exceptional mental momentum! Your tracking signals display peak emotional clarity and highly optimal decompression behavior loops. Keep cruising here."},
+        4: {"emoji": "😊", "review": "A highly positive, constructive horizon. Your tracking metrics indicate steady wellness and reliable stability. Maintain your current active choices!"},
+        3: {"emoji": "😐", "review": "A balanced neutral baseline. Things are holding perfectly constant, but consider introducing mild pattern variations or taking a small physical break to feel fully energized."},
+        2: {"emoji": "☹️", "review": "Your tracker highlights a subtle down-trending sequence. Energy metrics feel slightly strained. Make sure to schedule intentional downtime and get some rest today."},
+        1: {"emoji": "😫", "review": "Telemetry suggests heavy processing loads and fatigue patterns. Prioritize absolute preservation right now. Close down non-essential loops and decompress."}
+    }
+
+    weekly_insight = {
+        "emoji": "🤔",
+        "review": "No recent metrics recorded this week yet. Submit your first mood log box above to generate your dynamic tracking insights!"
+    }
+
+    if entry_count > 0:
+        score_key = max(1, min(5, int(round(avg_score))))
+        weekly_insight = insight_dictionary[score_key]
+
+    return render_template('dashboard.html', 
+                           insight=weekly_insight, 
+                           entry_count=entry_count, 
+                           avg_score=avg_score)
+
 @app.route('/history')
 def history():
     if 'user_id' not in session:
         return redirect(url_for('login'))
         
     username = session['user_id']
-    
     db = get_db()
-    db.row_factory = sqlite3.Row
-    # Requirement: Sort by date (Newest first)
-    cursor = db.execute('''
+    logs = db.execute('''
         SELECT mood_score, thought_text, timestamp 
         FROM mood_logs 
         WHERE username = ? 
         ORDER BY timestamp DESC
-    ''', (username,))
-    
-    logs = cursor.fetchall()
+    ''', (username,)).fetchall()
         
     return render_template('history.html', logs=logs)
 
-# API: Fetch data for the Chart
+# --- TELEMETRY AND DATA VISUALIZATION API ENDPOINTS ---
+
 @app.route('/api/mood_data/<username>')
 def api_mood_data(username):
+    """Generates down-sampled historical tracking metrics configured for Chart.js rendering."""
     time_range = request.args.get('range', 'day')
     offset = int(request.args.get('offset', 0))
     
@@ -262,18 +304,16 @@ def api_mood_data(username):
                     ORDER BY timestamp ASC
                 """
         
-    cursor = db.execute(query, (username,))
-    
-    rows = cursor.fetchall()
+    rows = db.execute(query, (username,)).fetchall()
     return jsonify({
         "labels": [row[0] for row in rows],
         "data": [row[1] for row in rows],
         "range_type": time_range
     })
     
-# API: Save mood from the Dashboard
 @app.route('/api/log_mood', methods=['POST'])
 def api_log_mood():
+    """Standalone endpoint handling decoupled programmatic entry insertions."""
     data = request.json
     username = data.get('username')
     score = data.get('mood_score')
@@ -284,10 +324,12 @@ def api_log_mood():
         return jsonify({"status": "success"})
     return jsonify({"status": "error"}), 500
 
-# --- DATABASE INIT ---
+# --- DATABASE SCHEMAS DEFINITION AND INITIALIZATION ---
+
 def init_db():
+    """Initializes schema tables and parameters if the core relational file does not exist."""
     db = get_db()
-    # 1. Mood Logs Table
+    
     db.execute('''CREATE TABLE IF NOT EXISTS mood_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
@@ -296,7 +338,6 @@ def init_db():
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )''')
 
-    # 2. Updated Users Table with Security Questions
     db.execute('''CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
@@ -305,7 +346,6 @@ def init_db():
         q2_answer TEXT,
         q3_answer TEXT
     )''')
-    
     print("Database refreshed and ready with Security Questions!")
 
 if __name__ == '__main__':
