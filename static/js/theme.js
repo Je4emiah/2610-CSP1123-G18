@@ -19,10 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
         htmlElement.setAttribute('data-bs-theme', newTheme);
         localStorage.setItem('theme', newTheme);
         updateIcon(newTheme);
-
-        // TRIGGER HAPTIC FEEDBACK (ClickUp Task: Universal Feedback System)
-        const modeText = newTheme === 'light' ? 'Light Mode' : 'Dark Mode';
-        showToast(`Switched to ${modeText}`, 'info'); 
     });
 
     function updateIcon(theme) {
@@ -31,27 +27,3 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
-
-/**
- * UNIVERSAL FEEDBACK SYSTEM (Haptic Web)
- * This function is global and can be called from any other script
- * Example: showToast("Entry Saved Successfully!", "success")
- */
-function showToast(message, type = 'primary') {
-    const toastElement = document.getElementById('liveToast');
-    const toastMessage = document.getElementById('toastMessage');
-    
-    // Safety check to ensure the toast HTML exists in base.html
-    if (!toastElement || !toastMessage) {
-        console.warn("Toast element not found. Make sure the toast container is in base.html");
-        return; 
-    }
-
-    // Set the background color based on type (success, danger, info, etc.)
-    toastElement.className = `toast align-items-center text-white bg-${type} border-0`;
-    toastMessage.innerText = message;
-    
-    // Initialize and show the Bootstrap Toast
-    const toast = new bootstrap.Toast(toastElement);
-    toast.show();
-}

@@ -1,14 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
-<main class="page-container hero-layout">
+<main class="hero-container">
     <header class="hero-header">
         <h1 class="main-title">MindMetric</h1>
         <p class="sub-title">A simple way for MMU students to monitor emotional trends.</p>
     </header>
 
     <div class="action-group">
-        <a href="{{ url_for('login') }}" class="action-btn">Get Started</a>
-        <a href="{{ url_for('register') }}" class="secondary-btn">Create Account</a>
+        <a href="{{ url_for('login') }}" class="btn-primary">Get Started</a>
     </div>
 </main>
 {% endblock %}
