@@ -1,26 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Home{% endblock %}
-
 {% block content %}
-<!-- Removed custom CSS dependency for background and used bg-body -->
-<section class="hero-section text-center py-5 bg-body">
-    <div class="container my-5">
-        <!-- text-body-emphasis ensures white text in dark mode and black in light mode -->
-        <h1 class="display-4 fw-bold text-body-emphasis">
-            Track Your Mind, <span class="text-info">Metric by Metric.</span>
-        </h1>
-        
-        <!-- text-secondary has better contrast in dark mode than text-muted -->
-        <p class="lead text-secondary mb-4">
-            A simple way for MMU students to monitor emotional trends.
-        </p>
+<main class="hero-container">
+    <header class="hero-header">
+        <h1 class="main-title">MindMetric</h1>
+        <p class="sub-title">A simple way for MMU students to monitor emotional trends.</p>
+    </header>
 
-        {% if not current_user %}
-            <!-- Changed btn-dark to btn-primary so it's visible on both themes -->
-            <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg px-5 rounded-pill shadow">
-                Get Started
-            </a>
-        {% endif %}
+    <div class="action-group">
+        <a href="{{ url_for('login') }}" class="btn-primary">Get Started</a>
     </div>
-</section>
+</main>
 {% endblock %}
