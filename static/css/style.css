@@ -2,6 +2,7 @@
    1. CORE VARIABLES & CUSTOM DESIGN TOKENS
    ========================================================================== */
 :root {
+    /* --- Light Theme Design Matrix --- */
     --bg-main: #f8fafc;
     --bg-panel: #ffffff;
     --text-main: #1e293b;
@@ -416,7 +417,7 @@ body {
 }
 
 /* ==========================================================================
-   8. PROFILE DASHBOARD MODULE COMPONENT SYSTEM
+   8. SHARED SYSTEM COMPONENT MODULE (PROFILE & AUTHENTICATION)
    ========================================================================== */
 .profile-view-wrapper {
     padding: 2rem 1rem;
@@ -564,6 +565,7 @@ body {
     font-size: 0.95rem;
     background: transparent;
     color: var(--text-main);
+    width: 100%;
 }
 
 .static-input {
@@ -610,11 +612,6 @@ body {
     border-color: rgba(239, 68, 68, 0.3);
 }
 
-body.dark-theme .purge-danger-zone {
-    border-color: rgba(239, 68, 68, 0.2);
-    background: rgba(239, 68, 68, 0.02);
-}
-
 .profile-delete-btn {
     background: #ef4444;
     color: #ffffff;
@@ -637,4 +634,39 @@ body.dark-theme .purge-danger-zone {
 
 .profile-secondary-link:hover {
     color: var(--accent);
+}
+
+/* Auth Specific Grid Alignment Updates */
+.auth-panel.profile-panel {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.security-setup-gate {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.5rem;
+}
+
+.verification-header-text {
+    color: var(--text-main);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.action-spacer {
+    margin-top: 2rem;
+}
+
+.auth-footer-divider {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+    text-align: center;
+}
+
+.navigation-footer-text {
+    text-decoration: none;
+    font-size: 0.9rem;
 }

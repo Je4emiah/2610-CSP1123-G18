@@ -22,6 +22,7 @@
           <a class="nav-item" href="{{ url_for('index') }}">Home</a>
           {% if current_user %}
             <a class="nav-item" href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a class="nav-item" href="{{ url_for('history') }}">History</a>
 
             <div class="user-controls dropdown">
               <button class="user-menu-trigger dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown">Hi, {{ current_user }}</button>
