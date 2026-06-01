@@ -82,7 +82,8 @@ def login():
                 session.permanent = True
             return redirect(url_for('dashboard'))
         else:
-            return "Invalid username or password", 401
+            flash("Invalid username or password.", "danger")
+            return redirect(url_for('login'))
             
     return render_template('login.html')
 
@@ -99,7 +100,8 @@ def forgot_password():
         
         # Verify 3-tier security answer strings
         if user and user['q1_answer'] == a1 and user['q2_answer'] == a2 and user['q3_answer'] == a3:
-            return render_template('forgot_password.html', user_found=True, username=username)
+            # Pass answers through as hidden parameters to the next form step
+            return render_template('forgot_password.html', user_found=True, username=username, q1=a1, q2=a2, q3=a3)
         else:
             flash("Incorrect answers or username not found.", "danger")
             return redirect(url_for('forgot_password'))
@@ -109,33 +111,30 @@ def forgot_password():
 @app.route('/reset_password', methods=['POST'])
 def reset_password():
     username = request.form.get('username')
-    a1 = request.form.get('q1', '').lower().strip()
-    a2 = request.form.get('q2', '').lower().strip()
-    a3 = request.form.get('q3', '').lower().strip()
     new_password = request.form.get('new_password')
     confirm_password = request.form.get('confirm_password')
 
-    # Guard 1: Validate frontend matching parameters
+    # Guard 1: Validate matching parameters
     if new_password != confirm_password:
-        return "Passwords do not match! <a href='/profile'>Try again</a>", 400
+        flash("Passwords do not match! Please try again.", "danger")
+        return redirect(url_for('forgot_password'))
 
     db = get_db()
     user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
 
     # Guard 2: Safety check to confirm user profile row exists
     if not user:
-        return "User profile data record not found. <a href='/profile'>Go back</a>", 404
+        flash("User profile data record not found.", "danger")
+        return redirect(url_for('forgot_password'))
 
-    # Guard 3: Authenticate security questions profile keys
-    if user['q1_answer'] != a1 or user['q2_answer'] != a2 or user['q3_answer'] != a3:
-        return "Identity Verification Failed: Security question answers are incorrect! <a href='/profile'>Try again</a>", 403
-
-    # Success Loop: Questions passed, apply secure hash and update database
+    # Success Loop: Apply secure hash and update database
     hashed_pw = generate_password_hash(new_password)
     db.execute('UPDATE users SET password_hash = ? WHERE username = ?', (hashed_pw, username))
     db.commit()
     
-    return "<h2>Success!</h2><p>Identity confirmed and password updated securely.</p><a href='/profile'>Return to Profile</a>"
+    flash("Account recovered successfully! You can now log in with your new password.", "success")
+    return redirect(url_for('login'))
+    
 
 @app.route('/profile')
 def profile():
@@ -181,7 +180,8 @@ def register():
         q3 = request.form.get('q3', '').lower().strip()
         
         if password != confirm_password:
-            return "Passwords do not match!", 400
+            flash("Passwords do not match!", "danger")
+            return redirect(url_for('register'))
         
         hashed_pw = generate_password_hash(password)
         
@@ -192,9 +192,11 @@ def register():
                 VALUES (?, ?, ?, ?, ?)
             """, (username, hashed_pw, q1, q2, q3))
             db.commit()
+            flash("Account created successfully! Please log in.", "success")
             return redirect(url_for('login'))
         except sqlite3.IntegrityError:
-            return "Username already exists!", 400
+            flash("Username already exists! Please choose a different one.", "danger")
+            return redirect(url_for('register'))
                 
     return render_template('register.html')
 
