@@ -58,7 +58,7 @@ def get_mood_trends(username):
 @app.context_processor
 def inject_user():
     """Exposes session tracking states globally across all HTML templates."""
-    return dict(current_user=session.get('user_id'))
+    return dict(current_user=session.get('name'))
 
 # --- ROUTES ---
 @app.route('/')
@@ -73,11 +73,13 @@ def login():
         remember = request.form.get('remember_me')
         
         db = get_db()
-        cursor = db.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
+        # FIXES INDEX ERROR: Fetch BOTH password_hash AND name columns
+        cursor = db.execute("SELECT password_hash, name FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
 
-        if user and check_password_hash(user[0], password):
+        if user and check_password_hash(user['password_hash'], password):
             session['user_id'] = username
+            session['name'] = user['name']  # Caches display name globally
             if remember:
                 session.permanent = True
             return redirect(url_for('dashboard'))
@@ -172,6 +174,7 @@ def delete_account():
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
+        full_name = request.form.get('full_name')  # 1. Grab full name from form
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         
@@ -187,10 +190,11 @@ def register():
         
         try:
             db = get_db()
+            # 2. Included 'name' column and its binding parameter '?'
             db.execute("""
-                INSERT INTO users (username, password_hash, q1_answer, q2_answer, q3_answer) 
-                VALUES (?, ?, ?, ?, ?)
-            """, (username, hashed_pw, q1, q2, q3))
+                INSERT INTO users (username, name, password_hash, q1_answer, q2_answer, q3_answer) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (username, full_name, hashed_pw, q1, q2, q3))
             db.commit()
             flash("Account created successfully! Please log in.", "success")
             return redirect(url_for('login'))
@@ -340,15 +344,17 @@ def init_db():
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )''')
 
+    # 3. Updated table schema parameters to include 'name' column
     db.execute('''CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
         password_hash TEXT NOT NULL,
         q1_answer TEXT,
         q2_answer TEXT,
         q3_answer TEXT
     )''')
-    print("Database refreshed and ready with Security Questions!")
+    print("Database refreshed and ready with Full Name schema parameters!")
 
 if __name__ == '__main__':
     with app.app_context():
