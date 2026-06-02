@@ -15,6 +15,65 @@
     --radius-interactive: 8px;
 }
 
+/* ==========================================================================\
+   1B. AUTOMATIC DARK MODE VARIANT OVERRIDES
+   ========================================================================== */
+[data-bs-theme="dark"] {
+    /* Redefine your core layout color design tokens */
+    --bg-main: #0f172a;       /* Dark slate background body */
+    --bg-panel: #1e293b;      /* Dark slate cards/modules */
+    --text-main: #f8fafc;     /* Off-white readable text */
+    --text-muted: #94a3b8;    /* Muted grey descriptions */
+    --border: #334155;        /* Subdued border dividers */
+    
+    /* Force body override background */
+    background-color: var(--bg-main) !important;
+}
+
+/* Fix history page card layouts and custom container modules */
+[data-bs-theme="dark"] .card,
+[data-bs-theme="dark"] .content-panel,
+[data-bs-theme="dark"] .auth-panel,
+[data-bs-theme="dark"] .auth-card {
+    background-color: var(--bg-panel) !important;
+    border-color: var(--border) !important;
+    color: var(--text-main) !important;
+    box-shadow: none !important;
+}
+
+/* Banish hardcoded black text utility conflicts */
+[data-bs-theme="dark"] p,
+[data-bs-theme="dark"] h1,
+[data-bs-theme="dark"] h2,
+[data-bs-theme="dark"] h3,
+[data-bs-theme="dark"] h4,
+[data-bs-theme="dark"] .text-dark,
+[data-bs-theme="dark"] .mb-1 {
+    color: var(--text-main) !important;
+}
+
+/* Ensure data inputs, selectors, and dropdown textareas adjust */
+[data-bs-theme="dark"] .input-field,
+[data-bs-theme="dark"] .profile-form-input,
+[data-bs-theme="dark"] .form-input,
+[data-bs-theme="dark"] select {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+    border-color: #475569 !important;
+}
+
+/* Align user profile dropdown control items */
+[data-bs-theme="dark"] .dropdown-menu {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+}
+[data-bs-theme="dark"] .dropdown-item {
+    color: #f8fafc !important;
+}
+[data-bs-theme="dark"] .dropdown-item:hover {
+    background-color: #334155 !important;
+}
+
 /* ==========================================================================
    2. GLOBAL DOCUMENT RESET
    ========================================================================== */
