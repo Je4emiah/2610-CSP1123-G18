@@ -323,10 +323,9 @@ body {
    6. THREE-SECTION FULLSCREEN STORY RUNTIME
    ========================================================================== */
 .dashboard-story-wrapper {
-    height: calc(100vh - 70px);
-    overflow-y: scroll;
-    scroll-snap-type: y mandatory;
+    min-height: calc(100vh - 70px);
     scroll-behavior: smooth;
+    overflow-y: visible !important; 
 }
 
 .dashboard-story-wrapper::-webkit-scrollbar {
@@ -334,7 +333,6 @@ body {
 }
 
 .story-section {
-    scroll-snap-align: start;
     min-height: calc(100vh - 70px);
     width: 100%;
     display: flex;
