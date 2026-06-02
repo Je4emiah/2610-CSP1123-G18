@@ -4,132 +4,125 @@
 <div class="profile-view-wrapper">
     <div class="profile-layout-container">
 
-        <div class="profile-panel profile-text-center profile-summary-card">
-            {% if user %}
-            <div class="profile-avatar-box">{{ user.username.0|upper }}</div>
-            <h2 class="profile-panel-title" id="displayNameText">{{ user.username }}</h2>
+<div class="profile-panel profile-text-center profile-summary-card">
+            
+            <form action="{{ url_for('profile') }}" method="POST" enctype="multipart/form-data" id="avatarForm">
+                <div class="profile-avatar-container" style="position: relative; width: 120px; height: 120px; margin: 0 auto 1.5rem;">
+                    <div class="profile-avatar-box" style="width: 100%; height: 100%; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #e2e8f0; border: 3px solid var(--border);">
+                        {% if user and user.profile_pic %}
+                            <img src="{{ url_for('static', filename=user.profile_pic) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                        {% else %}
+                            <span style="font-size: 2.5rem; font-weight: bold; color: var(--text-main);">{{ session.user_id.0|upper }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <input type="file" id="profile_avatar_hidden" name="profile_avatar" accept="image/*" style="display: none;" onchange="document.getElementById('avatarForm').submit();">
+                    
+                    <label for="profile_avatar_hidden" class="avatar-upload-overlay" style="position: absolute; bottom: 3px; right: 3px; width: 34px; height: 34px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 3px solid var(--bg-panel); box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: transform 0.2s ease;">
+                        <span style="font-size: 0.9rem;">📷</span>
+                    </label>
+                </div>
+                
+                <input type="hidden" name="full_name" value="{{ user.name if user and user.name else session.user_id }}">
+                <input type="hidden" name="gender" value="{{ user.gender if user and user.gender else '' }}">
+            </form>
+            
+            <h2 class="profile-panel-title" id="displayNameText" style="margin-top: 0.5rem;">{{ user.name if user and user.name else session.user_id }}</h2>
             <p class="profile-panel-subtitle">Account Profile Identity</p>
-            {% else %}
-            <div class="profile-avatar-box fallback-avatar">?</div>
-            <h2 class="profile-panel-title" id="displayNameText">{{ session.user_id }}</h2>
-            <p class="profile-panel-subtitle state-warning">Development Seeder Session Identity</p>
-            <p class="profile-notice-text">Notice: Running on volatile context parameters. Register via the sign-up
-                gateway to commit structural changes.</p>
-            {% endif %}
 
             <div class="profile-stats-divider">
                 <div class="stat-item">
                     <p class="profile-field-label">Telemetry Logs</p>
-                    <p>
-                        <span class="profile-status-counter" id="totalMoodsCount">{{ entry_count }}</span> entries
-                    </p>
+                    <p><span class="profile-status-counter" id="totalMoodsCount">{{ entry_count }}</span> entries</p>
                 </div>
                 <div class="stat-item">
                     <p class="profile-field-label">Mean Evaluation</p>
-                    <p>
-                        <span class="profile-status-counter score-badge">{{ avg_score }}/5</span>
-                    </p>
+                    <p><span class="profile-status-counter score-badge">{{ avg_score }}/5</span></p>
                 </div>
             </div>
         </div>
 
         <div class="profile-management-grid">
-
             <div class="profile-panel">
                 <h4 class="profile-section-heading">👤 Profile Details</h4>
 
-                <div class="profile-form-group">
-                    <label class="profile-form-label" for="editNameInput">Active Account Identifier</label>
-                    <input type="text" id="editNameInput" class="profile-form-input static-input"
-                        value="{{ session.user_id }}" readonly />
-                    <p class="profile-input-hint">Unique primary database key values cannot be changed manually.</p>
-                </div>
-
-                <div class="profile-form-group input-spacer">
-                    <label class="profile-form-label">System Security Standard</label>
-                    <div class="security-badge-lock">🔒 3-Tier Reset Questions Set</div>
-                </div>
-            </div>
-
-            <div class="profile-panel">
-                <h4 class="profile-section-heading">🔑 Credentials Control</h4>
-
-                <form action="{{ url_for('reset_password') }}" method="POST" id="passwordUpdateForm">
-                    <input type="hidden" name="username" value="{{ session['user_id'] }}">
-
-                    <p class="profile-field-label"
-                        style="color: var(--text-main); font-size: 0.8rem; margin-bottom: 0.75rem;">
-                        Identity Verification
-                    </p>
-
-                    <div class="profile-form-group" style="margin-bottom: 0.75rem;">
-                        <label class="profile-form-label" style="font-size: 0.8rem;">1. First pet's name?</label>
-                        <input type="text" name="q1" class="profile-form-input" placeholder="Answer" required>
+                <form action="{{ url_for('profile') }}" method="POST" class="d-flex flex-column gap-3">
+                    <div class="profile-form-group">
+                        <label class="profile-form-label">Active Account Identifier</label>
+                        <input type="text" class="profile-form-input static-input" value="{{ session.user_id }}" readonly style="opacity: 0.7; cursor: not-allowed;" />
                     </div>
 
-                    <div class="profile-form-group" style="margin-bottom: 0.75rem;">
-                        <label class="profile-form-label" style="font-size: 0.8rem;">2. Mother's maiden name?</label>
-                        <input type="text" name="q2" class="profile-form-input" placeholder="Answer" required>
+                    <div class="profile-form-group">
+                        <label class="profile-form-label" for="full_name">Display Name</label>
+                        <input type="text" id="full_name" name="full_name" class="profile-form-input" value="{{ user.name if user and user.name else '' }}" placeholder="Enter your full name" required />
                     </div>
 
-                    <div class="profile-form-group" style="margin-bottom: 1.25rem;">
-                        <label class="profile-form-label" style="font-size: 0.8rem;">3. Primary school name?</label>
-                        <input type="text" name="q3" class="profile-form-input" placeholder="Answer" required>
+                    <div class="profile-form-group">
+                        <label class="profile-form-label" for="gender">Gender Identity Choice</label>
+                        <select id="gender" name="gender" class="profile-form-input" style="background: var(--bg-panel, #fff); color: var(--text-main, #000);">
+                            <option value="" {% if not user or not user.gender %}selected{% endif %}>Select Choice Option</option>
+                            <option value="Female" {% if user and user.gender == 'Female' %}selected{% endif %}>Female</option>
+                            <option value="Male" {% if user and user.gender == 'Male' %}selected{% endif %}>Male</option>
+                            <option value="Other" {% if user and user.gender == 'Other' %}selected{% endif %}>Other</option>
+                            <option value="Prefer not to say" {% if user and user.gender == 'Prefer not to say' %}selected{% endif %}>Prefer not to say</option>
+                        </select>
                     </div>
 
-                    <div style="border-top: 1px dashed var(--border); margin: 1rem 0; padding-top: 1rem;"></div>
-
-                    <p class="profile-field-label"
-                        style="color: var(--text-main); font-size: 0.8rem; margin-bottom: 0.75rem;">
-                        Password Modification
-                    </p>
-
-                    <div class="profile-form-group" style="margin-bottom: 0.75rem;">
-                        <label class="profile-form-label" for="current_password">Current Password</label>
-                        <input type="password" id="current_password" name="current_password" class="profile-form-input"
-                            placeholder="••••••••" required>
-                    </div>
-
-                    <div class="profile-form-group" style="margin-bottom: 0.75rem;">
-                        <label class="profile-form-label" for="new_password">New Password</label>
-                        <input type="password" id="new_password" name="new_password" class="profile-form-input"
-                            placeholder="••••••••" required>
-                    </div>
-
-                    <div class="profile-form-group" style="margin-bottom: 1rem;">
-                        <label class="profile-form-label" for="confirm_password">Confirm New Password</label>
-                        <input type="password" id="confirm_password" name="confirm_password" class="profile-form-input"
-                            placeholder="••••••••" required>
-                    </div>
-
-                    <button type="submit" class="profile-action-btn profile-block-btn">
-                        Verify & Update Credentials
+                    <button type="submit" class="profile-action-btn profile-block-btn" style="margin-top: 1rem;">
+                        Save Profile Specifications
                     </button>
                 </form>
             </div>
 
+            <div class="profile-panel">
+                <h4 class="profile-section-heading">🔑 Credentials Control</h4>
+                <form action="{{ url_for('reset_password') }}" method="POST" id="passwordUpdateForm">
+                    <input type="hidden" name="username" value="{{ session['user_id'] }}">
+                    
+                    <div class="profile-form-group" style="margin-bottom: 0.5rem;">
+                        <label class="profile-form-label" style="font-size: 0.8rem;">1. First pet's name?</label>
+                        <input type="text" name="q1" class="profile-form-input" placeholder="Answer" required>
+                    </div>
+                    <div class="profile-form-group" style="margin-bottom: 0.5rem;">
+                        <label class="profile-form-label" style="font-size: 0.8rem;">2. Mother's maiden name?</label>
+                        <input type="text" name="q2" class="profile-form-input" placeholder="Answer" required>
+                    </div>
+                    <div class="profile-form-group" style="margin-bottom: 0.75rem;">
+                        <label class="profile-form-label" style="font-size: 0.8rem;">3. Primary school name?</label>
+                        <input type="text" name="q3" class="profile-form-input" placeholder="Answer" required>
+                    </div>
+
+                    <div style="border-top: 1px dashed var(--border, #eee); margin: 0.75rem 0;"></div>
+
+                    <div class="profile-form-group" style="margin-bottom: 0.5rem;">
+                        <label class="profile-form-label" for="current_password">Current Password</label>
+                        <input type="password" id="current_password" name="current_password" class="profile-form-input" placeholder="••••••••" required>
+                    </div>
+                    <div class="profile-form-group" style="margin-bottom: 0.5rem;">
+                        <label class="profile-form-label" for="new_password">New Password</label>
+                        <input type="password" id="new_password" name="new_password" class="profile-form-input" placeholder="••••••••" required>
+                    </div>
+                    <div class="profile-form-group" style="margin-bottom: 1rem;">
+                        <label class="profile-form-label" for="confirm_password">Confirm New Password</label>
+                        <input type="password" id="confirm_password" name="confirm_password" class="profile-form-input" placeholder="••••••••" required>
+                    </div>
+
+                    <button type="submit" class="profile-action-btn profile-block-btn">Verify & Update Credentials</button>
+                </form>
+            </div>
         </div>
 
-        <div class="profile-panel purge-danger-zone">
+        <div class="profile-panel purge-danger-zone" style="margin-top: 2rem;">
             <p class="profile-field-label text-danger">⚠️ System Hazard Controls</p>
-            <p class="profile-notice-text spacer-sm">
-                Purging completely drops user records and clears all tracking entries from the <code>mood_logs</code>
-                dataset permanently.
-            </p>
-
+            <p class="profile-notice-text spacer-sm">Purging completely drops user records and clears all tracking entries from the dataset permanently.</p>
             <div class="purge-actions-container">
-                <form action="{{ url_for('delete_account') }}" method="POST"
-                    onsubmit="return confirm('CRITICAL PROMPT: Are you absolutely certain you want to permanently delete your account and clear all analytics records from MindMetric? This action is non-reversible.');">
+                <form action="{{ url_for('delete_account') }}" method="POST" onsubmit="return confirm('CRITICAL PROMPT: Confirm permanent deletion? This action is non-reversible.');">
                     <button type="submit" class="profile-delete-btn">Delete Account & Logs</button>
                 </form>
-                <a href="{{ url_for('dashboard') }}" class="profile-secondary-link"
-                    style="display: block; margin-top: 1rem; font-size: 0.85rem; text-decoration: none;">← Back to
-                    Dashboard</a>
+                <a href="{{ url_for('dashboard') }}" class="profile-secondary-link" style="display: block; margin-top: 1rem; font-size: 0.85rem; text-decoration: none;">← Back to Dashboard</a>
             </div>
         </div>
 
     </div>
 </div>
-
-<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
 {% endblock %}

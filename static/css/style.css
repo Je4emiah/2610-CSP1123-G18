@@ -695,3 +695,17 @@ body.dark-theme .purge-danger-zone {
 .profile-secondary-link:hover {
     color: var(--accent);
 }
+
+/* Ensure the avatar box properly presents an uploaded picture */
+.profile-avatar-box img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+}
+
+/* Smooth zoom transition on hover */
+.avatar-upload-overlay:hover {
+    transform: scale(1.15) !important;
+    background-color: #1d4ed8 !important;
+}

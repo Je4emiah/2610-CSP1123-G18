@@ -1,12 +1,24 @@
 import sqlite3
+import os
 from flask import Flask, render_template, request, url_for, redirect, jsonify, session, flash, g
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from datetime import timedelta
 
 app = Flask(__name__)
 app.secret_key = 'mmu_project_secret_key'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 DATABASE = 'mindmetric.db'
+UPLOAD_FOLDER = os.path.join('static', 'uploads', 'profile_pics')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Automatically create the profile picture folder structure if it doesn't exist
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # --- DATABASE HELPERS ---
 def get_db():
@@ -138,15 +150,59 @@ def reset_password():
     return redirect(url_for('login'))
     
 
-@app.route('/profile')
+@app.route('/profile', methods=['GET', 'POST'])
 def profile():
     if 'user_id' not in session:
         return redirect(url_for('login'))
         
     username = session['user_id']
     db = get_db()
-    user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
-    return render_template('profile.html', user=user)
+    
+    if request.method == 'POST':
+        updated_name = request.form.get('full_name')
+        selected_gender = request.form.get('gender')
+        
+        # Keep old profile picture if no new image is uploaded
+        cursor = db.execute("SELECT profile_pic FROM users WHERE username = ?", (username,))
+        user_row = cursor.fetchone()
+        saved_pic_path = user_row['profile_pic'] if user_row else None
+        
+        # Process new image files safely
+        file = request.files.get('profile_avatar')
+        if file and file.filename != '':
+            if allowed_file(file.filename):
+                clean_filename = secure_filename(f"{username}_{file.filename}")
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], clean_filename))
+                saved_pic_path = f"uploads/profile_pics/{clean_filename}"
+            else:
+                flash("Invalid format! Please use PNG, JPG, JPEG, or GIF.", "danger")
+                return redirect(url_for('profile'))
+                
+        # Commit name, gender choice, and image pointer to database
+        db.execute("""
+            UPDATE users 
+            SET name = ?, gender = ?, profile_pic = ? 
+            WHERE username = ?
+        """, (updated_name, selected_gender, saved_pic_path, username))
+        db.commit()
+        
+        # Keep global greeting matching immediately
+        session['name'] = updated_name
+        
+        flash("Profile updated successfully!", "success")
+        return redirect(url_for('profile'))
+        
+    # GET: Fetch account parameters to fill out interface forms
+    cursor = db.execute("SELECT username, name, gender, profile_pic FROM users WHERE username = ?", (username,))
+    account_info = cursor.fetchone()
+    
+    # Calculate telemetry entries length for summary statistics panels
+    logs_cursor = db.execute("SELECT COUNT(*) as log_count, AVG(mood_score) as avg_score FROM mood_logs WHERE username = ?", (username,))
+    stats = logs_cursor.fetchone()
+    entry_count = stats['log_count'] if stats else 0
+    avg_score = round(stats['avg_score'], 2) if stats and stats['avg_score'] else "0.00"
+    
+    return render_template('profile.html', user=account_info, entry_count=entry_count, avg_score=avg_score)
 
 @app.route('/logout')
 def logout():
@@ -350,6 +406,8 @@ def init_db():
         username TEXT UNIQUE NOT NULL,
         name TEXT NOT NULL,
         password_hash TEXT NOT NULL,
+        gender TEXT,
+        profile_pic TEXT,
         q1_answer TEXT,
         q2_answer TEXT,
         q3_answer TEXT
