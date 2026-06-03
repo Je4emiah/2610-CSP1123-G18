@@ -1,39 +1,46 @@
 {% extends 'base.html' %}
-{% block title %}
-  Login
-{% endblock %}
 
 {% block content %}
-  <main class="auth-container">
-    <div class="auth-card">
-      <header class="auth-header">
-        <p class="auth-link-text">
-          <a href="{{ url_for('index') }}" class="auth-link">Go Back</a>
-        </p>
-        <h1 class="auth-title">Login</h1>
-        <p class="auth-subtitle">Welcome back to MindMetric</p>
+  <main class="auth-container profile-view-wrapper">
+    <div class="content-panel auth-panel profile-panel">
+      
+      <header class="panel-header">
+        <h1 class="panel-title profile-panel-title">Login</h1>
+        <p class="panel-subtitle profile-panel-subtitle">Welcome back to MindMetric</p>
       </header>
 
-      <form action="{{ url_for('login') }}" method="POST" class="auth-form">
-        <div class="form-group">
-          <label class="form-label">Username</label>
-          <input type="text" name="username" class="form-input" required placeholder="Enter your username" />
+      <form action="{{ url_for('login') }}" method="POST" class="semantic-form">
+        
+        <div class="profile-form-group">
+          <label class="profile-form-label" for="username">Username</label>
+          <input type="text" id="username" name="username" class="profile-form-input" placeholder="Enter your username" required />
         </div>
-        <div class="form-group">
-          <label class="form-label">Password</label>
-          <input type="password" name="password" class="form-input" required placeholder="Enter your password" />
+
+        <div class="profile-form-group input-spacer">
+          <label class="profile-form-label" for="password">Password</label>
+          <input type="password" id="password" name="password" class="profile-form-input" placeholder="Enter your password" required />
         </div>
-        <p class="auth-link-text">
-          <a href="{{ url_for('forgot_password') }}" class="auth-link">Forgot password?</a>
-        </p>
-        <button type="submit" class="btn-auth">Sign In</button>
+
+        <div class="profile-form-group" style="margin-top: 0.5rem; align-items: flex-end;">
+          <a href="{{ url_for('forgot_password') }}" class="profile-secondary-link navigation-footer-text">
+            Forgot password?
+          </a>
+        </div>
+
+        <div class="profile-form-group action-spacer">
+          <button type="submit" class="profile-action-btn profile-block-btn">
+            Sign In
+          </button>
+        </div>
+
       </form>
 
-      <footer class="auth-footer">
-        <p class="auth-link-text">
-          <a href="{{ url_for('register') }}" class="auth-link">Create an account?</a>
-        </p>
+      <footer class="panel-footer auth-footer-divider">
+        <a href="{{ url_for('register') }}" class="profile-secondary-link navigation-footer-text">
+          Create an account?
+        </a>
       </footer>
+      
     </div>
   </main>
 {% endblock %}

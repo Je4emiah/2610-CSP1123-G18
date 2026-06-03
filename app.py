@@ -1,24 +1,12 @@
 import sqlite3
-import os
 from flask import Flask, render_template, request, url_for, redirect, jsonify, session, flash, g
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
 from datetime import timedelta
 
 app = Flask(__name__)
 app.secret_key = 'mmu_project_secret_key'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 DATABASE = 'mindmetric.db'
-UPLOAD_FOLDER = os.path.join('static', 'uploads', 'profile_pics')
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# Automatically create the profile picture folder structure if it doesn't exist
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # --- DATABASE HELPERS ---
 def get_db():
@@ -70,7 +58,7 @@ def get_mood_trends(username):
 @app.context_processor
 def inject_user():
     """Exposes session tracking states globally across all HTML templates."""
-    return dict(current_user=session.get('name'))
+    return dict(current_user=session.get('user_id'))
 
 # --- ROUTES ---
 @app.route('/')
@@ -85,19 +73,16 @@ def login():
         remember = request.form.get('remember_me')
         
         db = get_db()
-        # FIXES INDEX ERROR: Fetch BOTH password_hash AND name columns
-        cursor = db.execute("SELECT password_hash, name FROM users WHERE username = ?", (username,))
+        cursor = db.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
 
-        if user and check_password_hash(user['password_hash'], password):
+        if user and check_password_hash(user[0], password):
             session['user_id'] = username
-            session['name'] = user['name']  # Caches display name globally
             if remember:
                 session.permanent = True
             return redirect(url_for('dashboard'))
         else:
-            flash("Invalid username or password.", "danger")
-            return redirect(url_for('login'))
+            return "Invalid username or password", 401
             
     return render_template('login.html')
 
@@ -114,8 +99,7 @@ def forgot_password():
         
         # Verify 3-tier security answer strings
         if user and user['q1_answer'] == a1 and user['q2_answer'] == a2 and user['q3_answer'] == a3:
-            # Pass answers through as hidden parameters to the next form step
-            return render_template('forgot_password.html', user_found=True, username=username, q1=a1, q2=a2, q3=a3)
+            return render_template('forgot_password.html', user_found=True, username=username)
         else:
             flash("Incorrect answers or username not found.", "danger")
             return redirect(url_for('forgot_password'))
@@ -125,84 +109,43 @@ def forgot_password():
 @app.route('/reset_password', methods=['POST'])
 def reset_password():
     username = request.form.get('username')
+    a1 = request.form.get('q1', '').lower().strip()
+    a2 = request.form.get('q2', '').lower().strip()
+    a3 = request.form.get('q3', '').lower().strip()
     new_password = request.form.get('new_password')
     confirm_password = request.form.get('confirm_password')
 
-    # Guard 1: Validate matching parameters
+    # Guard 1: Validate frontend matching parameters
     if new_password != confirm_password:
-        flash("Passwords do not match! Please try again.", "danger")
-        return redirect(url_for('forgot_password'))
+        return "Passwords do not match! <a href='/profile'>Try again</a>", 400
 
     db = get_db()
     user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
 
     # Guard 2: Safety check to confirm user profile row exists
     if not user:
-        flash("User profile data record not found.", "danger")
-        return redirect(url_for('forgot_password'))
+        return "User profile data record not found. <a href='/profile'>Go back</a>", 404
 
-    # Success Loop: Apply secure hash and update database
+    # Guard 3: Authenticate security questions profile keys
+    if user['q1_answer'] != a1 or user['q2_answer'] != a2 or user['q3_answer'] != a3:
+        return "Identity Verification Failed: Security question answers are incorrect! <a href='/profile'>Try again</a>", 403
+
+    # Success Loop: Questions passed, apply secure hash and update database
     hashed_pw = generate_password_hash(new_password)
     db.execute('UPDATE users SET password_hash = ? WHERE username = ?', (hashed_pw, username))
     db.commit()
     
-    flash("Account recovered successfully! You can now log in with your new password.", "success")
-    return redirect(url_for('login'))
-    
+    return "<h2>Success!</h2><p>Identity confirmed and password updated securely.</p><a href='/profile'>Return to Profile</a>"
 
-@app.route('/profile', methods=['GET', 'POST'])
+@app.route('/profile')
 def profile():
     if 'user_id' not in session:
         return redirect(url_for('login'))
         
     username = session['user_id']
     db = get_db()
-    
-    if request.method == 'POST':
-        updated_name = request.form.get('full_name')
-        selected_gender = request.form.get('gender')
-        
-        # Keep old profile picture if no new image is uploaded
-        cursor = db.execute("SELECT profile_pic FROM users WHERE username = ?", (username,))
-        user_row = cursor.fetchone()
-        saved_pic_path = user_row['profile_pic'] if user_row else None
-        
-        # Process new image files safely
-        file = request.files.get('profile_avatar')
-        if file and file.filename != '':
-            if allowed_file(file.filename):
-                clean_filename = secure_filename(f"{username}_{file.filename}")
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], clean_filename))
-                saved_pic_path = f"uploads/profile_pics/{clean_filename}"
-            else:
-                flash("Invalid format! Please use PNG, JPG, JPEG, or GIF.", "danger")
-                return redirect(url_for('profile'))
-                
-        # Commit name, gender choice, and image pointer to database
-        db.execute("""
-            UPDATE users 
-            SET name = ?, gender = ?, profile_pic = ? 
-            WHERE username = ?
-        """, (updated_name, selected_gender, saved_pic_path, username))
-        db.commit()
-        
-        # Keep global greeting matching immediately
-        session['name'] = updated_name
-        
-        flash("Profile updated successfully!", "success")
-        return redirect(url_for('profile'))
-        
-    # GET: Fetch account parameters to fill out interface forms
-    cursor = db.execute("SELECT username, name, gender, profile_pic FROM users WHERE username = ?", (username,))
-    account_info = cursor.fetchone()
-    
-    # Calculate telemetry entries length for summary statistics panels
-    logs_cursor = db.execute("SELECT COUNT(*) as log_count, AVG(mood_score) as avg_score FROM mood_logs WHERE username = ?", (username,))
-    stats = logs_cursor.fetchone()
-    entry_count = stats['log_count'] if stats else 0
-    avg_score = round(stats['avg_score'], 2) if stats and stats['avg_score'] else "0.00"
-    
-    return render_template('profile.html', user=account_info, entry_count=entry_count, avg_score=avg_score)
+    user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+    return render_template('profile.html', user=user)
 
 @app.route('/logout')
 def logout():
@@ -230,7 +173,6 @@ def delete_account():
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
-        full_name = request.form.get('full_name')  # 1. Grab full name from form
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         
@@ -239,24 +181,20 @@ def register():
         q3 = request.form.get('q3', '').lower().strip()
         
         if password != confirm_password:
-            flash("Passwords do not match!", "danger")
-            return redirect(url_for('register'))
+            return "Passwords do not match!", 400
         
         hashed_pw = generate_password_hash(password)
         
         try:
             db = get_db()
-            # 2. Included 'name' column and its binding parameter '?'
             db.execute("""
-                INSERT INTO users (username, name, password_hash, q1_answer, q2_answer, q3_answer) 
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (username, full_name, hashed_pw, q1, q2, q3))
+                INSERT INTO users (username, password_hash, q1_answer, q2_answer, q3_answer) 
+                VALUES (?, ?, ?, ?, ?)
+            """, (username, hashed_pw, q1, q2, q3))
             db.commit()
-            flash("Account created successfully! Please log in.", "success")
             return redirect(url_for('login'))
         except sqlite3.IntegrityError:
-            flash("Username already exists! Please choose a different one.", "danger")
-            return redirect(url_for('register'))
+            return "Username already exists!", 400
                 
     return render_template('register.html')
 
@@ -334,43 +272,32 @@ def history():
 
 @app.route('/api/mood_data/<username>')
 def api_mood_data(username):
-    """Generates down-sampled historical tracking metrics configured for Chart.js rendering."""
-    time_range = request.args.get('range', 'day')
-    offset = int(request.args.get('offset', 0))
+    """Generates historical tracking metrics filtered by a specific year and month."""
+    import datetime
     
-    ranges = {
-        'day': '1 day',
-        'week': '7 days'
-    }
+    # Get parameters from frontend, defaulting to the current year and month
+    now = datetime.datetime.now()
+    year = request.args.get('year', str(now.year))
+    month = request.args.get('month', f"{now.month:02d}") # Ensures 2-digit format '01' through '12'
     
     db = get_db()
     
-    if time_range in ranges:
-        unit = ranges[time_range]
-        start_time = f"datetime('now', '-{(offset + 1)} {unit}')"
-        end_time = f"datetime('now', '-{offset} {unit}')"
+    # Query logs matching the specified year and month (YYYY-MM-%)
+    query = """
+        SELECT timestamp, mood_score 
+        FROM mood_logs 
+        WHERE username = ? 
+        AND strftime('%Y-%m', timestamp) = ?
+        ORDER BY timestamp ASC
+    """
         
-        query = f"""
-                    SELECT timestamp, mood_score 
-                    FROM mood_logs 
-                    WHERE username = ? 
-                    AND datetime(timestamp) >= {start_time} 
-                    AND datetime(timestamp) < {end_time} 
-                    ORDER BY timestamp ASC
-                """
-    else:
-        query = f"""
-                    SELECT timestamp, mood_score
-                    FROM mood_logs
-                    WHERE username = ?
-                    ORDER BY timestamp ASC
-                """
-        
-    rows = db.execute(query, (username,)).fetchall()
+    rows = db.execute(query, (username, f"{year}-{month}")).fetchall()
+    
     return jsonify({
         "labels": [row[0] for row in rows],
         "data": [row[1] for row in rows],
-        "range_type": time_range
+        "current_year": int(year),
+        "current_month": int(month)
     })
     
 @app.route('/api/log_mood', methods=['POST'])
@@ -400,19 +327,15 @@ def init_db():
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )''')
 
-    # 3. Updated table schema parameters to include 'name' column
     db.execute('''CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
-        name TEXT NOT NULL,
         password_hash TEXT NOT NULL,
-        gender TEXT,
-        profile_pic TEXT,
         q1_answer TEXT,
         q2_answer TEXT,
         q3_answer TEXT
     )''')
-    print("Database refreshed and ready with Full Name schema parameters!")
+    print("Database refreshed and ready with Security Questions!")
 
 if __name__ == '__main__':
     with app.app_context():
