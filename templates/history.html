@@ -5,37 +5,98 @@
 
 {% block content %}
   <div class="container py-5">
+    
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="fw-bold"><i class="fas fa-book-open text-primary"></i> Digital Diary</h2>
+      <h2 class="fw-bold">
+        <i class="fas fa-book-open text-primary"></i> Digital Diary
+        <span class="badge bg-secondary fs-6 align-middle ms-2">{{ logs|length }} entries</span>
+      </h2>
       <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+    </div>
+
+    <div class="row justify-content-center mb-4">
+      <div class="col-md-8">
+        <div class="input-group shadow-sm">
+          <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+          <input type="text" id="diarySearchInput" class="form-control border-start-0" placeholder="Filter through your past thoughts...">
+        </div>
+      </div>
     </div>
 
     <div class="row justify-content-center">
       <div class="col-md-8">
         {% if logs %}
           {% for log in logs %}
-            <!-- Standard Bootstrap cards adapt dynamically to dark mode variables -->
-            <div class="card mb-3 shadow-sm border rounded-3">
-              <div class="card-body d-flex align-items-center">
+            <div class="card mb-3 shadow-sm border-0 rounded-3 border-start border-5 {% if log.mood_score >= 4 %}border-success{% elif log.mood_score == 3 %}border-warning{% else %}border-danger{% endif %}" style="background: #fff;">
+              <div class="card-body d-flex align-items-center py-3">
+                
                 <div class="me-4 text-center" style="min-width: 65px;">
-                  <div class="display-6 fw-bold text-primary">{{ log.mood_score }}</div>
-                  <small class="text-muted text-uppercase" style="font-size: 0.6rem;">Mood Score</small>
+                  <div class="display-5 fw-bold {% if log.mood_score >= 4 %}text-success{% elif log.mood_score == 3 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ log.mood_score }}
+                  </div>
+                  <small class="text-uppercase fw-bold text-muted" style="font-size: 0.55rem; letter-spacing: 0.5px;">Score</small>
                 </div>
-                <div class="border-start ps-4 w-100">
-                  <!-- REMOVED text-dark so the font turns white automatically in Dark Mode -->
-                  <p class="mb-1">{{ log.thought_text }}</p>
-                  <small class="text-muted d-block mt-2"><i class="far fa-calendar-alt"></i> {{ log.timestamp }}</small>
+                
+                <div class="ps-3 w-100" style="border-left: 1px solid #eee;">
+                  <p class="mb-0 text-dark" style="font-size: 1.05rem; font-style: italic; color: #2d3748 !important;">
+                    "{{ log.thought_text if log.thought_text else 'Logged entry without additional thoughts.' }}"
+                  </p>
+                  
+            <div class="d-flex align-items-center gap-3 mt-2 text-muted" style="font-size: 0.8rem;">
+              <span>
+                <i class="calendar-icon far fa-calendar-alt text-secondary me-1"></i> 
+                {{ log.timestamp.split(' ')[0] }}
+              </span>
+              <span>
+                <i class="clock-icon far fa-clock text-secondary me-1"></i> 
+                {{ log.timestamp.split(' ')[1] }}
+              </span>
+            </div>
                 </div>
+
               </div>
             </div>
           {% endfor %}
         {% else %}
-          <div class="text-center py-5">
-            <h4 class="text-muted">No entries yet.</h4>
-            <p>When you log your mood on the dashboard, it will appear here!</p>
-          </div>
+<div class="text-center py-5 shadow-sm border rounded-3 bg-white">
+  <div class="display-1 text-muted mb-3">📝</div>
+  <h4 class="text-muted fw-bold">Your Digital Diary is Empty</h4>
+  <p class="text-secondary px-3">You haven't recorded any metrics yet. Start logging your telemetry vectors to map out insights!</p>
+  <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-sm mt-2">
+    <i class="fas fa-plus me-1"></i> Log First Entry
+  </a>
+</div>
         {% endif %}
       </div>
     </div>
   </div>
+
+<script>
+    document.getElementById('diarySearchInput').addEventListener('keyup', function() {
+      let filter = this.value.toLowerCase().trim();
+      let cards = document.querySelectorAll('.card.mb-3'); 
+
+      cards.forEach(card => {
+        // 1. Grab the clean text from the paragraph tag
+        let thoughtText = card.querySelector('p') ? card.querySelector('p').textContent.toLowerCase() : '';
+        
+        // 2. Grab the precise score number text
+        let scoreText = card.querySelector('.display-5') ? card.querySelector('.display-5').textContent.toLowerCase().trim() : '';
+        
+        // 3. Grab the timestamp text safely
+        let timestampText = card.querySelector('.text-muted') ? card.querySelector('.text-muted').textContent.toLowerCase() : '';
+        
+        // Combine them cleanly with spaces so words don't mash together
+        let searchableContent = `${thoughtText} ${scoreText} ${timestampText}`;
+        
+        // Check if your filter keyword matches anything inside the clean content string
+        if (searchableContent.includes(filter)) {
+          card.style.setProperty('display', 'block', 'important');
+        } else {
+          card.style.setProperty('display', 'none', 'important');
+        }
+      });
+    });
+  </script>
+
 {% endblock %}
