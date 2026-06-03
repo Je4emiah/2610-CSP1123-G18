@@ -1,72 +1,84 @@
-// Global State Management
-let currentOffset = 0;
-let currentRange = 'day';
+// Global State Management - Set immediately using the system clock
+const initialDate = new Date();
+let currentYear = initialDate.getFullYear();
+let currentMonth = initialDate.getMonth() + 1; // JS months are 0-11, so we add 1
 let myChart = null; 
 
-//1. Logic for moving between "pages" (Previous/Next)
-function movePage(step) {
-    currentOffset += step;
-    if (currentOffset < 0) currentOffset = 0;
+// Initialize UI elements to match the current month/year on start
+function initFilterSelectors() {
+    const yearSelect = document.getElementById('yearSelect');
     
-    // Disable "Next" if users are at the most recent page
-    document.getElementById('nextBtn').disabled = (currentOffset === 0);
-    updateDashboard();
-}
-
-//2. Logic for changing the time scale (24h / Week / All)
-function changeRange(range) {
-    currentRange = range;
-    currentOffset = 0; 
-    
-    const label = document.getElementById('rangeLabel');
-    const pagingControls = document.getElementById('pagingControls');
-
-    // Update the sub-header text
-    const labels = { 'day': 'Last 24 Hours', 'week': 'This Week', 'all': 'Full History' };
-    label.innerText = labels[range] || 'Overview';
-
-    // Disable paging buttons if viewing "All" data
-    if (range === 'all') {
-        pagingControls.style.opacity = '0.3';
-        pagingControls.style.pointerEvents = 'none';
-    } else {
-        pagingControls.style.opacity = '1';
-        pagingControls.style.pointerEvents = 'auto';
-        document.getElementById('nextBtn').disabled = true;
+    // Safely inject a new option into the Year dropdown if the current year isn't listed yet
+    const yearExists = Array.from(yearSelect.options).some(option => parseInt(option.value) === currentYear);
+    if (!yearExists) {
+        const newYearOption = document.createElement('option');
+        newYearOption.value = currentYear;
+        newYearOption.innerText = currentYear;
+        yearSelect.appendChild(newYearOption);
     }
+
+    // Force the dropdown menus to visually match our current global state variables
+    document.getElementById('monthSelect').value = String(currentMonth).padStart(2, '0');
+    yearSelect.value = currentYear;
+}
+
+// Triggered when a dropdown filter is manually changed by the user
+function handleDropdownChange() {
+    currentMonth = parseInt(document.getElementById('monthSelect').value);
+    currentYear = parseInt(document.getElementById('yearSelect').value);
     updateDashboard();
 }
 
-//Master function to fetch data and render the Cha0rt
+// Logic for stepping backward (-1) or forward (+1) through months
+function adjustMonth(step) {
+    currentMonth += step;
+    
+    // Overflow roll-overs (Handles switching years seamlessly)
+    if (currentMonth > 12) {
+        currentMonth = 1;
+        currentYear += 1;
+    } else if (currentMonth < 1) {
+        currentMonth = 12;
+        currentYear -= 1;
+    }
+
+    // Sync state values back to the DOM dropdowns
+    document.getElementById('monthSelect').value = String(currentMonth).padStart(2, '0');
+    document.getElementById('yearSelect').value = currentYear;
+
+    updateDashboard();
+}
+
+// Master function to fetch data and render Chart.js
 async function updateDashboard() {
     const canvas = document.getElementById('moodChart');
     const counterElement = document.getElementById('dataCounter');
+    const labelElement = document.getElementById('rangeLabel');
     const username = canvas.dataset.username;
     const ctx = canvas.getContext('2d');
 
-    // Visual feedback
     if (counterElement) counterElement.innerText = "Refreshing...";
 
+    // Format current month for display text
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    if (labelElement) {
+        labelElement.innerText = `${monthNames[currentMonth - 1]} ${currentYear}`;
+    }
+
     try {
-        const response = await fetch(`/api/mood_data/${username}?range=${currentRange}&offset=${currentOffset}`);
+        const paddedMonth = String(currentMonth).padStart(2, '0');
+        const response = await fetch(`/api/mood_data/${username}?year=${currentYear}&month=${paddedMonth}`);
         const data = await response.json();
 
-        // Update Counter
+        // Update Counter display metadata
         if (counterElement) {
             const count = data.data.length;
             counterElement.innerText = `${count} entries found`;
-            
-            // Toggle red color if empty
-            if (count === 0) {
-                counterElement.style.color = "#ef4444";
-            } else {
-                counterElement.style.color = "#94a3b8";
-            }
+            counterElement.style.color = count === 0 ? "#ef4444" : "#94a3b8";
         }
 
         if (myChart) { myChart.destroy(); }
 
-        // Create a vertical gradient for the line area
         const gradient = ctx.createLinearGradient(0, 0, 0, 400);
         gradient.addColorStop(0, 'rgba(0, 212, 255, 0.4)');
         gradient.addColorStop(1, 'rgba(0, 212, 255, 0)');
@@ -74,44 +86,30 @@ async function updateDashboard() {
         myChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: data.labels.map(label => label.split(' ')[1] || label), // Shorten timestamps
+                labels: data.labels.map(label => {
+                    // Pulls only the date string portion for a cleaner monthly axis
+                    return label.split(' ')[0] || label; 
+                }),
                 datasets: [{
                     label: 'Mood Level',
                     data: data.data,
                     borderColor: '#00D4FF',
-                    backgroundColor: gradient, // Use the gradient
+                    backgroundColor: gradient,
                     borderWidth: 4,
                     pointBackgroundColor: '#ffffff',
                     pointBorderColor: '#00D4FF',
                     pointRadius: 5,
-                    pointHoverRadius: 8,
-                    tension: 0.4, // Smooth curves
+                    tension: 0.4,
                     fill: true
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }, // Hide legend for cleaner look
-                    tooltip: {
-                        backgroundColor: '#1e293b',
-                        titleColor: '#00D4FF',
-                        bodyColor: '#f8fafc',
-                        cornerRadius: 8,
-                        padding: 12
-                    }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    y: { 
-                        min: 0, max: 6, // Padding at top and bottom
-                        ticks: { stepSize: 1, color: '#94a3b8' },
-                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
-                    },
-                    x: {
-                        ticks: { color: '#94a3b8' },
-                        grid: { display: false }
-                    }
+                    y: { min: 0, max: 6, ticks: { stepSize: 1, color: '#94a3b8' } },
+                    x: { ticks: { color: '#94a3b8' } }
                 }
             }
         });
@@ -121,66 +119,8 @@ async function updateDashboard() {
     }
 }
 
-// 4. Logic for the Mood Input Form
-async function saveMood() {
-    const score = document.getElementById('moodScore').value;
-    const thought = document.getElementById('thoughtText').value;
-    const username = document.getElementById('moodChart').dataset.username;
-
-    try {
-        const response = await fetch('/api/log_mood', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username: username,
-                mood_score: parseInt(score),
-                thought_text: thought
-            })
-        });
-
-        const result = await response.json();
-        if (result.status === 'success') {
-            document.getElementById('thoughtText').value = '';
-            // Immediately refresh the current view
-            updateDashboard();
-        }
-    } catch (error) {
-        console.error('Submission failed:', error);
-    }
-}
-
-// 5. Auto-Initialize on page load
+// Auto-Initialize strictly in the correct order on page load
 document.addEventListener('DOMContentLoaded', () => {
-    updateDashboard();
+    initFilterSelectors(); // 1. Align the UI dropdown elements first
+    updateDashboard();     // 2. Fetch the current calendar date data immediately
 });
-
-function generateInsight(data) {
-    if (data.length === 0) return "Start logging to see insights!";
-
-    // Calculate the average score
-    const avg = data.reduce((a, b) => a + b, 0) / data.length;
-    
-    // The "Dictionary" logic
-    const insights = {
-        5: "You're on fire! Keep doing what makes you happy. 🌟",
-        4: "Looking good! A steady week so far. 👍",
-        3: "A bit of a neutral week. Maybe try a new hobby? ☕",
-        2: "Things seem tough. Don't forget to take a break. 🌿",
-        1: "It's okay to have bad days. Reach out to a friend. ❤️"
-    };
-
-    // Round the average to the nearest whole number to match the dictionary keys
-    const scoreKey = Math.round(avg);
-    return insights[scoreKey] || "Keep tracking to find your pattern!";
-}
-
-// Then, inside updateDashboard, after fetching 'data':
-const insightBox = document.getElementById('insightBox');
-const insightText = document.getElementById('insightText');
-
-if (currentRange === 'week' && data.data.length > 0) {
-    insightBox.style.display = 'block';
-    insightText.innerText = generateInsight(data.data);
-} else {
-    insightBox.style.display = 'none';
-}

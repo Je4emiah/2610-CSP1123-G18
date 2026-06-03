@@ -272,43 +272,32 @@ def history():
 
 @app.route('/api/mood_data/<username>')
 def api_mood_data(username):
-    """Generates down-sampled historical tracking metrics configured for Chart.js rendering."""
-    time_range = request.args.get('range', 'day')
-    offset = int(request.args.get('offset', 0))
+    """Generates historical tracking metrics filtered by a specific year and month."""
+    import datetime
     
-    ranges = {
-        'day': '1 day',
-        'week': '7 days'
-    }
+    # Get parameters from frontend, defaulting to the current year and month
+    now = datetime.datetime.now()
+    year = request.args.get('year', str(now.year))
+    month = request.args.get('month', f"{now.month:02d}") # Ensures 2-digit format '01' through '12'
     
     db = get_db()
     
-    if time_range in ranges:
-        unit = ranges[time_range]
-        start_time = f"datetime('now', '-{(offset + 1)} {unit}')"
-        end_time = f"datetime('now', '-{offset} {unit}')"
+    # Query logs matching the specified year and month (YYYY-MM-%)
+    query = """
+        SELECT timestamp, mood_score 
+        FROM mood_logs 
+        WHERE username = ? 
+        AND strftime('%Y-%m', timestamp) = ?
+        ORDER BY timestamp ASC
+    """
         
-        query = f"""
-                    SELECT timestamp, mood_score 
-                    FROM mood_logs 
-                    WHERE username = ? 
-                    AND datetime(timestamp) >= {start_time} 
-                    AND datetime(timestamp) < {end_time} 
-                    ORDER BY timestamp ASC
-                """
-    else:
-        query = f"""
-                    SELECT timestamp, mood_score
-                    FROM mood_logs
-                    WHERE username = ?
-                    ORDER BY timestamp ASC
-                """
-        
-    rows = db.execute(query, (username,)).fetchall()
+    rows = db.execute(query, (username, f"{year}-{month}")).fetchall()
+    
     return jsonify({
         "labels": [row[0] for row in rows],
         "data": [row[1] for row in rows],
-        "range_type": time_range
+        "current_year": int(year),
+        "current_month": int(month)
     })
     
 @app.route('/api/log_mood', methods=['POST'])

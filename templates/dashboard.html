@@ -55,10 +55,28 @@
         <div class="content-panel visualization-module">
           <header class="view-header">
             <h2 class="section-label">Mood Insights</h2>
-            <div class="controls-bar">
-              <button class="nav-item-btn" onclick="changeRange('day')">24h</button>
-              <button class="nav-item-btn" onclick="changeRange('week')">Week</button>
-              <button class="nav-item-btn" onclick="changeRange('all')">All</button>
+            <div class="controls-bar" style="display: flex; gap: 10px; align-items: center;">
+              <select id="monthSelect" class="input-field" onchange="handleDropdownChange()" style="padding: 5px 10px; width: auto; margin: 0;">
+                <option value="01">January</option>
+                <option value="02">February</option>
+                <option value="03">March</option>
+                <option value="04">April</option>
+                <option value="05">May</option>
+                <option value="06">June</option>
+                <option value="07">July</option>
+                <option value="08">August</option>
+                <option value="09">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+
+              <select id="yearSelect" class="input-field" onchange="handleDropdownChange()" style="padding: 5px 10px; width: auto; margin: 0;">
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+              </select>
+
               <span id="dataCounter" class="status-counter">Loading...</span>
             </div>
           </header>
@@ -68,9 +86,9 @@
           </div>
 
           <footer id="pagingControls" class="view-footer">
-            <button id="prevBtn" class="nav-item-btn" onclick="movePage(1)">← Previous</button>
-            <span id="rangeLabel" class="range-date-label">Current Day</span>
-            <button id="nextBtn" class="nav-item-btn" onclick="movePage(-1)" disabled>Next →</button>
+            <button id="prevBtn" class="nav-item-btn" onclick="adjustMonth(-1)">← Previous Month</button>
+            <span id="rangeLabel" class="range-date-label" style="font-weight: bold;">Loading Date...</span>
+            <button id="nextBtn" class="nav-item-btn" onclick="adjustMonth(1)">Next Month →</button>
           </footer>
         </div>
       </div>
