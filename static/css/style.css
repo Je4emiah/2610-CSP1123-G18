@@ -1,8 +1,7 @@
 /* ==========================================================================
-   1. CORE VARIABLES & CUSTOM DESIGN TOKENS
+   1. CORE VARIABLES & BRANDING TOKENS
    ========================================================================== */
 :root {
-    /* --- Light Theme Design Matrix --- */
     --bg-main: #f8fafc;
     --bg-panel: #ffffff;
     --text-main: #1e293b;
@@ -17,7 +16,68 @@
 }
 
 /* ==========================================================================
-   2. GLOBAL DOCUMENT RESET
+   2. AUTOMATIC DARK THEME OVERRIDES
+   ========================================================================== */
+[data-bs-theme="dark"] {
+    --bg-main: #0f172a;
+    --bg-panel: #1e293b;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border: #334155;
+
+    background-color: var(--bg-main) !important;
+}
+
+[data-bs-theme="dark"] .card,
+[data-bs-theme="dark"] .content-panel,
+[data-bs-theme="dark"] .auth-panel,
+[data-bs-theme="dark"] .auth-card {
+    background-color: var(--bg-panel) !important;
+    border-color: var(--border) !important;
+    color: var(--text-main) !important;
+    box-shadow: none !important;
+}
+
+[data-bs-theme="dark"] p,
+[data-bs-theme="dark"] h1,
+[data-bs-theme="dark"] h2,
+[data-bs-theme="dark"] h3,
+[data-bs-theme="dark"] h4,
+[data-bs-theme="dark"] .text-dark,
+[data-bs-theme="dark"] .mb-1 {
+    color: var(--text-main) !important;
+}
+
+[data-bs-theme="dark"] .input-field,
+[data-bs-theme="dark"] .profile-form-input,
+[data-bs-theme="dark"] .form-input,
+[data-bs-theme="dark"] select {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+    border-color: #475569 !important;
+}
+
+[data-bs-theme="dark"] .dropdown-menu {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+}
+
+[data-bs-theme="dark"] .dropdown-item {
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] .dropdown-item:hover {
+    background-color: #334155 !important;
+}
+
+[data-bs-theme="dark"] .profile-form-group {
+    border-left: 1px solid var(--border);
+    padding-left: 1.5rem;
+    width: 100%;
+}
+
+/* ==========================================================================
+   3. GLOBAL DOCUMENT RESET
    ========================================================================== */
 * {
     box-sizing: border-box;
@@ -37,7 +97,7 @@ body {
 }
 
 /* ==========================================================================
-   3. STRUCTURAL SITEWIDE LAYOUT
+   4. STRUCTURAL SITEWIDE LAYOUT (HEADER / FOOTER)
    ========================================================================== */
 .app-header {
     background: var(--bg-panel);
@@ -86,14 +146,15 @@ body {
 }
 
 /* ==========================================================================
-   4. FORM INFRASTRUCTURE & INTERACTIVE BUTTONS
+   5. FORM INFRASTRUCTURE & INTERACTIVE BUTTONS
    ========================================================================== */
 .form-group {
     margin-bottom: 1.5rem;
     width: 100%;
 }
 
-.form-label, .field-label {
+.form-label,
+.field-label {
     display: block;
     margin-bottom: 0.5rem;
     color: var(--text-main);
@@ -105,7 +166,8 @@ body {
     color: var(--text-muted);
 }
 
-.form-input, .input-field {
+.form-input,
+.input-field {
     width: 100%;
     padding: 0.75rem 1rem;
     background-color: var(--bg-main);
@@ -117,7 +179,8 @@ body {
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.form-input:focus, .input-field:focus {
+.form-input:focus,
+.input-field:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
     outline: none;
@@ -128,8 +191,10 @@ body {
     resize: vertical;
 }
 
-/* Base Semantic Actions */
-.action-btn, .btn-auth, .btn-primary {
+/* Primary Action Tokens */
+.action-btn,
+.btn-auth,
+.btn-primary {
     display: inline-block;
     padding: 0.75rem 1.5rem;
     font-family: inherit;
@@ -142,13 +207,15 @@ body {
     transition: all 0.2s ease;
 }
 
-.action-btn, .btn-auth {
+.action-btn,
+.btn-auth {
     background: var(--accent);
     color: #ffffff;
     border: none;
 }
 
-.action-btn:hover, .btn-auth:hover {
+.action-btn:hover,
+.btn-auth:hover {
     background: var(--accent-hover);
 }
 
@@ -156,7 +223,6 @@ body {
     width: 100%;
 }
 
-/* Secondary / Bordered Button Styles */
 .btn-primary {
     background: transparent;
     color: var(--accent);
@@ -168,8 +234,9 @@ body {
     color: #ffffff;
 }
 
-/* Navigation & Header Actions */
-.nav-item, .nav-item-btn {
+/* Nav Link Interaction States */
+.nav-item,
+.nav-item-btn {
     background: var(--bg-panel);
     border: 1px solid var(--border);
     color: var(--text-muted);
@@ -183,7 +250,9 @@ body {
     white-space: nowrap;
 }
 
-.nav-item:hover, .nav-item.active, .nav-item-btn:hover {
+.nav-item:hover,
+.nav-item.active,
+.nav-item-btn:hover {
     border-color: var(--accent);
     color: var(--accent);
     background: rgba(37, 99, 235, 0.04);
@@ -197,9 +266,11 @@ body {
 }
 
 /* ==========================================================================
-   5. REUSABLE CONTAINER PANELS (CARDS)
+   6. REUSABLE CONTAINER PANELS (CARDS & LAYOUTS)
    ========================================================================== */
-.content-panel, .data-card, .auth-card {
+.content-panel,
+.data-card,
+.auth-card {
     background: var(--bg-panel);
     padding: 2rem;
     border-radius: var(--radius-standard);
@@ -208,7 +279,9 @@ body {
     width: 100%;
 }
 
-.auth-panel, .auth-card, .data-card {
+.auth-panel,
+.auth-card,
+.data-card {
     max-width: 420px;
     margin: 0 auto;
 }
@@ -251,32 +324,32 @@ body {
     color: var(--text-muted);
 }
 
-.panel-link-text a, .secondary-link {
+.panel-link-text a,
+.secondary-link {
     color: var(--accent);
     text-decoration: none;
     font-weight: 600;
 }
 
-.panel-link-text a:hover, .secondary-link:hover {
+.panel-link-text a:hover,
+.secondary-link:hover {
     text-decoration: underline;
 }
 
 /* ==========================================================================
-   6. THREE-SECTION FULLSCREEN STORY RUNTIME
+   7. FULLSCREEN DASHBOARD STORY ENGINE
    ========================================================================== */
 .dashboard-story-wrapper {
-    height: calc(100vh - 70px);
-    overflow-y: scroll;
-    scroll-snap-type: y mandatory;
+    min-height: calc(100vh - 70px);
     scroll-behavior: smooth;
+    overflow-y: visible !important;
 }
 
 .dashboard-story-wrapper::-webkit-scrollbar {
-    display: none; 
+    display: none;
 }
 
 .story-section {
-    scroll-snap-align: start;
     min-height: calc(100vh - 70px);
     width: 100%;
     display: flex;
@@ -294,9 +367,17 @@ body {
     gap: 1.5rem;
 }
 
-.max-width-md { max-width: 550px; }
-.max-width-lg { max-width: 900px; }
-.text-center { text-align: center; }
+.max-width-md {
+    max-width: 550px;
+}
+
+.max-width-lg {
+    max-width: 900px;
+}
+
+.text-center {
+    text-align: center;
+}
 
 .main-title {
     font-size: 3rem;
@@ -321,7 +402,7 @@ body {
 }
 
 /* ==========================================================================
-   7. MACHINE INTERACTION MODULES (AI & VISUALIZATION)
+   8. TELEMETRY & MACHINE DATA ENGINE (AI / CHARTS)
    ========================================================================== */
 .insight-module {
     display: flex;
@@ -340,9 +421,17 @@ body {
 }
 
 @keyframes floating-pulse {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-8px); }
-    100% { transform: translateY(0px); }
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
 }
 
 .ai-review-container {
@@ -417,7 +506,7 @@ body {
 }
 
 /* ==========================================================================
-   8. SHARED SYSTEM COMPONENT MODULE (PROFILE & AUTHENTICATION)
+   9. ACCOUNT & PROFILE CONFIGURATION HUB
    ========================================================================== */
 .profile-view-wrapper {
     padding: 2rem 1rem;
@@ -546,6 +635,9 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    border-left: 1px solid var(--border);
+    padding-left: 1.5rem;
+    width: 100%;
 }
 
 .input-spacer {
@@ -565,7 +657,6 @@ body {
     font-size: 0.95rem;
     background: transparent;
     color: var(--text-main);
-    width: 100%;
 }
 
 .static-input {
@@ -612,6 +703,11 @@ body {
     border-color: rgba(239, 68, 68, 0.3);
 }
 
+body.dark-theme .purge-danger-zone {
+    border-color: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.02);
+}
+
 .profile-delete-btn {
     background: #ef4444;
     color: #ffffff;
@@ -636,37 +732,111 @@ body {
     color: var(--accent);
 }
 
-/* Auth Specific Grid Alignment Updates */
-.auth-panel.profile-panel {
-    max-width: 500px;
-    margin: 0 auto;
+.profile-avatar-box img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
 }
 
-.security-setup-gate {
-    margin-top: 1.5rem;
-    border-top: 1px solid var(--border);
-    padding-top: 1.5rem;
+.avatar-upload-overlay:hover {
+    transform: scale(1.15) !important;
+    background-color: #1d4ed8 !important;
 }
 
-.verification-header-text {
-    color: var(--text-main);
-    font-size: 0.95rem;
-    margin-bottom: 1rem;
-    display: block;
+/* ==========================================================================
+   10. DIARY HISTORY ARCHIVE MODIFIERS
+   ========================================================================== */
+.profile-header-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    width: 100%;
 }
 
-.action-spacer {
-    margin-top: 2rem;
+.profile-main-layout {
+    display: flex;
+    justify-content: center;
+    width: 100%;
 }
 
-.auth-footer-divider {
-    margin-top: 1.5rem;
-    border-top: 1px solid var(--border);
-    padding-top: 1rem;
+.profile-content-column {
+    width: 100%;
+    max-width: 750px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.profile-data-card {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    width: 100%;
+}
+
+.profile-metric-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
     text-align: center;
 }
 
-.navigation-footer-text {
+.profile-metric-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1.1;
+}
+
+.profile-metric-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-top: 0.25rem;
+    white-space: nowrap;
+}
+
+.profile-text-display {
+    font-size: 1rem;
+    color: var(--text-main);
+    line-height: 1.5;
+}
+
+.profile-timestamp-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+}
+
+.profile-empty-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.profile-button-secondary {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
     text-decoration: none;
-    font-size: 0.9rem;
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-interactive);
+    transition: all 0.2s ease;
+}
+
+.profile-button-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(37, 99, 235, 0.04);
 }

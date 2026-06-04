@@ -4,33 +4,34 @@
 {% endblock %}
 
 {% block content %}
-  <div class="container py-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="fw-bold"><i class="fas fa-book-open text-primary"></i> Digital Diary</h2>
-      <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
-    </div>
+  <div class="auth-container">
+    <div class="profile-main-layout">
+      <div class="profile-content-column">
+        <div class="profile-header-group">
+          <h2><i class="fas fa-book-open"></i> Digital Diary</h2>
+          <a href="{{ url_for('dashboard') }}" class="profile-button-secondary">Back to Dashboard</a>
+        </div>
 
-    <div class="row justify-content-center">
-      <div class="col-md-8">
+        <!-- Mood Entry Records Stream -->
         {% if logs %}
           {% for log in logs %}
-            <div class="card mb-3 shadow-sm border-0 rounded-3">
-              <div class="card-body d-flex align-items-center">
-                <div class="me-4 text-center">
-                  <div class="display-6 fw-bold text-primary">{{ log.mood_score }}</div>
-                  <small class="text-muted text-uppercase" style="font-size: 0.6rem;">Mood Score</small>
+            <div class="profile-panel">
+              <div class="profile-data-card">
+                <div class="profile-metric-node">
+                  <div class="profile-metric-value">{{ log.mood_score }}</div>
+                  <small class="profile-metric-label">Mood Score</small>
                 </div>
-                <div class="border-start ps-4 w-100">
-                  <p class="mb-1 text-dark">{{ log.thought_text }}</p>
-                  <small class="text-muted d-block mt-2"><i class="far fa-calendar-alt"></i> {{ log.timestamp }}</small>
+                <div class="profile-form-group">
+                  <p class="profile-text-display">{{ log.thought_text }}</p>
+                  <small class="profile-timestamp-label"><i class="far fa-calendar-alt"></i> {{ log.timestamp }}</small>
                 </div>
               </div>
             </div>
           {% endfor %}
         {% else %}
-          <div class="text-center py-5">
-            <h4 class="text-muted">No entries yet.</h4>
-            <p>When you log your mood on the dashboard, it will appear here!</p>
+          <div class="profile-panel text-center">
+            <h4 class="profile-empty-title">No entries yet.</h4>
+            <p class="profile-text-display">When you log your mood on the dashboard, it will appear here!</p>
           </div>
         {% endif %}
       </div>
