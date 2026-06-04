@@ -2,6 +2,7 @@
    1. CORE VARIABLES & CUSTOM DESIGN TOKENS
    ========================================================================== */
 :root {
+    /* --- Light Theme Design Matrix --- */
     --bg-main: #f8fafc;
     --bg-panel: #ffffff;
     --text-main: #1e293b;
@@ -13,65 +14,6 @@
     --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
     --radius-standard: 12px;
     --radius-interactive: 8px;
-}
-
-/* ==========================================================================\
-   1B. AUTOMATIC DARK MODE VARIANT OVERRIDES
-   ========================================================================== */
-[data-bs-theme="dark"] {
-    /* Redefine your core layout color design tokens */
-    --bg-main: #0f172a;       /* Dark slate background body */
-    --bg-panel: #1e293b;      /* Dark slate cards/modules */
-    --text-main: #f8fafc;     /* Off-white readable text */
-    --text-muted: #94a3b8;    /* Muted grey descriptions */
-    --border: #334155;        /* Subdued border dividers */
-    
-    /* Force body override background */
-    background-color: var(--bg-main) !important;
-}
-
-/* Fix history page card layouts and custom container modules */
-[data-bs-theme="dark"] .card,
-[data-bs-theme="dark"] .content-panel,
-[data-bs-theme="dark"] .auth-panel,
-[data-bs-theme="dark"] .auth-card {
-    background-color: var(--bg-panel) !important;
-    border-color: var(--border) !important;
-    color: var(--text-main) !important;
-    box-shadow: none !important;
-}
-
-/* Banish hardcoded black text utility conflicts */
-[data-bs-theme="dark"] p,
-[data-bs-theme="dark"] h1,
-[data-bs-theme="dark"] h2,
-[data-bs-theme="dark"] h3,
-[data-bs-theme="dark"] h4,
-[data-bs-theme="dark"] .text-dark,
-[data-bs-theme="dark"] .mb-1 {
-    color: var(--text-main) !important;
-}
-
-/* Ensure data inputs, selectors, and dropdown textareas adjust */
-[data-bs-theme="dark"] .input-field,
-[data-bs-theme="dark"] .profile-form-input,
-[data-bs-theme="dark"] .form-input,
-[data-bs-theme="dark"] select {
-    background-color: #1e293b !important;
-    color: #ffffff !important;
-    border-color: #475569 !important;
-}
-
-/* Align user profile dropdown control items */
-[data-bs-theme="dark"] .dropdown-menu {
-    background-color: #1e293b !important;
-    border-color: #475569 !important;
-}
-[data-bs-theme="dark"] .dropdown-item {
-    color: #f8fafc !important;
-}
-[data-bs-theme="dark"] .dropdown-item:hover {
-    background-color: #334155 !important;
 }
 
 /* ==========================================================================
@@ -323,9 +265,10 @@ body {
    6. THREE-SECTION FULLSCREEN STORY RUNTIME
    ========================================================================== */
 .dashboard-story-wrapper {
-    min-height: calc(100vh - 70px);
+    height: calc(100vh - 70px);
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
     scroll-behavior: smooth;
-    overflow-y: visible !important; 
 }
 
 .dashboard-story-wrapper::-webkit-scrollbar {
@@ -333,6 +276,7 @@ body {
 }
 
 .story-section {
+    scroll-snap-align: start;
     min-height: calc(100vh - 70px);
     width: 100%;
     display: flex;
@@ -473,7 +417,7 @@ body {
 }
 
 /* ==========================================================================
-   8. PROFILE DASHBOARD MODULE COMPONENT SYSTEM
+   8. SHARED SYSTEM COMPONENT MODULE (PROFILE & AUTHENTICATION)
    ========================================================================== */
 .profile-view-wrapper {
     padding: 2rem 1rem;
@@ -621,6 +565,7 @@ body {
     font-size: 0.95rem;
     background: transparent;
     color: var(--text-main);
+    width: 100%;
 }
 
 .static-input {
@@ -667,11 +612,6 @@ body {
     border-color: rgba(239, 68, 68, 0.3);
 }
 
-body.dark-theme .purge-danger-zone {
-    border-color: rgba(239, 68, 68, 0.2);
-    background: rgba(239, 68, 68, 0.02);
-}
-
 .profile-delete-btn {
     background: #ef4444;
     color: #ffffff;
@@ -696,16 +636,37 @@ body.dark-theme .purge-danger-zone {
     color: var(--accent);
 }
 
-/* Ensure the avatar box properly presents an uploaded picture */
-.profile-avatar-box img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    display: block !important;
+/* Auth Specific Grid Alignment Updates */
+.auth-panel.profile-panel {
+    max-width: 500px;
+    margin: 0 auto;
 }
 
-/* Smooth zoom transition on hover */
-.avatar-upload-overlay:hover {
-    transform: scale(1.15) !important;
-    background-color: #1d4ed8 !important;
+.security-setup-gate {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.5rem;
+}
+
+.verification-header-text {
+    color: var(--text-main);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.action-spacer {
+    margin-top: 2rem;
+}
+
+.auth-footer-divider {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+    text-align: center;
+}
+
+.navigation-footer-text {
+    text-decoration: none;
+    font-size: 0.9rem;
 }
