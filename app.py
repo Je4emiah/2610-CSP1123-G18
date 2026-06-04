@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import datetime
 from flask import Flask, render_template, request, url_for, redirect, jsonify, session, flash, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -70,7 +71,7 @@ def get_mood_trends(username):
 @app.context_processor
 def inject_user():
     """Exposes session tracking states globally across all HTML templates."""
-    return dict(current_user=session.get('name'))
+    return dict(current_user=session.get('name') if session.get('name') else session.get('user_id'))
 
 # --- ROUTES ---
 @app.route('/')
@@ -85,7 +86,7 @@ def login():
         remember = request.form.get('remember_me')
         
         db = get_db()
-        # FIXES INDEX ERROR: Fetch BOTH password_hash AND name columns
+        # Fetches both password_hash and name columns to support global greeting states
         cursor = db.execute("SELECT password_hash, name FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
 
@@ -149,7 +150,6 @@ def reset_password():
     flash("Account recovered successfully! You can now log in with your new password.", "success")
     return redirect(url_for('login'))
     
-
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
     if 'user_id' not in session:
@@ -230,7 +230,7 @@ def delete_account():
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
-        full_name = request.form.get('full_name')  # 1. Grab full name from form
+        full_name = request.form.get('full_name')  # Grab full name from form
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         
@@ -246,7 +246,7 @@ def register():
         
         try:
             db = get_db()
-            # 2. Included 'name' column and its binding parameter '?'
+            # Included 'name' column and its binding parameter '?'
             db.execute("""
                 INSERT INTO users (username, name, password_hash, q1_answer, q2_answer, q3_answer) 
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -334,43 +334,29 @@ def history():
 
 @app.route('/api/mood_data/<username>')
 def api_mood_data(username):
-    """Generates down-sampled historical tracking metrics configured for Chart.js rendering."""
-    time_range = request.args.get('range', 'day')
-    offset = int(request.args.get('offset', 0))
-    
-    ranges = {
-        'day': '1 day',
-        'week': '7 days'
-    }
+    """Generates historical tracking metrics filtered by a specific year and month."""
+    now = datetime.datetime.now()
+    year = request.args.get('year', str(now.year))
+    month = request.args.get('month', f"{now.month:02d}") # Ensures 2-digit format '01' through '12'
     
     db = get_db()
     
-    if time_range in ranges:
-        unit = ranges[time_range]
-        start_time = f"datetime('now', '-{(offset + 1)} {unit}')"
-        end_time = f"datetime('now', '-{offset} {unit}')"
+    # Query logs matching the specified year and month (YYYY-MM)
+    query = """
+        SELECT timestamp, mood_score 
+        FROM mood_logs 
+        WHERE username = ? 
+        AND strftime('%Y-%m', timestamp) = ?
+        ORDER BY timestamp ASC
+    """
         
-        query = f"""
-                    SELECT timestamp, mood_score 
-                    FROM mood_logs 
-                    WHERE username = ? 
-                    AND datetime(timestamp) >= {start_time} 
-                    AND datetime(timestamp) < {end_time} 
-                    ORDER BY timestamp ASC
-                """
-    else:
-        query = f"""
-                    SELECT timestamp, mood_score
-                    FROM mood_logs
-                    WHERE username = ?
-                    ORDER BY timestamp ASC
-                """
-        
-    rows = db.execute(query, (username,)).fetchall()
+    rows = db.execute(query, (username, f"{year}-{month}")).fetchall()
+    
     return jsonify({
         "labels": [row[0] for row in rows],
         "data": [row[1] for row in rows],
-        "range_type": time_range
+        "current_year": int(year),
+        "current_month": int(month)
     })
     
 @app.route('/api/log_mood', methods=['POST'])
@@ -400,7 +386,7 @@ def init_db():
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )''')
 
-    # 3. Updated table schema parameters to include 'name' column
+    # Updated table schema parameters to include 'name', 'gender', and 'profile_pic' columns
     db.execute('''CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
@@ -412,7 +398,7 @@ def init_db():
         q2_answer TEXT,
         q3_answer TEXT
     )''')
-    print("Database refreshed and ready with Full Name schema parameters!")
+    print("Database refreshed and ready with Full Name schema parameters & Security Questions!")
 
 if __name__ == '__main__':
     with app.app_context():
