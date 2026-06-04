@@ -1,0 +1,289 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="dashboard-grid-container">
+
+  <div style="display: flex; flex-direction: column; gap: 2rem;">
+    
+    <div class="dashboard-card-unit">
+      <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em;">Log Your Mind</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Record your tracking configurations safely.</p>
+      
+      <div class="blind-mode-panel">
+        <div>
+          <p style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.15rem; display: flex; align-items: center; gap: 0.35rem;">
+            <span>Blind Data Privacy Mode</span>
+          </p>
+          <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0;">Stripped server records. Cache reflections locally.</p>
+        </div>
+        <label class="toggle-switch-wrapper">
+          <input type="checkbox" id="blindModeToggle">
+          <span class="slider-switch"></span>
+        </label>
+      </div>
+
+      <form id="moodForm" action="{{ url_for('dashboard') }}" method="POST" style="display: flex; flex-direction: column;">
+        <div class="form-group">
+          <label for="moodScore" class="field-label">How are you feeling?</label>
+          <select class="input-field" id="moodScore" name="mood_score">
+            <option value="5">🔥 Great</option>
+            <option value="4">😊 Good</option>
+            <option value="3" selected>😐 Neutral</option>
+            <option value="2">☹️ Bad</option>
+            <option value="1">😫 Terrible</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="field-label">Quick Notes / Reflections</label>
+          <textarea id="thoughtText" name="thought" class="input-field dynamic-textarea" placeholder="What's on your mind?"></textarea>
+        </div>
+
+        <button type="submit" class="action-btn block-btn">Save Entry</button>
+      </form>
+    </div>
+
+    <div class="dashboard-card-unit">
+      <h2 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em;">Google Fit Telemetry</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">Extract real-time hardware telemetry streams directly into the sandbox layer.</p>
+      
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+          <span style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted);">Link Status</span>
+          <p class="status-chip {% if session.fit_access_token %}status-connected{% else %}status-disconnected{% endif %}">
+            {% if session.fit_access_token %}CONNECTED{% else %}DISCONNECTED{% endif %}
+          </p>
+        </div>
+        <a href="{{ url_for('fit_auth') }}" class="nav-item" style="border-color: var(--accent); color: var(--accent); font-size: 0.85rem;">
+          {% if session.fit_access_token %}Reauthorize Link{% else %}Connect Google Fit{% endif %}
+        </a>
+      </div>
+
+      {% if session.fit_access_token %}
+        <button id="fetchFitDataBtn" class="action-btn block-btn" style="background: #0284c7;">Query Raw Activity Stream</button>
+        <div id="fitTelemetryContainer" class="raw-telemetry-container" style="display: none;">
+          <div style="text-align: center; color: var(--text-muted);">Fetching activity stream metrics...</div>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 2rem;">
+    
+    <div class="dashboard-card-unit">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.5rem; font-weight: 700; margin: 0; letter-spacing: -0.02em;">Mood Analytics Insights</h2>
+        <span class="badge-blind-indicator" style="background: rgba(79, 70, 229, 0.1); color: var(--accent);">Active User Timeline</span>
+      </div>
+      <div style="position: relative; width: 100%; height: 320px;">
+        <canvas id="moodTelemetryChart"></canvas>
+      </div>
+    </div>
+
+    <div class="dashboard-card-unit">
+      <h3 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em;">Digital Diary Timeline</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Blended execution pipeline syncing server scores and local memories.</p>
+      
+      <div id="historyTimelineScroller" class="history-scroller-box">
+        <div style="text-align: center; color: var(--text-muted); padding: 2rem;">Initializing diary sync engine...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const ACTIVE_STUDENT_ID = "{{ session.user_id }}";
+  let moodChartInstance = null;
+
+  document.addEventListener("DOMContentLoaded", function() {
+      // 1. Initialize Toggle System Configurations to avoid lost operational states
+      if (localStorage.getItem('mindmetric_blind_active') === 'true') {
+          document.getElementById('blindModeToggle').checked = true;
+      }
+
+      document.getElementById('blindModeToggle').addEventListener('change', function(e) {
+          localStorage.setItem('mindmetric_blind_active', e.target.checked);
+      });
+
+      // 2. Load Visual Telemetry Timeline and Blended List
+      syncDashboardDataPipeline();
+
+      // 3. Form Submission Interceptor Logic
+      document.getElementById('moodForm').addEventListener('submit', function(e) {
+          const isBlindActive = document.getElementById('blindModeToggle').checked;
+          if (!isBlindActive) return; // Allow normal fallback submission routing if disabled
+
+          e.preventDefault();
+          
+          const scoreValue = document.getElementById('moodScore').value;
+          const confidentialText = document.getElementById('thoughtText').value;
+
+          // Dispatch stripped records payload definitions directly to server endpoints
+          fetch('/api/log_mood', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  mood_score: parseInt(scoreValue),
+                  thought_text: "" // Clear text strictly from the server mapping pipeline
+              })
+          })
+          .then(res => res.json())
+          .then(data => {
+              if (data.status === 'success') {
+                  // Bind confidential reflections locally under unified key definitions
+                  let localStore = JSON.parse(localStorage.getItem('mindmetric_local_thoughts') || '{}');
+                  
+                  // Map references by server database log id token mappings
+                  localStore[data.id] = confidentialText;
+                  localStorage.setItem('mindmetric_local_thoughts', JSON.stringify(localStore));
+
+                  // Clear local parameters and refresh workspace elements safely
+                  document.getElementById('thoughtText').value = "";
+                  syncDashboardDataPipeline();
+              } else {
+                  alert("Error resolving transaction node mapping.");
+              }
+          })
+          .catch(err => console.error("Pipeline failure mapping log parameters:", err));
+      });
+
+      // 4. Google Fit Raw Stream Data Request Execution Handlers
+      const fitTrigger = document.getElementById('fetchFitDataBtn');
+      if (fitTrigger) {
+          fitTrigger.addEventListener('click', function() {
+              const panel = document.getElementById('fitTelemetryContainer');
+              panel.style.display = 'block';
+              panel.innerHTML = '<div style="color: var(--text-muted);">Calling streaming dataset sources...</div>';
+              
+              fetch('/api/fit/data')
+              .then(res => res.json())
+              .then(payload => {
+                  panel.innerHTML = `<pre>${JSON.stringify(payload, null, 2)}</pre>`;
+              })
+              .catch(err => {
+                  panel.innerHTML = `<div style="color: var(--danger);">Failed tracking stream extraction updates.</div>`;
+              });
+          });
+      }
+  });
+
+  function syncDashboardDataPipeline() {
+      // Pull down history structure metrics parameters programmatic arrays
+      fetch(`/api/mood_logs/${ACTIVE_STUDENT_ID}`)
+      .then(res => res.json())
+      .then(resData => {
+          if (resData.status === 'success') {
+              renderBlendedHistoryList(resData.logs);
+              generateVisualChartObject(resData.logs);
+          }
+      });
+  }
+
+  function renderBlendedHistoryList(serverLogs) {
+      const container = document.getElementById('historyTimelineScroller');
+      if (!serverLogs || serverLogs.length === 0) {
+          container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No entries cataloged inside your account tracking ledger yet.</div>';
+          return;
+      }
+
+      // Extract unified local cached dictionaries
+      const localThoughts = JSON.parse(localStorage.getItem('mindmetric_local_thoughts') || '{}');
+      container.innerHTML = "";
+
+      serverLogs.forEach(item => {
+          let displayedReflection = item.thought_text;
+          let isLocallySecured = false;
+
+          // Check for matching entry structures recorded locally inside localStorage matching definitions
+          if (localThoughts[item.id]) {
+              displayedReflection = localThoughts[item.id];
+              isLocallySecured = true;
+          }
+
+          if (!displayedReflection || displayedReflection.trim() === "") {
+              displayedReflection = '<em style="color: var(--text-muted); font-size: 0.9rem;">No reflection thoughts attached to this record parameter.</em>';
+          }
+
+          let styleBoundary = "score-neutral";
+          if (item.mood_score >= 4) styleBoundary = "score-high";
+          if (item.mood_score <= 2) styleBoundary = "score-low";
+
+          const moodLabelMap = { 5: "Great", 4: "Good", 3: "Neutral", 2: "Bad", 1: "Terrible" };
+          const formattedLabel = moodLabelMap[item.mood_score] || "Neutral";
+
+          const entryMarkup = `
+              <div class="history-item-row ${styleBoundary}">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+                      <span style="font-weight: 700; font-size: 1rem;">Score: ${item.mood_score} (${formattedLabel})</span>
+                      <span style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace;">${item.timestamp}</span>
+                  </div>
+                  <p style="margin: 0 0 0.5rem 0; font-size: 0.95rem; line-height: 1.4;">${displayedReflection}</p>
+                  ${isLocallySecured ? '<span class="badge-blind-indicator badge-lock-local">🔒 Saved Locally (Blind Mode)</span>' : '<span class="badge-blind-indicator" style="background: rgba(79, 70, 229, 0.08); color: var(--accent);">☁️ Synced to Server</span>'}
+              </div>
+          `;
+          container.innerHTML += entryMarkup;
+      });
+  }
+
+  function generateVisualChartObject(serverLogs) {
+      const ctx = document.getElementById('moodTelemetryChart').getContext('2d');
+      
+      // Chronologically order the logs array for correct timeline rendering lines
+      const sortedLogs = [...serverLogs].reverse();
+      
+      const labels = sortedLogs.map(item => item.timestamp.split(" ")[0]);
+      const dataPoints = sortedLogs.map(item => item.mood_score);
+
+      if (moodChartInstance) {
+          moodChartInstance.destroy();
+      }
+
+      // Render standard premium dual-tone vector lines matching design variables
+      moodChartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+              labels: labels,
+              datasets: [{
+                  label: 'Emotional Trend Core Index',
+                  data: dataPoints,
+                  borderColor: '#4f46e5',
+                  backgroundColor: 'rgba(79, 70, 229, 0.05)',
+                  borderWidth: 3,
+                  pointBackgroundColor: '#4f46e5',
+                  pointBorderColor: '#ffffff',
+                  pointBorderWidth: 2,
+                  pointRadius: 5,
+                  pointHoverRadius: 7,
+                  tension: 0.35,
+                  fill: true
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                  legend: { display: false }
+              },
+              scales: {
+                  y: {
+                      min: 1,
+                      max: 5,
+                      ticks: {
+                          stepSize: 1,
+                          callback: function(value) {
+                              const labels = ["", "Terrible", "Bad", "Neutral", "Good", "Great"];
+                              return labels[value] || value;
+                          }
+                      },
+                      grid: { color: 'rgba(226, 232, 240, 0.15)' }
+                  },
+                  x: {
+                      grid: { display: false }
+                  }
+              }
+          }
+      });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <main class="auth-container" style="padding: 2rem 1rem; max-width: 500px; margin: 0 auto;">
+    <div class="content-panel auth-panel">
+      <header class="auth-header text-center" style="margin-bottom: 2rem;">
+        <h1 class="panel-title" style="font-size: 2rem; margin-bottom: 0.5rem;">Register</h1>
+        <p class="panel-subtitle">Start tracking your mental data trends</p>
+      </header>
+
+      <form action="{{ url_for('register') }}" method="POST" class="semantic-form" id="registrationForm">
+        <div class="form-group" style="margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+          <label class="profile-form-label" for="username">Username</label>
+          <input type="text" id="username" name="username" class="profile-form-input" placeholder="Dev123" required />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+  <label class="profile-form-label" for="full_name">Full Name</label>
+  <input type="text" id="full_name" name="full_name" class="profile-form-input" placeholder="Your real name" required />
+</div>
+
+    
+        <div class="form-group" style="margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+          <label class="profile-form-label" for="password">Password</label>
+          <input type="password" id="password" name="password" class="profile-form-input" placeholder="••••••" required />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+          <label class="profile-form-label" for="confirm_password">Confirm Password</label>
+          <input type="password" id="confirm_password" name="confirm_password" class="profile-form-input" placeholder="••••••" required />
+        </div>
+
+        <div class="security-section" style="margin-top: 1.5rem; border-top: 1px solid var(--border, #e2e8f0); padding-top: 1.5rem;">
+          <p class="profile-field-label" style="color: var(--text-main, #1e293b); font-size: 0.95rem; margin-bottom: 1rem; display: block;">🔒 Two-Step Verification (2SV) Setup</p>
+
+          <div class="form-group" style="margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            <label class="profile-form-label" for="q1">1. What was the name of your first pet?</label>
+            <input type="text" id="q1" name="q1" class="profile-form-input" placeholder="Your answer" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            <label class="profile-form-label" for="q2">2. What is your mother's maiden name?</label>
+            <input type="text" id="q2" name="q2" class="profile-form-input" placeholder="Your answer" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            <label class="profile-form-label" for="q3">3. What was the name of your primary school?</label>
+            <input type="text" id="q3" name="q3" class="profile-form-input" placeholder="Your answer" required />
+          </div>
+
+          <div class="form-group" style="margin-top: 2rem;">
+            <button type="submit" class="profile-action-btn profile-block-btn">Create Account</button>
+          </div>
+        </div>
+      </form>
+
+      <footer class="panel-footer text-center" style="margin-top: 1.5rem; border-top: 1px solid var(--border, #e2e8f0); padding-top: 1rem;">
+        <a href="{{ url_for('login') }}" class="profile-secondary-link" style="text-decoration: none; font-size: 0.9rem;">Have an account? Sign in</a>
+      </footer>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('registrationForm').onsubmit = function (e) {
+      const password = document.getElementById('password').value
+      const confirmPassword = document.getElementById('confirm_password').value
+    
+      if (password !== confirmPassword) {
+        e.preventDefault()
+        alert('Form verification fault: Password inputs do not match.')
+        return false
+      }
+      return true
+    }
+  </script>
+{% endblock %}

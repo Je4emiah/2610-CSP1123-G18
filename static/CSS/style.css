@@ -1,0 +1,416 @@
+/* ==========================================================================
+   1. CORE VARIABLES & CUSTOM DESIGN TOKENS (UPGRADED MINDMETRIC 2)
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    --bg-main: #f8fafc;
+    --bg-panel: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --accent: #4f46e5;
+    --accent-hover: #4338ca;
+    --border: #e2e8f0;
+    --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+    --radius-standard: 16px;
+    --radius-interactive: 10px;
+    
+    /* Specialized UI colors */
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(226, 232, 240, 0.8);
+}
+
+/* ==========================================================================\
+   1B. AUTOMATIC DARK MODE VARIANT OVERRIDES
+   ========================================================================== */
+[data-bs-theme="dark"] {
+    --bg-main: #090d16;       
+    --bg-panel: #111827;      
+    --text-main: #f3f4f6;     
+    --text-muted: #9ca3af;    
+    --border: #1f2937;        
+    --glass-bg: rgba(17, 24, 39, 0.7);
+    --glass-border: rgba(31, 41, 55, 0.8);
+    background-color: var(--bg-main) !important;
+}
+
+[data-bs-theme="dark"] .card,
+[data-bs-theme="dark"] .content-panel,
+[data-bs-theme="dark"] .auth-panel,
+[data-bs-theme="dark"] .auth-card,
+[data-bs-theme="dark"] .dashboard-card-unit {
+    background-color: var(--bg-panel) !important;
+    border-color: var(--border) !important;
+    color: var(--text-main) !important;
+    box-shadow: none !important;
+}
+
+[data-bs-theme="dark"] p,
+[data-bs-theme="dark"] h1,
+[data-bs-theme="dark"] h2,
+[data-bs-theme="dark"] h3,
+[data-bs-theme="dark"] h4,
+[data-bs-theme="dark"] .text-dark {
+    color: var(--text-main) !important;
+}
+
+[data-bs-theme="dark"] .input-field,
+[data-bs-theme="dark"] .profile-form-input,
+[data-bs-theme="dark"] .form-input,
+[data-bs-theme="dark"] select {
+    background-color: #1f2937 !important;
+    color: #ffffff !important;
+    border-color: #374151 !important;
+}
+
+/* ==========================================================================
+   2. GLOBAL DOCUMENT RESET & LAYOUT HOOKS
+   ========================================================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Glassmorphism utility design */
+.premium-glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+}
+
+/* ==========================================================================
+   3. STRUCTURAL SITEWIDE LAYOUT
+   ========================================================================== */
+.app-header {
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow-soft);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.primary-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 75px;
+    padding: 0 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.brand-logo {
+    font-weight: 800;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 1.6rem;
+    letter-spacing: -0.03em;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.content-wrapper {
+    padding: 2.5rem 0;
+    flex: 1;
+}
+
+.app-footer {
+    text-align: center;
+    padding: 2rem 0;
+    border-top: 1px solid var(--border);
+    background: var(--bg-panel);
+    margin-top: auto;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   4. COMPONENT STYLING & CORE GRIDS
+   ========================================================================== */
+.form-group {
+    margin-bottom: 1.5rem;
+    width: 100%;
+}
+
+.form-label, .field-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.form-input, .input-field {
+    width: 100%;
+    padding: 0.85rem 1.15rem;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-interactive);
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus, .input-field:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+    outline: none;
+}
+
+/* Premium Dashboard Grid Layout */
+.dashboard-grid-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+@media (min-width: 992px) {
+    .dashboard-grid-container {
+        grid-template-columns: 450px 1fr;
+    }
+}
+
+.dashboard-card-unit {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-standard);
+    padding: 2rem;
+    box-shadow: var(--shadow-card);
+}
+
+/* Modern Hero Design */
+.hero-container-box {
+    text-align: center;
+    max-width: 800px;
+    margin: 6rem auto;
+    padding: 0 2rem;
+}
+
+.hero-premium-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle-desc {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+}
+
+/* Buttons Infrastructure */
+.action-btn, .btn-auth, .btn-primary-luxury {
+    display: inline-block;
+    padding: 0.85rem 1.75rem;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    border-radius: var(--radius-interactive);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+}
+
+.action-btn, .btn-auth {
+    background: var(--accent);
+    color: #ffffff;
+}
+
+.action-btn:hover, .btn-auth:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
+.btn-primary-luxury {
+    background: transparent;
+    color: var(--accent);
+    border: 2px solid var(--accent);
+}
+
+.btn-primary-luxury:hover {
+    background: var(--accent);
+    color: #ffffff;
+}
+
+.block-btn {
+    width: 100%;
+}
+
+/* Specialized Integration Component Elements */
+.blind-mode-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(79, 70, 229, 0.05);
+    border: 1px dashed var(--accent);
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-interactive);
+    margin-bottom: 1.5rem;
+}
+
+.toggle-switch-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+
+.toggle-switch-wrapper input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider-switch {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: .3s;
+    border-radius: 34px;
+}
+
+.slider-switch:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+
+input:checked + .slider-switch {
+    background-color: var(--accent);
+}
+
+input:checked + .slider-switch:before {
+    transform: translateX(24px);
+}
+
+.badge-blind-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 20px;
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+}
+
+.status-chip {
+    margin: 0;
+    font-weight: 700;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    display: inline-block;
+    font-size: 0.95rem;
+}
+
+.status-connected {
+    color: var(--success);
+    background: rgba(16, 185, 129, 0.12);
+}
+
+.status-disconnected {
+    color: var(--danger);
+    background: rgba(239, 68, 68, 0.12);
+}
+
+.badge-lock-local {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning);
+}
+
+.raw-telemetry-container {
+    background: #0f172a;
+    color: #38bdf8;
+    padding: 1.25rem;
+    border-radius: var(--radius-interactive);
+    font-family: monospace;
+    font-size: 0.85rem;
+    overflow-x: auto;
+    max-height: 250px;
+    border: 1px solid #1e293b;
+    margin-top: 1rem;
+}
+
+.history-scroller-box {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.history-item-row {
+    border-left: 4px solid var(--border);
+    padding: 1rem;
+    background: var(--bg-main);
+    border-radius: 0 var(--radius-interactive) var(--radius-interactive) 0;
+    transition: all 0.2s ease;
+}
+
+.history-item-row.score-high { border-left-color: var(--success); }
+.history-item-row.score-neutral { border-left-color: var(--warning); }
+.history-item-row.score-low { border-left-color: var(--danger); }
+
+/* Premium Card & Containers adjustments */
+.auth-card-luxury {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-standard);
+    padding: 2.5rem;
+    box-shadow: var(--shadow-card);
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 0; transform: translateY(0); }
+}

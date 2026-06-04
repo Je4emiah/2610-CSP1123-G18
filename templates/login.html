@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Login{% endblock %}
+
+{% block content %}
+  <main class="auth-container">
+    <div class="auth-card-luxury premium-glass">
+      <header class="auth-header" style="text-align: center; margin-bottom: 2rem;">
+        <p class="auth-link-text" style="text-align: left; margin-bottom: 1.5rem;">
+          <a href="{{ url_for('index') }}" style="text-decoration:none; font-weight:600; color:var(--text-muted); display: inline-flex; align-items: center; gap: 0.25rem;">← Go Back</a>
+        </p>
+        <h1 class="auth-title" style="font-size: 2.25rem; font-weight:800; margin-bottom:0.5rem; letter-spacing: -0.03em;">Welcome Back</h1>
+        <p class="auth-subtitle" style="color: var(--text-muted); font-size: 0.95rem;">Access your internal mental metrics hub</p>
+      </header>
+
+      <form action="{{ url_for('login') }}" method="POST" class="auth-form">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input type="text" name="username" class="form-input" required placeholder="Enter your system username" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" name="password" class="form-input" required placeholder="••••••••" />
+        </div>
+        
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-top: -0.5rem; margin-bottom: 1.5rem;">
+          <label style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer; color: var(--text-muted);">
+            <input type="checkbox" name="remember_me" style="accent-color: var(--accent);"> Remember me
+          </label>
+          <p class="auth-link-text" style="margin: 0; font-size: 0.9rem;">
+            <a href="{{ url_for('forgot_password') }}" class="secondary-link" style="text-decoration:none; color:var(--accent); font-weight: 500;">Forgot password?</a>
+          </p>
+        </div>
+
+        <button type="submit" class="action-btn block-btn">Sign In</button>
+      </form>
+
+      <footer class="auth-footer" style="margin-top: 2rem; padding-top: 1.5rem; border-top:1px solid var(--border); text-align: center;">
+        <p class="auth-link-text" style="font-size:0.95rem; color:var(--text-muted); margin: 0;">
+          New to the portal? 
+          <a href="{{ url_for('register') }}" style="text-decoration:none; color:var(--accent); font-weight:600;">Create an account</a>
+        </p>
+      </footer>
+    </div>
+  </main>
+{% endblock %}

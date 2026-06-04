@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<main class="hero-container-box">
+    <header class="hero-header">
+        <h1 class="hero-premium-title">MindMetric</h1>
+        <p class="hero-subtitle-desc">A premium, privacy-first analytics pipeline for MMU students to monitor emotional trends and physical telemetry seamlessly.</p>
+    </header>
+
+    <div class="action-group" style="display: flex; gap: 1rem; justify-content: center; align-items: center;">
+        {% if session.user_id %}
+            <a href="{{ url_for('dashboard') }}" class="action-btn">Enter Dashboard Workspace</a>
+        {% else %}
+            <a href="{{ url_for('login') }}" class="action-btn">Get Started</a>
+            <a href="{{ url_for('register') }}" class="btn-primary-luxury">Create Account</a>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}
