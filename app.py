@@ -321,14 +321,30 @@ def history():
         
     username = session['user_id']
     db = get_db()
+    # ADDED 'id' to the query columns list below
     logs = db.execute('''
-        SELECT mood_score, thought_text, timestamp 
+        SELECT id, mood_score, thought_text, timestamp 
         FROM mood_logs 
         WHERE username = ? 
         ORDER BY timestamp DESC
     ''', (username,)).fetchall()
         
     return render_template('history.html', logs=logs)
+
+@app.route('/delete_entry/<int:log_id>', methods=['POST'])
+def delete_entry(log_id):
+    if 'user_id' not in session:
+        return 'Unauthorized', 401
+        
+    try:
+        db = get_db()
+        # Delete the entry matching this specific ID and user session context
+        db.execute("DELETE FROM mood_logs WHERE id = ? AND username = ?", (log_id, session['user_id']))
+        db.commit()
+        return '', 200  # Return a clean HTTP 200 OK success status back to your script
+    except Exception as e:
+        print(f"Error deleting log: {e}")
+        return 'Database Error', 500
 
 # --- TELEMETRY AND DATA VISUALIZATION API ENDPOINTS ---
 
