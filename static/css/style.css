@@ -1,5 +1,5 @@
 /* ==========================================================================
-   1. CORE VARIABLES & BRANDING TOKENS
+   1. CORE VARIABLES & CUSTOM DESIGN TOKENS
    ========================================================================== */
 :root {
     --bg-main: #f8fafc;
@@ -15,19 +15,22 @@
     --radius-interactive: 8px;
 }
 
-/* ==========================================================================
-   2. AUTOMATIC DARK THEME OVERRIDES
+/* ==========================================================================\
+   1B. AUTOMATIC DARK MODE VARIANT OVERRIDES
    ========================================================================== */
 [data-bs-theme="dark"] {
-    --bg-main: #0f172a;
-    --bg-panel: #1e293b;
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --border: #334155;
-
+    /* Redefine your core layout color design tokens */
+    --bg-main: #0f172a;       /* Dark slate background body */
+    --bg-panel: #1e293b;      /* Dark slate cards/modules */
+    --text-main: #f8fafc;     /* Off-white readable text */
+    --text-muted: #94a3b8;    /* Muted grey descriptions */
+    --border: #334155;        /* Subdued border dividers */
+    
+    /* Force body override background */
     background-color: var(--bg-main) !important;
 }
 
+/* Fix history page card layouts and custom container modules */
 [data-bs-theme="dark"] .card,
 [data-bs-theme="dark"] .content-panel,
 [data-bs-theme="dark"] .auth-panel,
@@ -38,6 +41,7 @@
     box-shadow: none !important;
 }
 
+/* Banish hardcoded black text utility conflicts */
 [data-bs-theme="dark"] p,
 [data-bs-theme="dark"] h1,
 [data-bs-theme="dark"] h2,
@@ -48,6 +52,7 @@
     color: var(--text-main) !important;
 }
 
+/* Ensure data inputs, selectors, and dropdown textareas adjust */
 [data-bs-theme="dark"] .input-field,
 [data-bs-theme="dark"] .profile-form-input,
 [data-bs-theme="dark"] .form-input,
@@ -57,27 +62,20 @@
     border-color: #475569 !important;
 }
 
+/* Align user profile dropdown control items */
 [data-bs-theme="dark"] .dropdown-menu {
     background-color: #1e293b !important;
     border-color: #475569 !important;
 }
-
 [data-bs-theme="dark"] .dropdown-item {
     color: #f8fafc !important;
 }
-
 [data-bs-theme="dark"] .dropdown-item:hover {
     background-color: #334155 !important;
 }
 
-[data-bs-theme="dark"] .profile-form-group {
-    border-left: 1px solid var(--border);
-    padding-left: 1.5rem;
-    width: 100%;
-}
-
 /* ==========================================================================
-   3. GLOBAL DOCUMENT RESET
+   2. GLOBAL DOCUMENT RESET
    ========================================================================== */
 * {
     box-sizing: border-box;
@@ -97,7 +95,7 @@ body {
 }
 
 /* ==========================================================================
-   4. STRUCTURAL SITEWIDE LAYOUT (HEADER / FOOTER)
+   3. STRUCTURAL SITEWIDE LAYOUT
    ========================================================================== */
 .app-header {
     background: var(--bg-panel);
@@ -146,15 +144,14 @@ body {
 }
 
 /* ==========================================================================
-   5. FORM INFRASTRUCTURE & INTERACTIVE BUTTONS
+   4. FORM INFRASTRUCTURE & INTERACTIVE BUTTONS
    ========================================================================== */
 .form-group {
     margin-bottom: 1.5rem;
     width: 100%;
 }
 
-.form-label,
-.field-label {
+.form-label, .field-label {
     display: block;
     margin-bottom: 0.5rem;
     color: var(--text-main);
@@ -166,8 +163,7 @@ body {
     color: var(--text-muted);
 }
 
-.form-input,
-.input-field {
+.form-input, .input-field {
     width: 100%;
     padding: 0.75rem 1rem;
     background-color: var(--bg-main);
@@ -179,8 +175,7 @@ body {
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.form-input:focus,
-.input-field:focus {
+.form-input:focus, .input-field:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
     outline: none;
@@ -191,10 +186,8 @@ body {
     resize: vertical;
 }
 
-/* Primary Action Tokens */
-.action-btn,
-.btn-auth,
-.btn-primary {
+/* Base Semantic Actions */
+.action-btn, .btn-auth, .btn-primary {
     display: inline-block;
     padding: 0.75rem 1.5rem;
     font-family: inherit;
@@ -207,15 +200,13 @@ body {
     transition: all 0.2s ease;
 }
 
-.action-btn,
-.btn-auth {
+.action-btn, .btn-auth {
     background: var(--accent);
     color: #ffffff;
     border: none;
 }
 
-.action-btn:hover,
-.btn-auth:hover {
+.action-btn:hover, .btn-auth:hover {
     background: var(--accent-hover);
 }
 
@@ -223,6 +214,7 @@ body {
     width: 100%;
 }
 
+/* Secondary / Bordered Button Styles */
 .btn-primary {
     background: transparent;
     color: var(--accent);
@@ -234,9 +226,8 @@ body {
     color: #ffffff;
 }
 
-/* Nav Link Interaction States */
-.nav-item,
-.nav-item-btn {
+/* Navigation & Header Actions */
+.nav-item, .nav-item-btn {
     background: var(--bg-panel);
     border: 1px solid var(--border);
     color: var(--text-muted);
@@ -250,9 +241,7 @@ body {
     white-space: nowrap;
 }
 
-.nav-item:hover,
-.nav-item.active,
-.nav-item-btn:hover {
+.nav-item:hover, .nav-item.active, .nav-item-btn:hover {
     border-color: var(--accent);
     color: var(--accent);
     background: rgba(37, 99, 235, 0.04);
@@ -266,11 +255,9 @@ body {
 }
 
 /* ==========================================================================
-   6. REUSABLE CONTAINER PANELS (CARDS & LAYOUTS)
+   5. REUSABLE CONTAINER PANELS (CARDS)
    ========================================================================== */
-.content-panel,
-.data-card,
-.auth-card {
+.content-panel, .data-card, .auth-card {
     background: var(--bg-panel);
     padding: 2rem;
     border-radius: var(--radius-standard);
@@ -279,9 +266,7 @@ body {
     width: 100%;
 }
 
-.auth-panel,
-.auth-card,
-.data-card {
+.auth-panel, .auth-card, .data-card {
     max-width: 420px;
     margin: 0 auto;
 }
@@ -324,29 +309,27 @@ body {
     color: var(--text-muted);
 }
 
-.panel-link-text a,
-.secondary-link {
+.panel-link-text a, .secondary-link {
     color: var(--accent);
     text-decoration: none;
     font-weight: 600;
 }
 
-.panel-link-text a:hover,
-.secondary-link:hover {
+.panel-link-text a:hover, .secondary-link:hover {
     text-decoration: underline;
 }
 
 /* ==========================================================================
-   7. FULLSCREEN DASHBOARD STORY ENGINE
+   6. THREE-SECTION FULLSCREEN STORY RUNTIME
    ========================================================================== */
 .dashboard-story-wrapper {
     min-height: calc(100vh - 70px);
     scroll-behavior: smooth;
-    overflow-y: visible !important;
+    overflow-y: visible !important; 
 }
 
 .dashboard-story-wrapper::-webkit-scrollbar {
-    display: none;
+    display: none; 
 }
 
 .story-section {
@@ -367,17 +350,9 @@ body {
     gap: 1.5rem;
 }
 
-.max-width-md {
-    max-width: 550px;
-}
-
-.max-width-lg {
-    max-width: 900px;
-}
-
-.text-center {
-    text-align: center;
-}
+.max-width-md { max-width: 550px; }
+.max-width-lg { max-width: 900px; }
+.text-center { text-align: center; }
 
 .main-title {
     font-size: 3rem;
@@ -402,7 +377,7 @@ body {
 }
 
 /* ==========================================================================
-   8. TELEMETRY & MACHINE DATA ENGINE (AI / CHARTS)
+   7. MACHINE INTERACTION MODULES (AI & VISUALIZATION)
    ========================================================================== */
 .insight-module {
     display: flex;
@@ -421,17 +396,9 @@ body {
 }
 
 @keyframes floating-pulse {
-    0% {
-        transform: translateY(0px);
-    }
-
-    50% {
-        transform: translateY(-8px);
-    }
-
-    100% {
-        transform: translateY(0px);
-    }
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+    100% { transform: translateY(0px); }
 }
 
 .ai-review-container {
@@ -506,7 +473,7 @@ body {
 }
 
 /* ==========================================================================
-   9. ACCOUNT & PROFILE CONFIGURATION HUB
+   8. PROFILE DASHBOARD MODULE COMPONENT SYSTEM
    ========================================================================== */
 .profile-view-wrapper {
     padding: 2rem 1rem;
@@ -635,9 +602,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    border-left: 1px solid var(--border);
-    padding-left: 1.5rem;
-    width: 100%;
 }
 
 .input-spacer {
@@ -732,6 +696,7 @@ body.dark-theme .purge-danger-zone {
     color: var(--accent);
 }
 
+/* Ensure the avatar box properly presents an uploaded picture */
 .profile-avatar-box img {
     width: 100% !important;
     height: 100% !important;
@@ -739,104 +704,8 @@ body.dark-theme .purge-danger-zone {
     display: block !important;
 }
 
+/* Smooth zoom transition on hover */
 .avatar-upload-overlay:hover {
     transform: scale(1.15) !important;
     background-color: #1d4ed8 !important;
-}
-
-/* ==========================================================================
-   10. DIARY HISTORY ARCHIVE MODIFIERS
-   ========================================================================== */
-.profile-header-group {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    width: 100%;
-}
-
-.profile-main-layout {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-}
-
-.profile-content-column {
-    width: 100%;
-    max-width: 750px;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-}
-
-.profile-data-card {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-    width: 100%;
-}
-
-.profile-metric-node {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-width: 80px;
-    text-align: center;
-}
-
-.profile-metric-value {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: var(--accent);
-    line-height: 1.1;
-}
-
-.profile-metric-label {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-    font-weight: 700;
-    margin-top: 0.25rem;
-    white-space: nowrap;
-}
-
-.profile-text-display {
-    font-size: 1rem;
-    color: var(--text-main);
-    line-height: 1.5;
-}
-
-.profile-timestamp-label {
-    display: block;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-top: 0.5rem;
-}
-
-.profile-empty-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--text-main);
-    margin-bottom: 0.5rem;
-}
-
-.profile-button-secondary {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-decoration: none;
-    background: transparent;
-    color: var(--text-muted);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-interactive);
-    transition: all 0.2s ease;
-}
-
-.profile-button-secondary:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(37, 99, 235, 0.04);
 }
