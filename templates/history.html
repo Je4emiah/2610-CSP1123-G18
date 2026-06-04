@@ -25,6 +25,17 @@
 
     <div class="row justify-content-center">
       <div class="col-md-8">
+
+        <div class="row justify-content-center mb-4">
+  <div class="col-md-8">
+    <div class="d-flex gap-2 flex-wrap justify-content-start">
+      <button class="btn btn-sm btn-primary filter-btn shadow-sm" onclick="filterMood('all', this)">⚡ All Logs</button>
+      <button class="btn btn-sm btn-outline-success filter-btn shadow-sm" onclick="filterMood('good', this)">😊 High Energy (4-5)</button>
+      <button class="btn btn-sm btn-outline-warning filter-btn shadow-sm" onclick="filterMood('neutral', this)">😐 Stable (3)</button>
+      <button class="btn btn-sm btn-outline-danger filter-btn shadow-sm" onclick="filterMood('bad', this)">⚠️ Needs Attention (1-2)</button>
+    </div>
+  </div>
+</div>
         {% if logs %}
           {% for log in logs %}
             <div class="card mb-3 shadow-sm border-0 rounded-3 border-start border-5 {% if log.mood_score >= 4 %}border-success{% elif log.mood_score == 3 %}border-warning{% else %}border-danger{% endif %}" style="background: #fff;">
@@ -72,24 +83,18 @@
   </div>
 
 <script>
+    // --- 1. TEXT SEARCH FILTER ---
     document.getElementById('diarySearchInput').addEventListener('keyup', function() {
       let filter = this.value.toLowerCase().trim();
       let cards = document.querySelectorAll('.card.mb-3'); 
 
       cards.forEach(card => {
-        // 1. Grab the clean text from the paragraph tag
         let thoughtText = card.querySelector('p') ? card.querySelector('p').textContent.toLowerCase() : '';
-        
-        // 2. Grab the precise score number text
         let scoreText = card.querySelector('.display-5') ? card.querySelector('.display-5').textContent.toLowerCase().trim() : '';
-        
-        // 3. Grab the timestamp text safely
         let timestampText = card.querySelector('.text-muted') ? card.querySelector('.text-muted').textContent.toLowerCase() : '';
         
-        // Combine them cleanly with spaces so words don't mash together
         let searchableContent = `${thoughtText} ${scoreText} ${timestampText}`;
         
-        // Check if your filter keyword matches anything inside the clean content string
         if (searchableContent.includes(filter)) {
           card.style.setProperty('display', 'block', 'important');
         } else {
@@ -97,6 +102,45 @@
         }
       });
     });
+
+    // --- 2. MOOD BUTTON FILTER ---
+    function filterMood(type, element) {
+      // Manage active button visual states
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        // Reset active primary buttons back to outline mode
+        if (btn.classList.contains('btn-primary')) btn.classList.replace('btn-primary', 'btn-outline-primary');
+        if (btn.classList.contains('btn-success')) btn.classList.replace('btn-success', 'btn-outline-success');
+        if (btn.classList.contains('btn-warning')) btn.classList.replace('btn-warning', 'btn-outline-warning');
+        if (btn.classList.contains('btn-danger')) btn.classList.replace('btn-danger', 'btn-outline-danger');
+      });
+      
+      // Make the clicked button solid active
+      if (type === 'all') element.classList.replace('btn-outline-primary', 'btn-primary');
+      else if (type === 'good') element.classList.replace('btn-outline-success', 'btn-success');
+      else if (type === 'neutral') element.classList.replace('btn-outline-warning', 'btn-warning');
+      else if (type === 'bad') element.classList.replace('btn-outline-danger', 'btn-danger');
+
+      // Filter your log cards based on score thresholds
+      let cards = document.querySelectorAll('.card.mb-3');
+      cards.forEach(card => {
+        let scoreElement = card.querySelector('.display-5');
+        if (!scoreElement) return;
+        
+        let score = parseInt(scoreElement.textContent.trim());
+        
+        if (type === 'all') {
+          card.style.setProperty('display', 'block', 'important');
+        } else if (type === 'good' && score >= 4) {
+          card.style.setProperty('display', 'block', 'important');
+        } else if (type === 'neutral' && score === 3) {
+          card.style.setProperty('display', 'block', 'important');
+        } else if (type === 'bad' && score <= 2) {
+          card.style.setProperty('display', 'block', 'important');
+        } else {
+          card.style.setProperty('display', 'none', 'important');
+        }
+      });
+    }
   </script>
 
 {% endblock %}
