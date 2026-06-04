@@ -280,6 +280,75 @@ def dashboard():
         db.commit()
         return redirect(url_for('dashboard'))
 
+    # --- STREAK CALCULATOR (Guaranteed to run on page load) ---
+    date_rows = db.execute('''
+        SELECT DISTINCT date(timestamp) as log_date 
+        FROM mood_logs 
+        WHERE username = ? 
+        ORDER BY log_date DESC
+    ''', (username,)).fetchall()
+
+    streak = 0
+    import datetime
+    today_str = datetime.date.today().strftime('%Y-%m-%d')
+    yesterday_str = (datetime.date.today() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+    
+    log_dates = [row['log_date'] for row in date_rows]
+
+    if today_str in log_dates or yesterday_str in log_dates:
+        current_date = datetime.date.today() if today_str in log_dates else datetime.date.today() - datetime.timedelta(days=1)
+        while current_date.strftime('%Y-%m-%d') in log_dates:
+            streak += 1
+            current_date -= datetime.timedelta(days=1)
+
+    # Calculate tracking entry volume and mean scoring over a sliding 7-day window
+    row = db.execute('''
+        SELECT COUNT(*) as entry_count, AVG(mood_score) as avg_score 
+        FROM mood_logs 
+        WHERE username = ? 
+        AND timestamp >= datetime('now', '-7 days', 'localtime')
+    ''', (username,)).fetchone()
+    
+    entry_count = row['entry_count'] if row['entry_count'] else 0
+    avg_score = round(row['avg_score'], 1) if row['avg_score'] else 0.0
+
+    # Localized static dictionary containing evaluations based on rounded average scores
+    insight_dictionary = {
+        5: {"emoji": "🔥", "review": "Exceptional mental momentum! Your tracking signals display peak emotional clarity and highly optimal decompression behavior loops. Keep cruising here."},
+        4: {"emoji": "😊", "review": "A highly positive, constructive horizon. Your tracking metrics indicate steady wellness and reliable stability. Maintain your current active choices!"},
+        3: {"emoji": "😐", "review": "A balanced neutral baseline. Things are holding perfectly constant, but consider introducing mild pattern variations or taking a small physical break to feel fully energized."},
+        2: {"emoji": "☹️", "review": "Your tracker highlights a subtle down-trending sequence. Energy metrics feel slightly strained. Make sure to schedule intentional downtime and get some rest today."},
+        1: {"emoji": "😫", "review": "Telemetry suggests heavy processing loads and fatigue patterns. Prioritize absolute preservation right now. Close down non-essential loops and decompress."}
+    }
+
+    weekly_insight = {
+        "emoji": "🤔",
+        "review": "No recent metrics recorded this week yet. Submit your first mood log box above to generate your dynamic tracking insights!"
+    }
+
+    if entry_count > 0:
+        score_key = max(1, min(5, int(round(avg_score))))
+        weekly_insight = insight_dictionary[score_key]
+
+    # Render view with streak context bound explicitly
+    return render_template('dashboard.html', 
+                           insight=weekly_insight, 
+                           entry_count=entry_count, 
+                           avg_score=avg_score,
+                           streak=streak)
+    
+    # Process and commit newly submitted mood tracking forms
+    if request.method == 'POST':
+        mood_score = int(request.form['mood_score'])
+        thought = request.form['thought']
+        
+        db.execute('''
+            INSERT INTO mood_logs (username, mood_score, thought_text, timestamp)
+            VALUES (?, ?, ?, datetime('now', 'localtime'))
+        ''', (username, mood_score, thought))
+        db.commit()
+        return redirect(url_for('dashboard'))
+
     # Calculate tracking entry volume and mean scoring over a sliding 7-day window
     row = db.execute('''
         SELECT COUNT(*) as entry_count, AVG(mood_score) as avg_score 
@@ -420,3 +489,4 @@ if __name__ == '__main__':
     with app.app_context():
         init_db()
     app.run(debug=True)
+
