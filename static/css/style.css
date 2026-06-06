@@ -1094,3 +1094,121 @@ body.dark-theme .purge-danger-zone {
     font-size: 0.9rem;
     line-height: 1.5;
 }
+
+/* --- Hero Section Styles --- */
+.hero-section {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: #ffffff;
+    padding: 80px 20px;
+    text-align: center;
+}
+
+.hero-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.hero-title {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    line-height: 1.2;
+}
+
+.hero-subtitle {
+    color: #c7d2fe;
+}
+
+.hero-description {
+    font-size: 1.2rem;
+    color: #e0e7ff;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.hero-cta-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn {
+    padding: 12px 24px;
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.2s ease;
+}
+
+.hero-section .btn-primary {
+    background-color: #ffffff;
+    color: #4f46e5;
+}
+
+.hero-section .btn-primary:hover {
+    background-color: #f3f4f6;
+}
+
+.btn-secondary {
+    background-color: rgba(49, 46, 129, 0.5);
+}
+
+/* --- Comparison Table Styles --- */
+.comparison-section {
+    padding: 60px 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.section-title {
+    font-size: 2rem;
+    color: #111827;
+    margin-bottom: 10px;
+}
+
+.table-responsive-wrapper {
+    overflow-x: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.comparison-table th, 
+.comparison-table td {
+    padding: 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.comparison-table th {
+    background-color: #f9fafb;
+    color: #374151;
+    font-weight: 600;
+}
+
+/* Gives your MindMetric application column a visually distinct background */
+.comparison-table .highlight-column {
+    background-color: rgba(243, 244, 246, 0.7);
+    font-weight: 600;
+}
+
+.comparison-table tr:hover {
+    background-color: #f9fafb;
+}
+
+.table-footnote {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
