@@ -7,6 +7,30 @@
           <h1 class="main-title">Your Insights</h1>
         </header>
 
+        {# --- Streak Counter Banner Display Engine --- #}
+        {% if streak > 0 %}
+          <div class="streak-banner streak-active">
+            <div class="streak-content">
+              <div class="streak-emoji">🔥</div>
+              <div class="streak-details">
+                <h6 class="streak-title">{{ streak }}-Day Streak!</h6>
+                <small class="streak-subtitle">You're doing amazing. Keep building this tracking habit daily!</small>
+              </div>
+            </div>
+            <span class="streak-badge status-active">ACTIVE</span>
+          </div>
+        {% else %}
+          <div class="streak-banner streak-inactive">
+            <div class="streak-content">
+              <div class="streak-emoji">🌱</div>
+              <div class="streak-details">
+                <h6 class="streak-title">Start a New Streak</h6>
+                <small class="streak-subtitle">Log your thoughts today to start your streak counter chain!</small>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+
         <div class="content-panel logger-module">
           <h2 class="section-label">Log Your Mind</h2>
           <form id="moodForm" action="{{ url_for('dashboard') }}" method="POST" class="semantic-form">

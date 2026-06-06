@@ -51,21 +51,17 @@ def save_mood_entry(username, score, thought):
         print(f"Database error in save_mood_entry: {e}")
         return False
 
-def get_mood_trends(username):
-    """Retrieves and aggregates chronological historical mood records for analytics rendering."""
+def get_monthly_mood_data(username, year, month):
+    """Retrieves specific time-delimited telemetry signals for chart injection."""
     db = get_db()
-    cursor = db.execute('''
-            SELECT date(timestamp), AVG(mood_score) 
-            FROM mood_logs 
-            WHERE username = ? 
-            GROUP BY date(timestamp)
-            ORDER BY date(timestamp) ASC
-    ''', (username,))
-    rows = cursor.fetchall()
-    return {
-        "labels": [row[0] for row in rows],
-        "data": [row[1] for row in rows]
-    }
+    query = """
+        SELECT timestamp, mood_score 
+        FROM mood_logs 
+        WHERE username = ? 
+        AND strftime('%Y-%m', timestamp) = ?
+        ORDER BY timestamp ASC
+    """
+    return db.execute(query, (username, f"{year}-{month}")).fetchall()
 
 # --- CONTEXT PROCESSOR ---
 @app.context_processor
@@ -86,7 +82,6 @@ def login():
         remember = request.form.get('remember_me')
         
         db = get_db()
-        # Fetches both password_hash and name columns to support global greeting states
         cursor = db.execute("SELECT password_hash, name FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
 
@@ -113,9 +108,7 @@ def forgot_password():
         db = get_db()
         user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
         
-        # Verify 3-tier security answer strings
         if user and user['q1_answer'] == a1 and user['q2_answer'] == a2 and user['q3_answer'] == a3:
-            # Pass answers through as hidden parameters to the next form step
             return render_template('forgot_password.html', user_found=True, username=username, q1=a1, q2=a2, q3=a3)
         else:
             flash("Incorrect answers or username not found.", "danger")
@@ -129,7 +122,6 @@ def reset_password():
     new_password = request.form.get('new_password')
     confirm_password = request.form.get('confirm_password')
 
-    # Guard 1: Validate matching parameters
     if new_password != confirm_password:
         flash("Passwords do not match! Please try again.", "danger")
         return redirect(url_for('forgot_password'))
@@ -137,12 +129,10 @@ def reset_password():
     db = get_db()
     user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
 
-    # Guard 2: Safety check to confirm user profile row exists
     if not user:
         flash("User profile data record not found.", "danger")
         return redirect(url_for('forgot_password'))
 
-    # Success Loop: Apply secure hash and update database
     hashed_pw = generate_password_hash(new_password)
     db.execute('UPDATE users SET password_hash = ? WHERE username = ?', (hashed_pw, username))
     db.commit()
@@ -162,12 +152,10 @@ def profile():
         updated_name = request.form.get('full_name')
         selected_gender = request.form.get('gender')
         
-        # Keep old profile picture if no new image is uploaded
         cursor = db.execute("SELECT profile_pic FROM users WHERE username = ?", (username,))
         user_row = cursor.fetchone()
         saved_pic_path = user_row['profile_pic'] if user_row else None
         
-        # Process new image files safely
         file = request.files.get('profile_avatar')
         if file and file.filename != '':
             if allowed_file(file.filename):
@@ -178,7 +166,6 @@ def profile():
                 flash("Invalid format! Please use PNG, JPG, JPEG, or GIF.", "danger")
                 return redirect(url_for('profile'))
                 
-        # Commit name, gender choice, and image pointer to database
         db.execute("""
             UPDATE users 
             SET name = ?, gender = ?, profile_pic = ? 
@@ -186,17 +173,13 @@ def profile():
         """, (updated_name, selected_gender, saved_pic_path, username))
         db.commit()
         
-        # Keep global greeting matching immediately
         session['name'] = updated_name
-        
         flash("Profile updated successfully!", "success")
         return redirect(url_for('profile'))
         
-    # GET: Fetch account parameters to fill out interface forms
     cursor = db.execute("SELECT username, name, gender, profile_pic FROM users WHERE username = ?", (username,))
     account_info = cursor.fetchone()
     
-    # Calculate telemetry entries length for summary statistics panels
     logs_cursor = db.execute("SELECT COUNT(*) as log_count, AVG(mood_score) as avg_score FROM mood_logs WHERE username = ?", (username,))
     stats = logs_cursor.fetchone()
     entry_count = stats['log_count'] if stats else 0
@@ -230,7 +213,7 @@ def delete_account():
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
-        full_name = request.form.get('full_name')  # Grab full name from form
+        full_name = request.form.get('full_name')
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         
@@ -246,7 +229,6 @@ def register():
         
         try:
             db = get_db()
-            # Included 'name' column and its binding parameter '?'
             db.execute("""
                 INSERT INTO users (username, name, password_hash, q1_answer, q2_answer, q3_answer) 
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -268,19 +250,34 @@ def dashboard():
     username = session['user_id']
     db = get_db()
     
-    # Process and commit newly submitted mood tracking forms
     if request.method == 'POST':
         mood_score = int(request.form['mood_score'])
         thought = request.form['thought']
         
-        db.execute('''
-            INSERT INTO mood_logs (username, mood_score, thought_text, timestamp)
-            VALUES (?, ?, ?, datetime('now', 'localtime'))
-        ''', (username, mood_score, thought))
-        db.commit()
+        # FIX: Unified to use standard database transaction helper
+        save_mood_entry(username, mood_score, thought)
         return redirect(url_for('dashboard'))
 
-    # Calculate tracking entry volume and mean scoring over a sliding 7-day window
+    # --- STREAK CALCULATOR ---
+    date_rows = db.execute('''
+        SELECT DISTINCT date(timestamp) as log_date 
+        FROM mood_logs 
+        WHERE username = ? 
+        ORDER BY log_date DESC
+    ''', (username,)).fetchall()
+
+    streak = 0
+    today_str = datetime.date.today().strftime('%Y-%m-%d')
+    yesterday_str = (datetime.date.today() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+    log_dates = [row['log_date'] for row in date_rows]
+
+    if today_str in log_dates or yesterday_str in log_dates:
+        current_date = datetime.date.today() if today_str in log_dates else datetime.date.today() - datetime.timedelta(days=1)
+        while current_date.strftime('%Y-%m-%d') in log_dates:
+            streak += 1
+            current_date -= datetime.timedelta(days=1)
+
+    # Calculate metrics over a sliding 7-day window
     row = db.execute('''
         SELECT COUNT(*) as entry_count, AVG(mood_score) as avg_score 
         FROM mood_logs 
@@ -291,7 +288,6 @@ def dashboard():
     entry_count = row['entry_count'] if row['entry_count'] else 0
     avg_score = round(row['avg_score'], 1) if row['avg_score'] else 0.0
 
-    # Localized static dictionary containing evaluations based on rounded average scores
     insight_dictionary = {
         5: {"emoji": "🔥", "review": "Exceptional mental momentum! Your tracking signals display peak emotional clarity and highly optimal decompression behavior loops. Keep cruising here."},
         4: {"emoji": "😊", "review": "A highly positive, constructive horizon. Your tracking metrics indicate steady wellness and reliable stability. Maintain your current active choices!"},
@@ -312,7 +308,8 @@ def dashboard():
     return render_template('dashboard.html', 
                            insight=weekly_insight, 
                            entry_count=entry_count, 
-                           avg_score=avg_score)
+                           avg_score=avg_score,
+                           streak=streak)
 
 @app.route('/history')
 def history():
@@ -321,36 +318,46 @@ def history():
         
     username = session['user_id']
     db = get_db()
-    logs = db.execute('''
-        SELECT mood_score, thought_text, timestamp 
+    raw_logs = db.execute('''
+        SELECT id, mood_score, thought_text, timestamp 
         FROM mood_logs 
         WHERE username = ? 
         ORDER BY timestamp DESC
     ''', (username,)).fetchall()
+    
+    logs = []
+    for log in raw_logs:
+        log_dict = dict(log)
+        if not log_dict['thought_text'] or log_dict['thought_text'].strip() == "":
+            log_dict['thought_text'] = "Logged entry without additional thoughts."
+        logs.append(log_dict)
         
     return render_template('history.html', logs=logs)
+
+@app.route('/delete_entry/<int:log_id>', methods=['POST'])
+def delete_entry(log_id):
+    if 'user_id' not in session:
+        return 'Unauthorized', 401
+        
+    try:
+        db = get_db()
+        db.execute("DELETE FROM mood_logs WHERE id = ? AND username = ?", (log_id, session['user_id']))
+        db.commit()
+        return '', 200
+    except Exception as e:
+        print(f"Error deleting log: {e}")
+        return 'Database Error', 500
 
 # --- TELEMETRY AND DATA VISUALIZATION API ENDPOINTS ---
 
 @app.route('/api/mood_data/<username>')
 def api_mood_data(username):
-    """Generates historical tracking metrics filtered by a specific year and month."""
     now = datetime.datetime.now()
     year = request.args.get('year', str(now.year))
-    month = request.args.get('month', f"{now.month:02d}") # Ensures 2-digit format '01' through '12'
+    month = request.args.get('month', f"{now.month:02d}")
     
-    db = get_db()
-    
-    # Query logs matching the specified year and month (YYYY-MM)
-    query = """
-        SELECT timestamp, mood_score 
-        FROM mood_logs 
-        WHERE username = ? 
-        AND strftime('%Y-%m', timestamp) = ?
-        ORDER BY timestamp ASC
-    """
-        
-    rows = db.execute(query, (username, f"{year}-{month}")).fetchall()
+    # FIX: Refactored old inline fetch statement to run using unified monthly telemetry utility
+    rows = get_monthly_mood_data(username, year, month)
     
     return jsonify({
         "labels": [row[0] for row in rows],
@@ -361,11 +368,12 @@ def api_mood_data(username):
     
 @app.route('/api/log_mood', methods=['POST'])
 def api_log_mood():
-    """Standalone endpoint handling decoupled programmatic entry insertions."""
     data = request.json
     username = data.get('username')
     score = data.get('mood_score')
     thought = data.get('thought_text')
+    
+    # Intentionally honors transactional design logic architectures
     success = save_mood_entry(username, score, thought)
     
     if success:
@@ -375,9 +383,7 @@ def api_log_mood():
 # --- DATABASE SCHEMAS DEFINITION AND INITIALIZATION ---
 
 def init_db():
-    """Initializes schema tables and parameters if the core relational file does not exist."""
     db = get_db()
-    
     db.execute('''CREATE TABLE IF NOT EXISTS mood_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
@@ -386,7 +392,6 @@ def init_db():
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )''')
 
-    # Updated table schema parameters to include 'name', 'gender', and 'profile_pic' columns
     db.execute('''CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,

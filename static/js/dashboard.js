@@ -2,12 +2,12 @@
 const initialDate = new Date();
 let currentYear = initialDate.getFullYear();
 let currentMonth = initialDate.getMonth() + 1; // JS months are 0-11, so we add 1
-let myChart = null; 
+let myChart = null;
 
 // Initialize UI elements to match the current month/year on start
 function initFilterSelectors() {
     const yearSelect = document.getElementById('yearSelect');
-    
+
     // Safely inject a new option into the Year dropdown if the current year isn't listed yet
     const yearExists = Array.from(yearSelect.options).some(option => parseInt(option.value) === currentYear);
     if (!yearExists) {
@@ -32,7 +32,7 @@ function handleDropdownChange() {
 // Logic for stepping backward (-1) or forward (+1) through months
 function adjustMonth(step) {
     currentMonth += step;
-    
+
     // Overflow roll-overs (Handles switching years seamlessly)
     if (currentMonth > 12) {
         currentMonth = 1;
@@ -88,7 +88,7 @@ async function updateDashboard() {
             data: {
                 labels: data.labels.map(label => {
                     // Pulls only the date string portion for a cleaner monthly axis
-                    return label.split(' ')[0] || label; 
+                    return label.split(' ')[0] || label;
                 }),
                 datasets: [{
                     label: 'Mood Level',
