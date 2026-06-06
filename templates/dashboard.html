@@ -7,29 +7,29 @@
           <h1 class="main-title">Your Insights</h1>
         </header>
 
+        {# --- Streak Counter Banner Display Engine --- #}
         {% if streak > 0 %}
-        <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center justify-content-between p-3 rounded-3 mb-4" style="background-color: #fff3cd; color: #856404; text-align: left;">
-          <div class="d-flex align-items-center" style="gap: 15px;">
-            <div style="font-size: 1.8rem;">🔥</div>
-            <div>
-              <h6 class="fw-bold mb-0" style="margin: 0; font-weight: 700;">{{ streak }}-Day Streak!</h6>
-              <small style="font-size: 0.8rem; opacity: 0.85;">You're doing amazing. Keep building this tracking habit daily!</small>
+          <div class="streak-banner streak-active">
+            <div class="streak-content">
+              <div class="streak-emoji">🔥</div>
+              <div class="streak-details">
+                <h6 class="streak-title">{{ streak }}-Day Streak!</h6>
+                <small class="streak-subtitle">You're doing amazing. Keep building this tracking habit daily!</small>
+              </div>
+            </div>
+            <span class="streak-badge status-active">ACTIVE</span>
+          </div>
+        {% else %}
+          <div class="streak-banner streak-inactive">
+            <div class="streak-content">
+              <div class="streak-emoji">🌱</div>
+              <div class="streak-details">
+                <h6 class="streak-title">Start a New Streak</h6>
+                <small class="streak-subtitle">Log your thoughts today to start your streak counter chain!</small>
+              </div>
             </div>
           </div>
-          <span class="badge rounded-pill bg-warning text-dark px-3 py-2 fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;">ACTIVE</span>
-        </div>
-        {% else %}
-        <div class="alert alert-light border shadow-sm d-flex align-items-center p-3 rounded-3 mb-4" style="gap: 15px; text-align: left; background: #fff;">
-          <div style="font-size: 1.8rem;">🌱</div>
-          <div>
-            <h6 class="fw-bold mb-0" style="margin: 0; color: #4a5568; font-weight: 700;">Start a New Streak</h6>
-            <small class="text-secondary" style="font-size: 0.8rem;">Log your thoughts today to start your streak counter chain!</small>
-          </div>
-        </div>
         {% endif %}
-        <div class="content-panel logger-module">
-          <h2 class="section-label">Log Your Mind</h2>
-          <form id="moodForm" action="{{ url_for('dashboard') }}" method="POST" class="semantic-form">
 
         <div class="content-panel logger-module">
           <h2 class="section-label">Log Your Mind</h2>
