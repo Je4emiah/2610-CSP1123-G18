@@ -20,12 +20,17 @@
    ========================================================================== */
 [data-bs-theme="dark"] {
     /* Redefine your core layout color design tokens */
-    --bg-main: #0f172a;       /* Dark slate background body */
-    --bg-panel: #1e293b;      /* Dark slate cards/modules */
-    --text-main: #f8fafc;     /* Off-white readable text */
-    --text-muted: #94a3b8;    /* Muted grey descriptions */
-    --border: #334155;        /* Subdued border dividers */
-    
+    --bg-main: #0f172a;
+    /* Dark slate background body */
+    --bg-panel: #1e293b;
+    /* Dark slate cards/modules */
+    --text-main: #f8fafc;
+    /* Off-white readable text */
+    --text-muted: #94a3b8;
+    /* Muted grey descriptions */
+    --border: #334155;
+    /* Subdued border dividers */
+
     /* Force body override background */
     background-color: var(--bg-main) !important;
 }
@@ -67,9 +72,11 @@
     background-color: #1e293b !important;
     border-color: #475569 !important;
 }
+
 [data-bs-theme="dark"] .dropdown-item {
     color: #f8fafc !important;
 }
+
 [data-bs-theme="dark"] .dropdown-item:hover {
     background-color: #334155 !important;
 }
@@ -151,7 +158,8 @@ body {
     width: 100%;
 }
 
-.form-label, .field-label {
+.form-label,
+.field-label {
     display: block;
     margin-bottom: 0.5rem;
     color: var(--text-main);
@@ -163,7 +171,8 @@ body {
     color: var(--text-muted);
 }
 
-.form-input, .input-field {
+.form-input,
+.input-field {
     width: 100%;
     padding: 0.75rem 1rem;
     background-color: var(--bg-main);
@@ -175,7 +184,8 @@ body {
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.form-input:focus, .input-field:focus {
+.form-input:focus,
+.input-field:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
     outline: none;
@@ -187,7 +197,9 @@ body {
 }
 
 /* Base Semantic Actions */
-.action-btn, .btn-auth, .btn-primary {
+.action-btn,
+.btn-auth,
+.btn-primary {
     display: inline-block;
     padding: 0.75rem 1.5rem;
     font-family: inherit;
@@ -200,13 +212,15 @@ body {
     transition: all 0.2s ease;
 }
 
-.action-btn, .btn-auth {
+.action-btn,
+.btn-auth {
     background: var(--accent);
     color: #ffffff;
     border: none;
 }
 
-.action-btn:hover, .btn-auth:hover {
+.action-btn:hover,
+.btn-auth:hover {
     background: var(--accent-hover);
 }
 
@@ -227,7 +241,8 @@ body {
 }
 
 /* Navigation & Header Actions */
-.nav-item, .nav-item-btn {
+.nav-item,
+.nav-item-btn {
     background: var(--bg-panel);
     border: 1px solid var(--border);
     color: var(--text-muted);
@@ -241,7 +256,9 @@ body {
     white-space: nowrap;
 }
 
-.nav-item:hover, .nav-item.active, .nav-item-btn:hover {
+.nav-item:hover,
+.nav-item.active,
+.nav-item-btn:hover {
     border-color: var(--accent);
     color: var(--accent);
     background: rgba(37, 99, 235, 0.04);
@@ -257,7 +274,9 @@ body {
 /* ==========================================================================
    5. REUSABLE CONTAINER PANELS (CARDS)
    ========================================================================== */
-.content-panel, .data-card, .auth-card {
+.content-panel,
+.data-card,
+.auth-card {
     background: var(--bg-panel);
     padding: 2rem;
     border-radius: var(--radius-standard);
@@ -266,7 +285,9 @@ body {
     width: 100%;
 }
 
-.auth-panel, .auth-card, .data-card {
+.auth-panel,
+.auth-card,
+.data-card {
     max-width: 420px;
     margin: 0 auto;
 }
@@ -309,13 +330,15 @@ body {
     color: var(--text-muted);
 }
 
-.panel-link-text a, .secondary-link {
+.panel-link-text a,
+.secondary-link {
     color: var(--accent);
     text-decoration: none;
     font-weight: 600;
 }
 
-.panel-link-text a:hover, .secondary-link:hover {
+.panel-link-text a:hover,
+.secondary-link:hover {
     text-decoration: underline;
 }
 
@@ -325,11 +348,11 @@ body {
 .dashboard-story-wrapper {
     min-height: calc(100vh - 70px);
     scroll-behavior: smooth;
-    overflow-y: visible !important; 
+    overflow-y: visible !important;
 }
 
 .dashboard-story-wrapper::-webkit-scrollbar {
-    display: none; 
+    display: none;
 }
 
 .story-section {
@@ -350,9 +373,17 @@ body {
     gap: 1.5rem;
 }
 
-.max-width-md { max-width: 550px; }
-.max-width-lg { max-width: 900px; }
-.text-center { text-align: center; }
+.max-width-md {
+    max-width: 550px;
+}
+
+.max-width-lg {
+    max-width: 900px;
+}
+
+.text-center {
+    text-align: center;
+}
 
 .main-title {
     font-size: 3rem;
@@ -396,9 +427,17 @@ body {
 }
 
 @keyframes floating-pulse {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-8px); }
-    100% { transform: translateY(0px); }
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
 }
 
 .ai-review-container {
@@ -708,4 +747,468 @@ body.dark-theme .purge-danger-zone {
 .avatar-upload-overlay:hover {
     transform: scale(1.15) !important;
     background-color: #1d4ed8 !important;
+}
+
+/* --- SEMANTIC STREAK BANNER COMPONENT --- */
+
+/* Base container layout handles layout, spacing, and rounding */
+.streak-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+/* Internal flex group matching the emoji alongside the textual data stack */
+.streak-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Individual text stacking container */
+.streak-details {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+/* Typography elements styling rules */
+.streak-title {
+    margin: 0 !important;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.streak-subtitle {
+    font-size: 0.8rem;
+}
+
+.streak-emoji {
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+/* Status Pill Badge Badge formatting setup */
+.streak-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    border-radius: 50rem;
+}
+
+/* --- STATE VARIATIONS --- */
+
+/* Active State layout configurations */
+.streak-active {
+    background-color: #fff3cd;
+    color: #856404;
+    border: none;
+}
+
+.status-active {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+/* Inactive state fallback variables */
+.streak-inactive {
+    background-color: #ffffff;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.streak-inactive .streak-title {
+    color: #4a5568;
+}
+
+/* ==========================================================================
+   9. DIGITAL DIARY HISTORY PAGE COMPONENT SYSTEM
+   ========================================================================== */
+
+.diary-container {
+    max-width: 750px;
+    margin: 0 auto;
+    padding: 3rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Header Context Configurations */
+.diary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.diary-main-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.title-icon {
+    color: var(--accent);
+}
+
+.diary-counter-badge {
+    font-size: 0.85rem;
+    padding: 4px 12px;
+    background-color: var(--text-muted);
+    color: var(--bg-panel);
+    border-radius: 50rem;
+    vertical-align: middle;
+    margin-left: 0.5rem;
+    font-weight: 600;
+}
+
+/* Custom Component Structural Search Bar Input */
+.search-filter-wrapper {
+    width: 100%;
+}
+
+.search-input-group {
+    display: flex;
+    align-items: center;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-interactive);
+    box-shadow: var(--shadow-soft);
+    overflow: hidden;
+}
+
+.search-addon-icon {
+    padding: 0 1rem;
+    color: var(--text-muted);
+}
+
+.search-box-input {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding-left: 0;
+}
+
+/* Tab Filter Action Layout */
+.filter-actions-wrapper {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+
+.filter-tab {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: var(--radius-interactive);
+    cursor: pointer;
+    box-shadow: var(--shadow-soft);
+    transition: all 0.2s ease;
+}
+
+/* Custom Interactive States Overrides */
+.filter-tab.tab-all:hover,
+.filter-tab.active-all {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+}
+
+.filter-tab.tab-good:hover,
+.filter-tab.active-good {
+    background: #28a745;
+    color: #ffffff;
+    border-color: #28a745;
+}
+
+.filter-tab.tab-neutral:hover,
+.filter-tab.active-neutral {
+    background: #ffc107;
+    color: #212529;
+    border-color: #ffc107;
+}
+
+.filter-tab.tab-bad:hover,
+.filter-tab.active-bad {
+    background: #dc3545;
+    color: #ffffff;
+    border-color: #dc3545;
+}
+
+/* Structural Dynamic Feed Cards */
+.diary-feed-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.diary-card {
+    background: var(--bg-panel);
+    border-radius: var(--radius-standard);
+    box-shadow: var(--shadow-soft);
+    border: none;
+    border-left-style: solid;
+    border-left-width: 5px;
+    overflow: hidden;
+}
+
+.diary-card-body {
+    display: flex;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+}
+
+/* Score Panel Columns styling blocks */
+.diary-score-column {
+    text-align: center;
+    min-width: 70px;
+    padding-right: 1.5rem;
+}
+
+.diary-score-value {
+    font-size: 2.25rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.diary-score-label {
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-size: 0.55rem;
+    letter-spacing: 0.5px;
+}
+
+/* Core Information Detail Box Space */
+.diary-details-compartment {
+    flex: 1;
+    padding-left: 1.5rem;
+    border-left: 1px solid var(--border);
+}
+
+.diary-thought-quote {
+    font-size: 1.05rem;
+    font-style: italic;
+    color: var(--text-main);
+    line-height: 1.5;
+}
+
+/* Card Action Footers layout */
+.diary-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.diary-timestamps {
+    display: flex;
+    gap: 1rem;
+}
+
+.icon-gap {
+    margin-right: 0.25rem;
+}
+
+/* Delete Element styling links */
+.diary-delete-trigger {
+    background: transparent;
+    color: #ef4444;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0;
+    transition: color 0.15s ease;
+}
+
+.diary-delete-trigger:hover {
+    color: #dc2626;
+    text-decoration: underline;
+}
+
+/* Status Semantic Context Color Swaps */
+.mood-border-good {
+    border-left-color: #28a745;
+}
+
+.mood-border-neutral {
+    border-left-color: #ffc107;
+}
+
+.mood-border-bad {
+    border-left-color: #dc3545;
+}
+
+.mood-text-good {
+    color: #28a745;
+}
+
+.mood-text-neutral {
+    color: #ffc107;
+}
+
+.mood-text-bad {
+    color: #dc3545;
+}
+
+/* Empty Placeholder States Component Box */
+.empty-state-card {
+    text-align: center;
+    padding: 3.5rem 2rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-standard);
+    background: var(--bg-panel);
+    box-shadow: var(--shadow-soft);
+}
+
+.empty-state-graphic {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state-heading {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.empty-state-text {
+    color: var(--text-muted);
+    max-width: 420px;
+    margin: 0 auto 1.25rem auto;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* --- Hero Section Styles --- */
+.hero-section {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: #ffffff;
+    padding: 80px 20px;
+    text-align: center;
+}
+
+.hero-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.hero-title {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    line-height: 1.2;
+}
+
+.hero-subtitle {
+    color: #c7d2fe;
+}
+
+.hero-description {
+    font-size: 1.2rem;
+    color: #e0e7ff;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.hero-cta-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn {
+    padding: 12px 24px;
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.2s ease;
+}
+
+.hero-section .btn-primary {
+    background-color: #ffffff;
+    color: #4f46e5;
+}
+
+.hero-section .btn-primary:hover {
+    background-color: #f3f4f6;
+}
+
+.btn-secondary {
+    background-color: rgba(49, 46, 129, 0.5);
+}
+
+/* --- Comparison Table Styles --- */
+.comparison-section {
+    padding: 60px 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.section-title {
+    font-size: 2rem;
+    color: #111827;
+    margin-bottom: 10px;
+}
+
+.table-responsive-wrapper {
+    overflow-x: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.comparison-table th, 
+.comparison-table td {
+    padding: 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.comparison-table th {
+    background-color: #f9fafb;
+    color: #374151;
+    font-weight: 600;
+}
+
+/* Gives your MindMetric application column a visually distinct background */
+.comparison-table .highlight-column {
+    background-color: rgba(243, 244, 246, 0.7);
+    font-weight: 600;
+}
+
+.comparison-table tr:hover {
+    background-color: #f9fafb;
+}
+
+.table-footnote {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #6b7280;
 }

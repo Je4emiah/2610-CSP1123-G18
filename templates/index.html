@@ -1,13 +1,64 @@
 {% extends "base.html" %}
 {% block content %}
-<main class="hero-container">
-    <header class="hero-header">
-        <h1 class="main-title">MindMetric</h1>
-        <p class="sub-title">A simple way for MMU students to monitor emotional trends.</p>
-    </header>
-
-    <div class="action-group">
-        <a href="{{ url_for('login') }}" class="btn-primary">Get Started</a>
+<header class="hero-section">
+    <div class="hero-container">
+        <h1 class="hero-title">
+            Understand Your Mind. <br><span class="hero-subtitle">Track Your Momentum.</span>
+        </h1>
+        <p class="hero-description">
+            MindMetric helps you log your daily thoughts, visualize deep emotional trends over months and years, and
+            optimize your mental well-being securely.
+        </p>
+        <div class="hero-cta-group">
+            <a href="/register" class="btn btn-primary">Get Started Free</a>
+            <a href="/login" class="btn btn-secondary">Sign In</a>
+        </div>
     </div>
+</header>
+
+<main class="content-wrapper">
+    <section class="comparison-section content-panel" style="max-width: 900px; margin: 2rem auto;">
+        <div class="section-header text-center">
+            <h2 class="main-title" style="font-size: 2.25rem;">Why Choose MindMetric?</h2>
+            <p class="sub-title" style="font-size: 1.05rem; margin-bottom: 2rem;">See how we stack up against other
+                popular mood tracking platforms.</p>
+        </div>
+
+        <div class="table-responsive-wrapper">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th style="color: var(--text-muted);">Features</th>
+                        <th class="highlight-column"
+                            style="color: var(--accent); font-weight: 800; border-bottom: 2px solid var(--accent);">
+                            MindMetric (You)</th>
+                        <th style="color: var(--text-muted);">Competitor Horizon</th>
+                        <th style="color: var(--text-muted);">MoodTracker Inc</th>
+                    </tr>
+                </thead>
+                <tbody style="color: var(--text-main);">
+                    {% for row in competitors %}
+                    <tr>
+                        <td class="feature-name" style="font-weight: 600; border-bottom: 1px solid var(--border);">{{
+                            row.feature }}</td>
+                        <td class="highlight-column metric-value"
+                            style="font-weight: 700; border-bottom: 1px solid var(--border);">{{ row.mindmetric }}</td>
+                        <td class="competitor-value"
+                            style="color: var(--text-muted); border-bottom: 1px solid var(--border);">{{
+                            row.competitor_a }}</td>
+                        <td class="competitor-value"
+                            style="color: var(--text-muted); border-bottom: 1px solid var(--border);">{{
+                            row.competitor_b }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footnote text-center"
+            style="color: var(--text-muted); margin-top: 1.5rem; font-size: 0.85rem;">
+            * Data points collected based on standard consumer application tiers in 2026.
+        </div>
+    </section>
 </main>
 {% endblock %}
