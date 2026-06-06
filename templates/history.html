@@ -4,154 +4,74 @@
 {% endblock %}
 
 {% block content %}
-  <div class="container py-5">
+  <main class="diary-container">
     
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="fw-bold">
-        <i class="fas fa-book-open text-primary"></i> Digital Diary
-        <span class="badge bg-secondary fs-6 align-middle ms-2">{{ logs|length }} entries</span>
+    <header class="diary-header">
+      <h2 class="diary-main-title">
+        <i class="fas fa-book-open title-icon"></i> Digital Diary
+        <span class="diary-counter-badge">{{ logs|length }} entries</span>
       </h2>
-      <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
-    </div>
+      <a href="{{ url_for('dashboard') }}" class="nav-item-btn">Back to Dashboard</a>
+    </header>
 
-    <div class="row justify-content-center mb-4">
-      <div class="col-md-8">
-        <div class="input-group shadow-sm">
-          <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-          <input type="text" id="diarySearchInput" class="form-control border-start-0" placeholder="Filter through your past thoughts...">
-        </div>
+    <div class="search-filter-wrapper">
+      <div class="search-input-group">
+        <span class="search-addon-icon"><i class="fas fa-search"></i></span>
+        <input type="text" id="diarySearchInput" class="input-field search-box-input" placeholder="Filter through your past thoughts...">
       </div>
     </div>
 
-    <div class="row justify-content-center">
-      <div class="col-md-8">
-
-        <div class="row justify-content-center mb-4">
-  <div class="col-md-8">
-    <div class="d-flex gap-2 flex-wrap justify-content-start">
-      <button class="btn btn-sm btn-primary filter-btn shadow-sm" onclick="filterMood('all', this)">⚡ All Logs</button>
-      <button class="btn btn-sm btn-outline-success filter-btn shadow-sm" onclick="filterMood('good', this)">😊 High Energy (4-5)</button>
-      <button class="btn btn-sm btn-outline-warning filter-btn shadow-sm" onclick="filterMood('neutral', this)">😐 Stable (3)</button>
-      <button class="btn btn-sm btn-outline-danger filter-btn shadow-sm" onclick="filterMood('bad', this)">⚠️ Needs Attention (1-2)</button>
+    <div class="filter-actions-wrapper">
+      <button class="filter-tab tab-all active-all" onclick="filterMood('all', this)">⚡ All Logs</button>
+      <button class="filter-tab tab-good" onclick="filterMood('good', this)">😊 High Energy (4-5)</button>
+      <button class="filter-tab tab-neutral" onclick="filterMood('neutral', this)">😐 Stable (3)</button>
+      <button class="filter-tab tab-bad" onclick="filterMood('bad', this)">⚠️ Needs Attention (1-2)</button>
     </div>
-  </div>
-</div>
-{% if logs %}
-          {% for log in logs %}
-            <div class="card mb-3 shadow-sm border-0 rounded-3 border-start border-5 {% if log.mood_score >= 4 %}border-success{% elif log.mood_score == 3 %}border-warning{% else %}border-danger{% endif %}" style="background: #fff;">
-              <div class="card-body d-flex align-items-center py-3">
-                
-                <div class="me-4 text-center" style="min-width: 65px;">
-                  <div class="display-5 fw-bold {% if log.mood_score >= 4 %}text-success{% elif log.mood_score == 3 %}text-warning{% else %}text-danger{% endif %}">
-                    {{ log.mood_score }}
-                  </div>
-                  <small class="text-uppercase fw-bold text-muted" style="font-size: 0.55rem; letter-spacing: 0.5px;">Score</small>
+
+    <div class="diary-feed-list">
+      {% if logs %}
+        {% for log in logs %}
+          <div class="diary-card mood-border-{% if log.mood_score >= 4 %}good{% elif log.mood_score == 3 %}neutral{% else %}bad{% endif %}">
+            <div class="diary-card-body">
+              
+              <div class="diary-score-column">
+                <div class="diary-score-value mood-text-{% if log.mood_score >= 4 %}good{% elif log.mood_score == 3 %}neutral{% else %}bad{% endif %}">
+                  {{ log.mood_score }}
                 </div>
+                <small class="diary-score-label">Score</small>
+              </div>
+              
+              <div class="diary-details-compartment">
+                <p class="diary-thought-quote">
+                  {{ log.thought_text if log.thought_text else 'Logged entry without additional thoughts.' }}
+                </p>
                 
-                <div class="ps-3 w-100" style="border-left: 1px solid #eee;">
-                  <p class="mb-0 text-dark" style="font-size: 1.05rem; font-style: italic; color: #2d3748 !important;">
-                    "{{ log.thought_text if log.thought_text else 'Logged entry without additional thoughts.' }}"
-                  </p>
+                <footer class="diary-card-footer">
+                  <div class="diary-timestamps">
+                    <span class="timestamp-item"><i class="far fa-calendar-alt icon-gap"></i> {{ log.timestamp.split(' ')[0] }}</span>
+                    <span class="timestamp-item"><i class="far fa-clock icon-gap"></i> {{ log.timestamp.split(' ')[1] }}</span>
+                  </div>
                   
-                  <div class="d-flex align-items-center justify-content-between mt-3 text-muted" style="font-size: 0.8rem;">
-                    <div class="d-flex gap-3">
-                      <span><i class="far fa-calendar-alt me-1"></i> {{ log.timestamp.split(' ')[0] }}</span>
-                      <span><i class="far fa-clock me-1"></i> {{ log.timestamp.split(' ')[1] }}</span>
-                    </div>
-                    
-                    <button class="btn btn-link text-danger p-0 border-0 text-decoration-none" 
-                            onclick="deleteEntry('{{ log.id }}', this)">
-                      <i class="fas fa-trash-alt me-1"></i> Delete
-                    </button>
-                  </div>
-                </div>
-
-              </div> </div> {% endfor %}
-        {% else %}
-          <div class="text-center py-5 shadow-sm border rounded-3 bg-white">
-            <div class="display-1 text-muted mb-3">📝</div>
-            <h4 class="text-muted fw-bold">Your Digital Diary is Empty</h4>
-            <p class="text-secondary px-3">You haven't recorded any metrics yet. Start logging your telemetry vectors to map out insights!</p>
-            <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-sm mt-2">
-              <i class="fas fa-plus me-1"></i> Log First Entry
-            </a>
-          </div>
-        {% endif %}
-      </div>
+                  <button class="diary-delete-trigger" onclick="deleteEntry('{{ log.id }}', this)">
+                    <i class="fas fa-trash-alt icon-gap"></i> Delete
+                  </button>
+                </footer>
+              </div>
+            </div> 
+          </div> 
+        {% endfor %}
+      {% else %}
+        <div class="empty-state-card">
+          <div class="empty-state-graphic">📝</div>
+          <h4 class="empty-state-heading">Your Digital Diary is Empty</h4>
+          <p class="empty-state-text">You haven't recorded any metrics yet. Start logging your telemetry vectors to map out insights!</p>
+          <a href="{{ url_for('dashboard') }}" class="action-btn btn-sm">
+            <i class="fas fa-plus icon-gap"></i> Log First Entry
+          </a>
+        </div>
+      {% endif %}
     </div>
-  </div>
+  </main>
 
-  <script>
-    // --- 1. TEXT SEARCH FILTER ---
-    document.getElementById('diarySearchInput').addEventListener('keyup', function() {
-      let filter = this.value.toLowerCase().trim();
-      let cards = document.querySelectorAll('.card.mb-3'); 
-
-      cards.forEach(card => {
-        let thoughtText = card.querySelector('p') ? card.querySelector('p').textContent.toLowerCase() : '';
-        let scoreText = card.querySelector('.display-5') ? card.querySelector('.display-5').textContent.toLowerCase().trim() : '';
-        let timestampText = card.querySelector('.text-muted') ? card.querySelector('.text-muted').textContent.toLowerCase() : '';
-        
-        let searchableContent = `${thoughtText} ${scoreText} ${timestampText}`;
-        
-        if (searchableContent.includes(filter)) {
-          card.style.setProperty('display', 'block', 'important');
-        } else {
-          card.style.setProperty('display', 'none', 'important');
-        }
-      });
-    });
-
-    // --- 2. MOOD BUTTON FILTER ---
-    function filterMood(type, element) {
-      document.querySelectorAll('.filter-btn').forEach(btn => {
-        if (btn.classList.contains('btn-primary')) btn.classList.replace('btn-primary', 'btn-outline-primary');
-        if (btn.classList.contains('btn-success')) btn.classList.replace('btn-success', 'btn-outline-success');
-        if (btn.classList.contains('btn-warning')) btn.classList.replace('btn-warning', 'btn-outline-warning');
-        if (btn.classList.contains('btn-danger')) btn.classList.replace('btn-danger', 'btn-outline-danger');
-      });
-      
-      if (type === 'all') element.classList.replace('btn-outline-primary', 'btn-primary');
-      else if (type === 'good') element.classList.replace('btn-outline-success', 'btn-success');
-      else if (type === 'neutral') element.classList.replace('btn-outline-warning', 'btn-warning');
-      else if (type === 'bad') element.classList.replace('btn-outline-danger', 'btn-danger');
-
-      let cards = document.querySelectorAll('.card.mb-3');
-      cards.forEach(card => {
-        let scoreElement = card.querySelector('.display-5');
-        if (!scoreElement) return;
-        
-        let score = parseInt(scoreElement.textContent.trim());
-        
-        if (type === 'all') {
-          card.style.setProperty('display', 'block', 'important');
-        } else if (type === 'good' && score >= 4) {
-          card.style.setProperty('display', 'block', 'important');
-        } else if (type === 'neutral' && score === 3) {
-          card.style.setProperty('display', 'block', 'important');
-        } else if (type === 'bad' && score <= 2) {
-          card.style.setProperty('display', 'block', 'important');
-        } else {
-          card.style.setProperty('display', 'none', 'important');
-        }
-      });
-    }
-
-    // --- 3. QUICK AJAX DELETE (Moved Out and Fixed) ---
-    function deleteEntry(logId, btn) {
-      if (confirm("Permanently delete this entry?")) {
-        fetch(`/delete_entry/${logId}`, { method: 'POST' })
-        .then(res => {
-          if (res.ok) {
-            btn.closest('.card.mb-3').remove();
-            
-            let badge = document.querySelector('.badge.bg-secondary');
-            if (badge) badge.innerText = `${parseInt(badge.innerText) - 1} entries`;
-          } else {
-            alert("Delete failed.");
-          }
-        });
-      }
-    }
-  </script>
+  <script src="{{ url_for('static', filename='js/history.js') }}"></script>
 {% endblock %}

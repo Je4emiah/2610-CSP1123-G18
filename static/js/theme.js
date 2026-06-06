@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault(); // Stop the menu from closing immediately
         const currentTheme = htmlElement.getAttribute('data-bs-theme');
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        
+
         htmlElement.setAttribute('data-bs-theme', newTheme);
         localStorage.setItem('theme', newTheme);
         updateIcon(newTheme);
