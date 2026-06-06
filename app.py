@@ -72,7 +72,14 @@ def inject_user():
 # --- ROUTES ---
 @app.route('/')
 def index():
-    return render_template('index.html')
+    competitors = [
+        {"feature": "Automated Mood Analytics", "mindmetric": "✅ Advanced (Monthly/Yearly)", "competitor_a": "❌ Basic Only", "competitor_b": "⚠️ Premium Only"},
+        {"feature": "Secure 3-Tier Account Recovery", "mindmetric": "✅ Yes", "competitor_a": "❌ Email Only", "competitor_b": "❌ Email Only"},
+        {"feature": "Custom Profile Avatars & Personalization", "mindmetric": "✅ Yes", "competitor_a": "⚠️ Premium Only", "competitor_b": "❌ No"},
+        {"feature": "Data Privacy & Localized Storage", "mindmetric": "✅ Full Encryption", "competitor_a": "⚠️ Shared Data", "competitor_b": "⚠️ Cloud Only"},
+        {"feature": "Pricing", "mindmetric": "💎 100% Free", "competitor_a": "$9.99/mo", "competitor_b": "$4.99/mo"},
+    ]
+    return render_template('index.html', competitors=competitors)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
