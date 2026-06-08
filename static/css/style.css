@@ -670,3 +670,52 @@ body {
     text-decoration: none;
     font-size: 0.9rem;
 }
+
+/* ==========================================================================
+   9. TELEMETRY VISUALIZATION FILTERS & PRIVACY PANEL STYLE RULES
+   ========================================================================== */
+.visualization-filters-panel {
+    transition: all 0.3s ease;
+}
+
+.disabled-form-section {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
+    transition: opacity 0.3s ease;
+}
+
+.disabled-form-section input,
+.disabled-form-section select,
+.disabled-form-section textarea,
+.disabled-form-section button {
+    cursor: not-allowed !important;
+}
+
+/* Responsive adjustment for controls layout on smaller/mobile viewports */
+@media (max-width: 768px) {
+    .visualization-filters-panel {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    
+    .metric-select-block {
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .privacy-toggle-block {
+        width: 100%;
+        border-top: 1px solid var(--border);
+        padding-top: 12px;
+        margin-top: 5px;
+    }
+    
+    .privacy-toggle-block .form-check {
+        padding-left: 2.5em !important;
+    }
+    
+    .privacy-toggle-block span {
+        padding-left: 0 !important;
+    }
+}

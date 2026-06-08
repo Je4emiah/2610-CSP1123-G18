@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import datetime
 from flask import Flask, render_template, request, url_for, redirect, jsonify, session, flash, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -85,7 +86,7 @@ def login():
         remember = request.form.get('remember_me')
         
         db = get_db()
-        # FIXES INDEX ERROR: Fetch BOTH password_hash AND name columns
+        # Fetch BOTH password_hash AND name columns
         cursor = db.execute("SELECT password_hash, name FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
 
@@ -125,10 +126,13 @@ def forgot_password():
 @app.route('/reset_password', methods=['POST'])
 def reset_password():
     username = request.form.get('username')
+    a1 = request.form.get('q1', '').lower().strip()
+    a2 = request.form.get('q2', '').lower().strip()
+    a3 = request.form.get('q3', '').lower().strip()
     new_password = request.form.get('new_password')
     confirm_password = request.form.get('confirm_password')
 
-    # Guard 1: Validate matching parameters
+    # Guard 1: Validate frontend matching parameters
     if new_password != confirm_password:
         flash("Passwords do not match! Please try again.", "danger")
         return redirect(url_for('forgot_password'))
@@ -141,7 +145,12 @@ def reset_password():
         flash("User profile data record not found.", "danger")
         return redirect(url_for('forgot_password'))
 
-    # Success Loop: Apply secure hash and update database
+    # Guard 3: Authenticate security questions profile keys
+    if user['q1_answer'] != a1 or user['q2_answer'] != a2 or user['q3_answer'] != a3:
+        flash("Identity Verification Failed: Security question answers are incorrect!", "danger")
+        return redirect(url_for('forgot_password'))
+
+    # Success Loop: Questions passed, apply secure hash and update database
     hashed_pw = generate_password_hash(new_password)
     db.execute('UPDATE users SET password_hash = ? WHERE username = ?', (hashed_pw, username))
     db.commit()
@@ -230,7 +239,7 @@ def delete_account():
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
-        full_name = request.form.get('full_name')  # 1. Grab full name from form
+        full_name = request.form.get('full_name')  # Grab full name from form
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         
@@ -246,7 +255,6 @@ def register():
         
         try:
             db = get_db()
-            # 2. Included 'name' column and its binding parameter '?'
             db.execute("""
                 INSERT INTO users (username, name, password_hash, q1_answer, q2_answer, q3_answer) 
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -334,45 +342,217 @@ def history():
 
 @app.route('/api/mood_data/<username>')
 def api_mood_data(username):
-    """Generates down-sampled historical tracking metrics configured for Chart.js rendering."""
-    time_range = request.args.get('range', 'day')
-    offset = int(request.args.get('offset', 0))
+    """Generates historical tracking metrics filtered by a specific year and month."""
+    import datetime
     
-    ranges = {
-        'day': '1 day',
-        'week': '7 days'
-    }
+    # Get parameters from frontend, defaulting to the current year and month
+    now = datetime.datetime.now()
+    year = request.args.get('year', str(now.year))
+    month = request.args.get('month', f"{now.month:02d}") # Ensures 2-digit format '01' through '12'
     
     db = get_db()
     
-    if time_range in ranges:
-        unit = ranges[time_range]
-        start_time = f"datetime('now', '-{(offset + 1)} {unit}')"
-        end_time = f"datetime('now', '-{offset} {unit}')"
+    # Query logs matching the specified year and month (YYYY-MM-%)
+    query = """
+        SELECT timestamp, mood_score 
+        FROM mood_logs 
+        WHERE username = ? 
+        AND strftime('%Y-%m', timestamp) = ?
+        ORDER BY timestamp ASC
+    """
         
-        query = f"""
-                    SELECT timestamp, mood_score 
-                    FROM mood_logs 
-                    WHERE username = ? 
-                    AND datetime(timestamp) >= {start_time} 
-                    AND datetime(timestamp) < {end_time} 
-                    ORDER BY timestamp ASC
-                """
-    else:
-        query = f"""
-                    SELECT timestamp, mood_score
-                    FROM mood_logs
-                    WHERE username = ?
-                    ORDER BY timestamp ASC
-                """
-        
-    rows = db.execute(query, (username,)).fetchall()
+    rows = db.execute(query, (username, f"{year}-{month}")).fetchall()
+    
     return jsonify({
         "labels": [row[0] for row in rows],
         "data": [row[1] for row in rows],
-        "range_type": time_range
+        "current_year": int(year),
+        "current_month": int(month)
     })
+
+def seed_user_telemetry(username, year, month):
+    """Generates mock telemetry logs for a user if they do not exist for the specified year/month."""
+    import random
+    import calendar
+    db = get_db()
     
+    # Check if any telemetry exists for this user in this year-month
+    cursor = db.execute('''
+        SELECT COUNT(*) FROM telemetry_logs 
+        WHERE username = ? AND strftime('%Y-%m', timestamp) = ?
+    ''', (username, f"{year}-{month}"))
+    count = cursor.fetchone()[0]
+    
+    if count == 0:
+        try:
+            days_in_month = calendar.monthrange(int(year), int(month))[1]
+            for day in range(1, days_in_month + 1):
+                date_str = f"{year}-{month}-{day:02d}"
+                
+                # 1. Steps count: random 2000 to 12000
+                steps_val = random.randint(2000, 12000)
+                db.execute("""
+                    INSERT INTO telemetry_logs (username, metric_type, value, timestamp) 
+                    VALUES (?, 'steps', ?, ?)
+                """, (username, steps_val, f"{date_str} 20:00:00"))
+                
+                # 2. Active execution hours: random 1.0 to 8.0
+                active_val = round(random.uniform(1.0, 8.0), 1)
+                db.execute("""
+                    INSERT INTO telemetry_logs (username, metric_type, value, timestamp) 
+                    VALUES (?, 'active_hours', ?, ?)
+                """, (username, active_val, f"{date_str} 18:00:00"))
+                
+                # 3. Sleep cycles: random 4.5 to 9.0
+                sleep_val = round(random.uniform(4.5, 9.0), 1)
+                db.execute("""
+                    INSERT INTO telemetry_logs (username, metric_type, value, timestamp) 
+                    VALUES (?, 'sleep_cycles', ?, ?)
+                """, (username, sleep_val, f"{date_str} 08:00:00"))
+                
+            db.commit()
+            print(f"Lazy seeded telemetry logs for user {username} for {year}-{month}")
+        except Exception as e:
+            print(f"Error seeding telemetry: {e}")
+
+@app.route('/api/telemetry_data/<username>')
+def api_telemetry_data(username):
+    """Generates combined mood and physical telemetry logs for analytics rendering, supporting privacy mode."""
+    import datetime
+    import calendar
+    
+    now = datetime.datetime.now()
+    year = request.args.get('year', str(now.year))
+    month = request.args.get('month', f"{now.month:02d}")
+    metric_type = request.args.get('metric_type', 'steps')
+    
+    db = get_db()
+    
+    # Lazy seed data for visualization if it's a specific user (not 'global')
+    if username != 'global' and username != 'none':
+        seed_user_telemetry(username, year, month)
+    
+    # Branch queries based on username being 'global' or a specific user
+    if username == 'global':
+        # Global mood tracking (average of all users per day)
+        mood_query = """
+            SELECT date(timestamp) as log_date, AVG(mood_score) as avg_mood
+            FROM mood_logs
+            WHERE strftime('%Y-%m', timestamp) = ?
+            GROUP BY log_date
+        """
+        mood_rows = db.execute(mood_query, (f"{year}-{month}",)).fetchall()
+        
+        # Global physical telemetry tracking (average of all users per day)
+        telemetry_query = """
+            SELECT date(timestamp) as log_date, AVG(value) as avg_val
+            FROM telemetry_logs
+            WHERE metric_type = ? AND strftime('%Y-%m', timestamp) = ?
+            GROUP BY log_date
+        """
+        telemetry_rows = db.execute(telemetry_query, (metric_type, f"{year}-{month}")).fetchall()
+    else:
+        # Localized/Personal mood tracking (average per day for the specific user)
+        mood_query = """
+            SELECT date(timestamp) as log_date, AVG(mood_score) as avg_mood
+            FROM mood_logs
+            WHERE username = ? AND strftime('%Y-%m', timestamp) = ?
+            GROUP BY log_date
+        """
+        mood_rows = db.execute(mood_query, (username, f"{year}-{month}")).fetchall()
+        
+        # Localized/Personal physical telemetry tracking
+        telemetry_query = """
+            SELECT date(timestamp) as log_date, AVG(value) as avg_val
+            FROM telemetry_logs
+            WHERE username = ? AND metric_type = ? AND strftime('%Y-%m', timestamp) = ?
+            GROUP BY log_date
+        """
+        telemetry_rows = db.execute(telemetry_query, (username, metric_type, f"{year}-{month}")).fetchall()
+        
+    mood_map = {row['log_date']: row['avg_mood'] for row in mood_rows}
+    telemetry_map = {row['log_date']: row['avg_val'] for row in telemetry_rows}
+    
+    # Build complete linear arrays for all days of the selected month
+    try:
+        days_in_month = calendar.monthrange(int(year), int(month))[1]
+    except Exception:
+        days_in_month = 30
+        
+    labels = []
+    mood_data = []
+    telemetry_data = []
+    
+    for day in range(1, days_in_month + 1):
+        date_str = f"{year}-{month}-{day:02d}"
+        labels.append(date_str)
+        
+        # Map user's chronological mood index (or None if no entry)
+        if date_str in mood_map:
+            mood_data.append(round(mood_map[date_str], 2))
+        else:
+            mood_data.append(None)
+            
+        # Standardize fallback for telemetry to prevent breaking linear line arrays
+        if date_str in telemetry_map:
+            telemetry_data.append(round(telemetry_map[date_str], 2))
+        else:
+            telemetry_data.append(0.0) # Dynamic fallback for days lacking telemetry logs
+            
+    return jsonify({
+        "labels": labels,
+        "mood_data": mood_data,
+        "telemetry_data": telemetry_data,
+        "current_year": int(year),
+        "current_month": int(month),
+        "metric_type": metric_type,
+        "privacy": "global" if username == 'global' else "local"
+    })
+
+@app.route('/api/mood_blind_summary')
+def api_mood_blind_summary():
+    """Privacy-first anonymous mood summary endpoint."""
+    year = request.args.get('year')
+    month = request.args.get('month')
+    db = get_db()
+
+    if year and month:
+        date_filter = f"{year}-{month.zfill(2)}"
+        summary = db.execute('''
+            SELECT COUNT(*) as total_entries, AVG(mood_score) as avg_score
+            FROM mood_logs
+            WHERE strftime('%Y-%m', timestamp) = ?
+        ''', (date_filter,)).fetchone()
+
+        distribution = db.execute('''
+            SELECT mood_score, COUNT(*) as count
+            FROM mood_logs
+            WHERE strftime('%Y-%m', timestamp) = ?
+            GROUP BY mood_score
+            ORDER BY mood_score DESC
+        ''', (date_filter,)).fetchall()
+    else:
+        summary = db.execute('''
+            SELECT COUNT(*) as total_entries, AVG(mood_score) as avg_score
+            FROM mood_logs
+        ''').fetchone()
+
+        distribution = db.execute('''
+            SELECT mood_score, COUNT(*) as count
+            FROM mood_logs
+            GROUP BY mood_score
+            ORDER BY mood_score DESC
+        ''').fetchall()
+
+    return jsonify({
+        "total_entries": summary['total_entries'] if summary else 0,
+        "avg_score": round(summary['avg_score'], 2) if summary and summary['avg_score'] is not None else None,
+        "distribution": [{"mood_score": row['mood_score'], "count": row['count']} for row in distribution],
+        "year": int(year) if year else None,
+        "month": int(month) if month else None,
+        "privacy": "Aggregated mood metrics only. No user identifiers returned."
+    })
+
 @app.route('/api/log_mood', methods=['POST'])
 def api_log_mood():
     """Standalone endpoint handling decoupled programmatic entry insertions."""
@@ -400,7 +580,7 @@ def init_db():
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )''')
 
-    # 3. Updated table schema parameters to include 'name' column
+    # Combined table parameters: Contains security strings, names, profile pics, and gender options
     db.execute('''CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
@@ -412,7 +592,15 @@ def init_db():
         q2_answer TEXT,
         q3_answer TEXT
     )''')
-    print("Database refreshed and ready with Full Name schema parameters!")
+
+    db.execute('''CREATE TABLE IF NOT EXISTS telemetry_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        metric_type TEXT NOT NULL,
+        value REAL NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
+    print("Database refreshed and ready with fully unified schema configuration parameters!")
 
 if __name__ == '__main__':
     with app.app_context():
