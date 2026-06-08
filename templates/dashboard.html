@@ -7,6 +7,30 @@
           <h1 class="main-title">Your Insights</h1>
         </header>
 
+        {# --- Streak Counter Banner Display Engine --- #}
+        {% if streak > 0 %}
+          <div class="streak-banner streak-active">
+            <div class="streak-content">
+              <div class="streak-emoji">🔥</div>
+              <div class="streak-details">
+                <h6 class="streak-title">{{ streak }}-Day Streak!</h6>
+                <small class="streak-subtitle">You're doing amazing. Keep building this tracking habit daily!</small>
+              </div>
+            </div>
+            <span class="streak-badge status-active">ACTIVE</span>
+          </div>
+        {% else %}
+          <div class="streak-banner streak-inactive">
+            <div class="streak-content">
+              <div class="streak-emoji">🌱</div>
+              <div class="streak-details">
+                <h6 class="streak-title">Start a New Streak</h6>
+                <small class="streak-subtitle">Log your thoughts today to start your streak counter chain!</small>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+
         <div class="content-panel logger-module">
           <h2 class="section-label">Log Your Mind</h2>
           <form id="moodForm" action="{{ url_for('dashboard') }}" method="POST" class="semantic-form">
@@ -55,6 +79,7 @@
         </div>
       </div>
     </section>
+
     <section class="story-section" id="section-chart">
       <div class="section-content max-width-lg">
         <div class="content-panel visualization-module">
@@ -86,7 +111,6 @@
             </div>
           </header>
 
-          <!-- Telemetry Selection & Privacy Toggle Panel -->
           <div class="visualization-filters-panel" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 1.5rem; padding: 15px; background: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-standard);">
              <div class="metric-select-block" style="display: flex; align-items: center; gap: 10px;">
                 <label for="metricSelect" class="field-label" style="margin: 0; font-weight: 600; white-space: nowrap; color: var(--text-main);">Correlation Metric:</label>
