@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, url_for, redirect, jsonify, s
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import timedelta
+from google.genai import Client
 
 app = Flask(__name__)
 app.secret_key = 'mmu_project_secret_key'
@@ -295,23 +296,54 @@ def dashboard():
     entry_count = row['entry_count'] if row['entry_count'] else 0
     avg_score = round(row['avg_score'], 1) if row['avg_score'] else 0.0
 
-    insight_dictionary = {
-        5: {"emoji": "🔥", "review": "Exceptional mental momentum! Your tracking signals display peak emotional clarity and highly optimal decompression behavior loops. Keep cruising here."},
-        4: {"emoji": "😊", "review": "A highly positive, constructive horizon. Your tracking metrics indicate steady wellness and reliable stability. Maintain your current active choices!"},
-        3: {"emoji": "😐", "review": "A balanced neutral baseline. Things are holding perfectly constant, but consider introducing mild pattern variations or taking a small physical break to feel fully energized."},
-        2: {"emoji": "☹️", "review": "Your tracker highlights a subtle down-trending sequence. Energy metrics feel slightly strained. Make sure to schedule intentional downtime and get some rest today."},
-        1: {"emoji": "😫", "review": "Telemetry suggests heavy processing loads and fatigue patterns. Prioritize absolute preservation right now. Close down non-essential loops and decompress."}
-    }
+    # Fetch the actual log text notes to give to Gemini
+    recent_logs = db.execute('''
+        SELECT timestamp, mood_score, thought_text 
+        FROM mood_logs 
+        WHERE username = ? 
+        AND timestamp >= datetime('now', '-7 days', 'localtime')
+        ORDER BY timestamp DESC
+    ''', (username,)).fetchall()
 
-    weekly_insight = {
-        "emoji": "🤔",
-        "review": "No recent metrics recorded this week yet. Submit your first mood log box above to generate your dynamic tracking insights!"
-    }
-
+    # --- NEW LIVE GEMINI AI INSIGHTS ---
+    weekly_insight = "No recent metrics recorded this week yet. Submit your first mood log box above to see your dynamic tracking insights!"
+    
     if entry_count > 0:
-        score_key = max(1, min(5, int(round(avg_score))))
-        weekly_insight = insight_dictionary[score_key]
-
+        try:
+            # 1. Initialize the Gemini Client
+            client = Client()
+            
+            # 2. Format the recent logs into a clean text summary for the AI to read
+            logs_summary = ""
+            for log in recent_logs:
+                logs_summary += f"- Date: {log['timestamp']}, Mood Score: {log['mood_score']}/5, Note: \"{log['thought_text']}\"\n"
+            
+            # 3. Create the prompt telling the AI how to behave
+            ai_prompt = f"""
+            You are an empathetic wellness assistant built into the MindMetric web app.
+            Analyze the following mood diary data points from the user's last few entries:
+            
+            {logs_summary}
+            
+            Provide a short, comforting, 2-sentence analytical insight. 
+            Highlight any trends or patterns, and offer a gentle, actionable recommendation.
+            Keep the tone warm and professional. Do not use any markdown formatting or asterisks.
+            """
+            
+            # 4. Request Gemini to generate the insight
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=ai_prompt
+            )
+            
+            if response.text:
+                weekly_insight = response.text.strip()
+                
+        except Exception as e:
+            # Backup: If the API key is missing or the internet cuts out, fall back safely
+            print(f"⚠️ Gemini API Call Failed: {e}")
+            weekly_insight = "Unable to sync with live AI generation channels. Displaying local telemetry matrices."
+            
     return render_template('dashboard.html', 
                            insight=weekly_insight, 
                            entry_count=entry_count, 
