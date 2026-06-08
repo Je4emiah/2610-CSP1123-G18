@@ -18,13 +18,16 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="full_name">Full Name</label>
+          <label class="form-label" for="full_name">Name</label>
           <input type="text" id="full_name" name="full_name" class="form-input" placeholder="Your real name" required />
         </div>
 
-        <div class="form-group">
+<div class="form-group">
           <label class="form-label" for="password">Password</label>
-          <input type="password" id="password" name="password" class="form-input" placeholder="••••••" required />
+          <div style="position: relative; display: flex; align-items: center;">
+            <input type="password" id="password" name="password" class="form-input" placeholder="Enter secure password" required style="padding-right: 2.5rem;" />
+            <span onclick="togglePasswordVisibility('password', this)" style="position: absolute; right: 12px; cursor: pointer; user-select: none; font-size: 1.1rem; z-index: 10;">👁️</span>
+          </div>
           
           <p class="field-instruction-note">💡 Password must be at least 6 characters and contain a mix of uppercase, lowercase, and special symbols.</p>
 
@@ -33,9 +36,11 @@
 
         <div class="form-group">
           <label class="form-label" for="confirm_password">Confirm Password</label>
-          <input type="password" id="confirm_password" name="confirm_password" class="form-input" placeholder="••••••" required />
+          <div style="position: relative; display: flex; align-items: center;">
+            <input type="password" id="confirm_password" name="confirm_password" class="form-input" placeholder="Repeat your password" required style="padding-right: 2.5rem;" />
+            <span onclick="togglePasswordVisibility('confirm_password', this)" style="position: absolute; right: 12px; cursor: pointer; user-select: none; font-size: 1.1rem; z-index: 10;">👁️</span>
+          </div>
         </div>
-
         <div class="security-divider">
           <span class="security-divider-text">🔒 Two-Step Verification (2SV) Setup</span>
         </div>

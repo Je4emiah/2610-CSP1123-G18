@@ -20,8 +20,11 @@
           <input type="text" name="username" class="form-input" required placeholder="Enter your username" />
         </div>
         <div class="form-group">
-          <label class="form-label">Password</label>
-          <input type="password" name="password" class="form-input" required placeholder="Enter your password" />
+          <label class="form-label" for="password">Password</label>
+          <div style="position: relative; display: flex; align-items: center;">
+            <input type="password" id="password" name="password" class="form-input" placeholder="Enter your password" required style="padding-right: 2.5rem;" />
+            <span onclick="togglePasswordVisibility('password', this)" style="position: absolute; right: 12px; cursor: pointer; user-select: none; font-size: 1.1rem; z-index: 10;">👁️</span>
+          </div>
         </div>
         <p class="auth-link-text">
           <a href="{{ url_for('forgot_password') }}" class="auth-link">Forgot password?</a>
@@ -36,4 +39,5 @@
       </footer>
     </div>
   </main>
+  <script src="{{ url_for('static', filename='js/register.js') }}"></script>
 {% endblock %}
