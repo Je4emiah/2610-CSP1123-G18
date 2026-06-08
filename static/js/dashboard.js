@@ -11,6 +11,7 @@ let myChart = null;
 // Initialize UI elements to match the current month/year on start
 function initFilterSelectors() {
     const yearSelect = document.getElementById('yearSelect');
+    if (!yearSelect) return;
     
     // Safely inject a new option into the Year dropdown if the current year isn't listed yet
     const yearExists = Array.from(yearSelect.options).some(option => parseInt(option.value) === state.year);
@@ -22,7 +23,8 @@ function initFilterSelectors() {
     }
 
     // Force the dropdown menus to visually match our current global state variables
-    document.getElementById('monthSelect').value = String(state.month).padStart(2, '0');
+    const monthSelect = document.getElementById('monthSelect');
+    if (monthSelect) monthSelect.value = String(state.month).padStart(2, '0');
     yearSelect.value = state.year;
     
     const metricSelect = document.getElementById('metricSelect');
@@ -34,8 +36,11 @@ function initFilterSelectors() {
 
 // Triggered when a dropdown filter is manually changed by the user
 function handleDropdownChange() {
-    state.month = parseInt(document.getElementById('monthSelect').value);
-    state.year = parseInt(document.getElementById('yearSelect').value);
+    const monthSelect = document.getElementById('monthSelect');
+    const yearSelect = document.getElementById('yearSelect');
+    
+    if (monthSelect) state.month = parseInt(monthSelect.value);
+    if (yearSelect) state.year = parseInt(yearSelect.value);
     
     const metricSelect = document.getElementById('metricSelect');
     if (metricSelect) state.metricType = metricSelect.value;
@@ -64,8 +69,11 @@ function adjustMonth(step) {
     }
 
     // Sync state values back to the DOM dropdowns
-    document.getElementById('monthSelect').value = String(state.month).padStart(2, '0');
-    document.getElementById('yearSelect').value = state.year;
+    const monthSelect = document.getElementById('monthSelect');
+    const yearSelect = document.getElementById('yearSelect');
+    
+    if (monthSelect) monthSelect.value = String(state.month).padStart(2, '0');
+    if (yearSelect) yearSelect.value = state.year;
 
     updateDashboard();
 }
@@ -123,7 +131,7 @@ async function updateDashboard() {
         const data = await response.json();
 
         // Update Counter display metadata based on mood data entries
-        if (counterElement) {
+        if (counterElement && data.mood_data) {
             const count = data.mood_data.filter(val => val !== null).length;
             counterElement.innerText = `${count} logs found`;
             counterElement.style.color = count === 0 ? "#ef4444" : "#94a3b8";
@@ -142,7 +150,7 @@ async function updateDashboard() {
         // Prepare Chart datasets
         const datasets = [{
             label: 'Mood Level',
-            data: data.mood_data,
+            data: data.mood_data || [],
             borderColor: '#00D4FF',
             backgroundColor: gradient,
             borderWidth: 4,
@@ -155,7 +163,7 @@ async function updateDashboard() {
         }];
 
         // Multi-axis logic mapping a secondary linear trend line
-        if (state.metricType !== 'none') {
+        if (state.metricType !== 'none' && data.telemetry_data) {
             let telemetryLabel = 'Metric';
             let color = '#2563eb';
             if (state.metricType === 'steps') {
@@ -213,12 +221,12 @@ async function updateDashboard() {
             };
         }
 
+        const labels = data.labels ? data.labels.map(label => label.split(' ')[0] || label) : [];
+
         myChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: data.labels.map(label => {
-                    return label.split(' ')[0] || label; 
-                }),
+                labels: labels,
                 datasets: datasets
             },
             options: {
