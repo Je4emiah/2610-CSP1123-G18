@@ -7,30 +7,6 @@
           <h1 class="main-title">Your Insights</h1>
         </header>
 
-        {# --- Streak Counter Banner Display Engine --- #}
-        {% if streak > 0 %}
-          <div class="streak-banner streak-active">
-            <div class="streak-content">
-              <div class="streak-emoji">🔥</div>
-              <div class="streak-details">
-                <h6 class="streak-title">{{ streak }}-Day Streak!</h6>
-                <small class="streak-subtitle">You're doing amazing. Keep building this tracking habit daily!</small>
-              </div>
-            </div>
-            <span class="streak-badge status-active">ACTIVE</span>
-          </div>
-        {% else %}
-          <div class="streak-banner streak-inactive">
-            <div class="streak-content">
-              <div class="streak-emoji">🌱</div>
-              <div class="streak-details">
-                <h6 class="streak-title">Start a New Streak</h6>
-                <small class="streak-subtitle">Log your thoughts today to start your streak counter chain!</small>
-              </div>
-            </div>
-          </div>
-        {% endif %}
-
         <div class="content-panel logger-module">
           <h2 class="section-label">Log Your Mind</h2>
           <form id="moodForm" action="{{ url_for('dashboard') }}" method="POST" class="semantic-form">
@@ -70,6 +46,11 @@
             </p>
           </div>
 
+          <div id="blindMoodSummary" class="privacy-summary-panel" style="margin-top: 1.5rem; padding: 1rem; border-radius: 16px; background: #f8fafc; color: #0f172a; text-align: left;">
+            <h4 class="section-label">Anonymous Mood Summary</h4>
+            <p id="blindMoodSummaryText">Loading privacy-first mood summary...</p>
+          </div>
+
           <button class="nav-item-btn" style="margin-top: 2rem;" onclick="scrollToSection('section-chart')">View Visual Analytics ↓</button>
         </div>
       </div>
@@ -104,6 +85,32 @@
               <span id="dataCounter" class="status-counter">Loading...</span>
             </div>
           </header>
+
+          <!-- Telemetry Selection & Privacy Toggle Panel -->
+          <div class="visualization-filters-panel" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 1.5rem; padding: 15px; background: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-standard);">
+             <div class="metric-select-block" style="display: flex; align-items: center; gap: 10px;">
+                <label for="metricSelect" class="field-label" style="margin: 0; font-weight: 600; white-space: nowrap; color: var(--text-main);">Correlation Metric:</label>
+                <select id="metricSelect" class="input-field" onchange="handleDropdownChange()" style="padding: 5px 10px; width: auto; margin: 0;">
+                   <optgroup label="Manual Inputs">
+                      <option value="none">None (Mood Only)</option>
+                   </optgroup>
+                   <optgroup label="Synced Google Fit (Environmental)">
+                      <option value="steps" selected>👟 Step Count</option>
+                      <option value="active_hours">⚡ Active Hours</option>
+                      <option value="sleep_cycles">😴 Sleep Cycles</option>
+                   </optgroup>
+                </select>
+             </div>
+
+             <div class="privacy-toggle-block d-flex flex-column align-items-start">
+                <div class="form-check form-switch d-flex align-items-center gap-2 m-0" style="padding-left: 2.5em;">
+                   <input class="form-check-input" type="checkbox" role="switch" id="privacyToggle" onchange="handlePrivacyToggleChange()" style="cursor: pointer; margin-top: 0;">
+                   <label class="form-check-label" for="privacyToggle" style="font-weight: 600; cursor: pointer; user-select: none; color: var(--text-main); margin-bottom: 0;">Privacy Mode</label>
+                   <span id="privacyStatusMarker" class="badge bg-secondary" style="font-size: 0.75rem; transition: all 0.2s ease;">Local Tracker</span>
+                </div>
+                <span id="privacyHintText" class="text-muted" style="font-size: 0.75rem; display: block; margin-top: 4px; padding-left: 2.5em;">Showing personalized mood & telemetry metrics.</span>
+             </div>
+          </div>
 
           <div class="chart-view">
             <canvas id="moodChart" data-username="{{ session.user_id }}"></canvas>
