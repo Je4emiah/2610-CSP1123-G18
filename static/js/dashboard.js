@@ -131,9 +131,10 @@ async function updateDashboard() {
         const data = await response.json();
 
         // Update Counter display metadata based on mood data entries
-        if (counterElement && data.mood_data) {
-            const count = data.mood_data.filter(val => val !== null).length;
-            counterElement.innerText = `${count} logs found`;
+        if (counterElement) {
+            const chartDataArray = data.mood_data || data.data || [];
+            const count = chartDataArray.filter(val => val !== null).length;
+            counterElement.innerText = `${count} entries found`;
             counterElement.style.color = count === 0 ? "#ef4444" : "#94a3b8";
         }
 
@@ -150,7 +151,7 @@ async function updateDashboard() {
         // Prepare Chart datasets
         const datasets = [{
             label: 'Mood Level',
-            data: data.mood_data || [],
+            data: data.mood_data || data.data || [],
             borderColor: '#00D4FF',
             backgroundColor: gradient,
             borderWidth: 4,
@@ -168,13 +169,13 @@ async function updateDashboard() {
             let color = '#2563eb';
             if (state.metricType === 'steps') {
                 telemetryLabel = 'Step Count';
-                color = '#10b981'; // Sleek Emerald
+                color = '#10b981'; 
             } else if (state.metricType === 'active_hours') {
                 telemetryLabel = 'Active Hours';
-                color = '#f59e0b'; // Sleek Amber
+                color = '#f59e0b'; 
             } else if (state.metricType === 'sleep_cycles') {
                 telemetryLabel = 'Sleep Cycles';
-                color = '#8b5cf6'; // Sleek Purple
+                color = '#8b5cf6'; 
             }
 
             datasets.push({
@@ -206,7 +207,7 @@ async function updateDashboard() {
             }
         };
 
-        if (state.metricType !== 'none') {
+        if (state.metricType !== 'none' && data.telemetry_data) {
             let y1Title = 'Value';
             if (state.metricType === 'steps') y1Title = 'Steps';
             if (state.metricType === 'active_hours') y1Title = 'Active Hours';
