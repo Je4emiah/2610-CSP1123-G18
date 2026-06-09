@@ -305,8 +305,7 @@ def dashboard():
         ORDER BY timestamp DESC
     ''', (username,)).fetchall()
 
-    # --- NEW LIVE GEMINI AI INSIGHTS ---
-    # Default fallback object matching your HTML schema
+# --- NEW LIVE GEMINI AI INSIGHTS ---
     weekly_insight = {
         "emoji": "🤔",
         "review": "No recent metrics recorded this week yet. Submit your first mood log box above to see your dynamic tracking insights!"
@@ -314,15 +313,12 @@ def dashboard():
     
     if entry_count > 0:
         try:
-            # 1. Initialize the Gemini Client
             client = Client()
             
-            # 2. Format the recent logs into a clean text summary for the AI to read
             logs_summary = ""
             for log in recent_logs:
                 logs_summary += f"- Date: {log['timestamp']}, Mood Score: {log['mood_score']}/5, Note: \"{log['thought_text']}\"\n"
             
-            # 3. Create the prompt telling the AI how to behave
             ai_prompt = f"""
             You are an empathetic wellness assistant built into the MindMetric web app.
             Analyze the following mood diary data points from the user's last few entries:
@@ -336,31 +332,24 @@ def dashboard():
             Example format: 🌿|Your mood shows a steady improvement over the last few days. Try to maintain this momentum by keeping up your evening walking habit.
             """
             
-            # 4. Request Gemini to generate the insight
             response = client.models.generate_content(
                 model='gemini-2.5-flash',
                 contents=ai_prompt
             )
             
             if response.text and "|" in response.text:
-                # Split the response into the emoji and the review text cleanly
                 parts = response.text.strip().split("|", 1)
-                ai_emoji = parts[0].strip()
-                ai_review = parts[1].strip()
-                
                 weekly_insight = {
-                    "emoji": ai_emoji,
-                    "review": ai_review
+                    "emoji": parts[0].strip(),
+                    "review": parts[1].strip()
                 }
             elif response.text:
-                # Backup if the AI forgets to include the "|" pipe separator
                 weekly_insight = {
                     "emoji": "✨",
                     "review": response.text.strip()
                 }
                 
         except Exception as e:
-            # Backup: If the API key is missing or the internet cuts out, fall back safely
             print(f"⚠️ Gemini API Call Failed: {e}")
             weekly_insight = {
                 "emoji": "⚠️",
