@@ -306,7 +306,11 @@ def dashboard():
     ''', (username,)).fetchall()
 
     # --- NEW LIVE GEMINI AI INSIGHTS ---
-    weekly_insight = "No recent metrics recorded this week yet. Submit your first mood log box above to see your dynamic tracking insights!"
+    # Default fallback object matching your HTML schema
+    weekly_insight = {
+        "emoji": "🤔",
+        "review": "No recent metrics recorded this week yet. Submit your first mood log box above to see your dynamic tracking insights!"
+    }
     
     if entry_count > 0:
         try:
@@ -325,9 +329,11 @@ def dashboard():
             
             {logs_summary}
             
-            Provide a short, comforting, 2-sentence analytical insight. 
-            Highlight any trends or patterns, and offer a gentle, actionable recommendation.
-            Keep the tone warm and professional. Do not use any markdown formatting or asterisks.
+            Provide your response in two parts separated by a vertical pipe character (|).
+            Part 1: Exactly ONE emoji that perfectly represents the user's overall emotional trend or vibe from their notes (e.g., 🌟, 🌿, 🔋, 🌦️, ☕).
+            Part 2: A short, comforting, 2-sentence analytical insight highlighting patterns and giving a gentle, actionable recommendation. Keep the tone warm and professional. Do not use any markdown formatting or asterisks.
+            
+            Example format: 🌿|Your mood shows a steady improvement over the last few days. Try to maintain this momentum by keeping up your evening walking habit.
             """
             
             # 4. Request Gemini to generate the insight
@@ -336,13 +342,30 @@ def dashboard():
                 contents=ai_prompt
             )
             
-            if response.text:
-                weekly_insight = response.text.strip()
+            if response.text and "|" in response.text:
+                # Split the response into the emoji and the review text cleanly
+                parts = response.text.strip().split("|", 1)
+                ai_emoji = parts[0].strip()
+                ai_review = parts[1].strip()
+                
+                weekly_insight = {
+                    "emoji": ai_emoji,
+                    "review": ai_review
+                }
+            elif response.text:
+                # Backup if the AI forgets to include the "|" pipe separator
+                weekly_insight = {
+                    "emoji": "✨",
+                    "review": response.text.strip()
+                }
                 
         except Exception as e:
             # Backup: If the API key is missing or the internet cuts out, fall back safely
             print(f"⚠️ Gemini API Call Failed: {e}")
-            weekly_insight = "Unable to sync with live AI generation channels. Displaying local telemetry matrices."
+            weekly_insight = {
+                "emoji": "⚠️",
+                "review": "Unable to sync with live AI generation channels. Displaying local telemetry matrices."
+            }
             
     return render_template('dashboard.html', 
                            insight=weekly_insight, 
