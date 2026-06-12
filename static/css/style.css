@@ -1245,3 +1245,15 @@ body.dark-theme .purge-danger-zone {
         transform: translateY(0);
     }
 }
+
+/* Section divider for the 2SV setup block on the register form */
+.security-divider {
+    margin: 1.5rem 0 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+}
+
+.security-divider-text {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
