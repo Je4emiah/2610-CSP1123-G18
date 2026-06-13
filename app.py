@@ -23,6 +23,24 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def is_password_complex(password):
+    """Enforces uniform application complexity parameters: 6+ chars, upper, lower, digit, and special char."""
+    if len(password) < 6:
+        return False, "Password must be at least 6 characters long."
+    if not any(c.isupper() for c in password):
+        return False, "Password must contain at least one uppercase letter."
+    if not any(c.islower() for c in password):
+        return False, "Password must contain at least one lowercase letter."
+    if not any(c.isdigit() for c in password):
+        return False, "Password must contain at least one numeric digit."
+        
+    # 🛡️ FIX: Force a special character check in the backend
+    special_characters = "!@#$%^&*(),.?\":{}|<>/\\-+=_~`[]';"
+    if not any(c in special_characters for c in password):
+        return False, "Password must contain at least one special character (e.g., !, @, #, $, %, *)."
+        
+    return True, ""
+
 # --- DATABASE HELPERS ---
 def get_db():
     """Establishes a thread-safe database connection cached within the request context."""
@@ -135,9 +153,14 @@ def reset_password():
         flash("Passwords do not match! Please try again.", "danger")
         return redirect(url_for('forgot_password'))
 
+    # 🛡️ Recovery Flow Guard Activation
+    is_valid, error_msg = is_password_complex(new_password)
+    if not is_valid:
+        flash(f"Reset Error: {error_msg}", "danger")
+        return redirect(url_for('forgot_password'))
+
     db = get_db()
     user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
-
     if not user:
         flash("User profile data record not found.", "danger")
         return redirect(url_for('forgot_password'))
@@ -233,9 +256,14 @@ def register():
         if password != confirm_password:
             flash("Passwords do not match!", "danger")
             return redirect(url_for('register'))
+            
+        # 🛡️ Backend Guard Activation
+        is_valid, error_msg = is_password_complex(password)
+        if not is_valid:
+            flash(f"Registration Error: {error_msg}", "danger")
+            return redirect(url_for('register'))
         
         hashed_pw = generate_password_hash(password)
-        
         try:
             db = get_db()
             db.execute("""
