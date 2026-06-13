@@ -1,75 +1,76 @@
 {% extends 'base.html' %}
 
+{% block title %}Register — MindMetric{% endblock %}
+
 {% block content %}
-  <main class="auth-container">
-    <div class="auth-card">
-      <header class="auth-header">
-        <p class="auth-link-text">
-          <a href="{{ url_for('index') }}" class="auth-link">Go Back</a>
-        </p>
-        <h1 class="auth-title">Register</h1>
-        <p class="auth-subtitle">Start tracking your mental data trends</p>
-      </header>
+<div class="auth-container">
+  <div class="auth-card">
+    <header class="auth-header">
+      <p class="auth-link-text">
+        <a href="{{ url_for('index') }}" class="auth-link">← Go Back</a>
+      </p>
+      <h1 class="auth-title">Register</h1>
+      <p class="auth-subtitle">Start tracking your mental data trends</p>
+    </header>
 
-      <form action="{{ url_for('register') }}" method="POST" class="auth-form" id="registrationForm">
-        <div class="form-group">
-          <label class="form-label" for="username">Username</label>
-          <input type="text" id="username" name="username" class="form-input" placeholder="Dev123" required />
+    <form action="{{ url_for('register') }}" method="POST" id="registrationForm">
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <input type="text" id="username" name="username" class="form-input" placeholder="Dev123" required />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="full_name">Name</label>
+        <input type="text" id="full_name" name="full_name" class="form-input" placeholder="Your real name" required />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="password" name="password" class="form-input" placeholder="Enter secure password" required />
+          <span class="password-toggle" onclick="togglePasswordVisibility('password', this)">👁️</span>
         </div>
+        <p class="field-instruction-note">💡 Password must be at least 6 characters and contain a mix of uppercase, lowercase, and special symbols.</p>
+        <div id="form-error-banner" class="error-banner d-none"></div>
+      </div>
 
-        <div class="form-group">
-          <label class="form-label" for="full_name">Name</label>
-          <input type="text" id="full_name" name="full_name" class="form-input" placeholder="Your real name" required />
+      <div class="form-group">
+        <label class="form-label" for="confirm_password">Confirm Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="confirm_password" name="confirm_password" class="form-input" placeholder="Repeat your password" required />
+          <span class="password-toggle" onclick="togglePasswordVisibility('confirm_password', this)">👁️</span>
         </div>
+      </div>
 
-<div class="form-group">
-          <label class="form-label" for="password">Password</label>
-          <div style="position: relative; display: flex; align-items: center;">
-            <input type="password" id="password" name="password" class="form-input" placeholder="Enter secure password" required style="padding-right: 2.5rem;" />
-            <span onclick="togglePasswordVisibility('password', this)" style="position: absolute; right: 12px; cursor: pointer; user-select: none; font-size: 1.1rem; z-index: 10;">👁️</span>
-          </div>
-          
-          <p class="field-instruction-note">💡 Password must be at least 6 characters and contain a mix of uppercase, lowercase, and special symbols.</p>
+      <div class="security-divider">
+        <span class="security-divider-text">🔒 Two-Step Verification (2SV) Setup</span>
+      </div>
 
-          <div id="form-error-banner" class="error-banner" style="display: none;"></div>
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="q1">1. What was the name of your first pet?</label>
+        <input type="text" id="q1" name="q1" class="form-input" placeholder="Your answer" required />
+      </div>
 
-        <div class="form-group">
-          <label class="form-label" for="confirm_password">Confirm Password</label>
-          <div style="position: relative; display: flex; align-items: center;">
-            <input type="password" id="confirm_password" name="confirm_password" class="form-input" placeholder="Repeat your password" required style="padding-right: 2.5rem;" />
-            <span onclick="togglePasswordVisibility('confirm_password', this)" style="position: absolute; right: 12px; cursor: pointer; user-select: none; font-size: 1.1rem; z-index: 10;">👁️</span>
-          </div>
-        </div>
-        <div class="security-divider">
-          <span class="security-divider-text">🔒 Two-Step Verification (2SV) Setup</span>
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="q2">2. What is your mother's maiden name?</label>
+        <input type="text" id="q2" name="q2" class="form-input" placeholder="Your answer" required />
+      </div>
 
-        <div class="form-group">
-          <label class="form-label" for="q1">1. What was the name of your first pet?</label>
-          <input type="text" id="q1" name="q1" class="form-input" placeholder="Your answer" required />
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="q3">3. What was the name of your primary school?</label>
+        <input type="text" id="q3" name="q3" class="form-input" placeholder="Your answer" required />
+      </div>
 
-        <div class="form-group">
-          <label class="form-label" for="q2">2. What is your mother's maiden name?</label>
-          <input type="text" id="q2" name="q2" class="form-input" placeholder="Your answer" required />
-        </div>
+      <button type="submit" class="btn-auth auth-submit-btn">Create Account</button>
+    </form>
 
-        <div class="form-group">
-          <label class="form-label" for="q3">3. What was the name of your primary school?</label>
-          <input type="text" id="q3" name="q3" class="form-input" placeholder="Your answer" required />
-        </div>
+    <footer class="auth-footer">
+      <p class="auth-link-text">
+        <a href="{{ url_for('login') }}" class="auth-link">Have an account? Sign in</a>
+      </p>
+    </footer>
+  </div>
+</div>
 
-        <button type="submit" class="btn-auth" style="margin-top: 1.5rem;">Create Account</button>
-      </form>
-
-      <footer class="auth-footer">
-        <p class="auth-link-text">
-          <a href="{{ url_for('login') }}" class="auth-link">Have an account? Sign in</a>
-        </p>
-      </footer>
-    </div>
-  </main>
-
-  <script src="{{ url_for('static', filename='js/register.js') }}"></script>
+<script src="{{ url_for('static', filename='js/register.js') }}"></script>
 {% endblock %}

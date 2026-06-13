@@ -1,10 +1,12 @@
 import sqlite3
 import os
 import datetime
+import calendar
 from flask import Flask, render_template, request, url_for, redirect, jsonify, session, flash, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import timedelta
+from google.genai import Client
 
 app = Flask(__name__)
 app.secret_key = 'mmu_project_secret_key'
@@ -295,23 +297,66 @@ def dashboard():
     entry_count = row['entry_count'] if row['entry_count'] else 0
     avg_score = round(row['avg_score'], 1) if row['avg_score'] else 0.0
 
-    insight_dictionary = {
-        5: {"emoji": "🔥", "review": "Exceptional mental momentum! Your tracking signals display peak emotional clarity and highly optimal decompression behavior loops. Keep cruising here."},
-        4: {"emoji": "😊", "review": "A highly positive, constructive horizon. Your tracking metrics indicate steady wellness and reliable stability. Maintain your current active choices!"},
-        3: {"emoji": "😐", "review": "A balanced neutral baseline. Things are holding perfectly constant, but consider introducing mild pattern variations or taking a small physical break to feel fully energized."},
-        2: {"emoji": "☹️", "review": "Your tracker highlights a subtle down-trending sequence. Energy metrics feel slightly strained. Make sure to schedule intentional downtime and get some rest today."},
-        1: {"emoji": "😫", "review": "Telemetry suggests heavy processing loads and fatigue patterns. Prioritize absolute preservation right now. Close down non-essential loops and decompress."}
-    }
+    # Fetch the actual log text notes to give to Gemini
+    recent_logs = db.execute('''
+        SELECT timestamp, mood_score, thought_text 
+        FROM mood_logs 
+        WHERE username = ? 
+        AND timestamp >= datetime('now', '-7 days', 'localtime')
+        ORDER BY timestamp DESC
+    ''', (username,)).fetchall()
 
+# --- NEW LIVE GEMINI AI INSIGHTS ---
     weekly_insight = {
         "emoji": "🤔",
-        "review": "No recent metrics recorded this week yet. Submit your first mood log box above to generate your dynamic tracking insights!"
+        "review": "No recent metrics recorded this week yet. Submit your first mood log box above to see your dynamic tracking insights!"
     }
-
+    
     if entry_count > 0:
-        score_key = max(1, min(5, int(round(avg_score))))
-        weekly_insight = insight_dictionary[score_key]
-
+        try:
+            client = Client()
+            
+            logs_summary = ""
+            for log in recent_logs:
+                logs_summary += f"- Date: {log['timestamp']}, Mood Score: {log['mood_score']}/5, Note: \"{log['thought_text']}\"\n"
+            
+            ai_prompt = f"""
+            You are an empathetic wellness assistant built into the MindMetric web app.
+            Analyze the following mood diary data points from the user's last few entries:
+            
+            {logs_summary}
+            
+            Provide your response in two parts separated by a vertical pipe character (|).
+            Part 1: Exactly ONE emoji that perfectly represents the user's overall emotional trend or vibe from their notes (e.g., 🌟, 🌿, 🔋, 🌦️, ☕).
+            Part 2: A short, comforting, 2-sentence analytical insight highlighting patterns and giving a gentle, actionable recommendation. Keep the tone warm and professional. Do not use any markdown formatting or asterisks.
+            
+            Example format: 🌿|Your mood shows a steady improvement over the last few days. Try to maintain this momentum by keeping up your evening walking habit.
+            """
+            
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=ai_prompt
+            )
+            
+            if response.text and "|" in response.text:
+                parts = response.text.strip().split("|", 1)
+                weekly_insight = {
+                    "emoji": parts[0].strip(),
+                    "review": parts[1].strip()
+                }
+            elif response.text:
+                weekly_insight = {
+                    "emoji": "✨",
+                    "review": response.text.strip()
+                }
+                
+        except Exception as e:
+            print(f"⚠️ Gemini API Call Failed: {e}")
+            weekly_insight = {
+                "emoji": "⚠️",
+                "review": "Unable to sync with live AI generation channels. Displaying local telemetry matrices."
+            }
+            
     return render_template('dashboard.html', 
                            insight=weekly_insight, 
                            entry_count=entry_count, 
@@ -357,21 +402,119 @@ def delete_entry(log_id):
 
 # --- TELEMETRY AND DATA VISUALIZATION API ENDPOINTS ---
 
+@app.route('/api/telemetry_data/<username>')
+def api_telemetry_data(username):
+    """Returns one data point per calendar day (null for missing days) so the
+    dashboard chart's gaps/counters line up correctly. Supports username='global'
+    for Privacy Mode, which averages across all users."""
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    now = datetime.datetime.now()
+    try:
+        year = int(request.args.get('year', now.year))
+        month = int(request.args.get('month', now.month))
+    except ValueError:
+        return jsonify({"error": "Invalid year/month"}), 400
+
+    metric_type = request.args.get('metric_type', 'none')
+    month_str = f"{year}-{month:02d}"
+    days_in_month = calendar.monthrange(year, month)[1]
+
+    db = get_db()
+    is_global = (username == 'global')
+
+    # --- Mood data, averaged per day ---
+    if is_global:
+        mood_rows = db.execute('''
+            SELECT date(timestamp) as day, AVG(mood_score) as avg_score
+            FROM mood_logs
+            WHERE strftime('%Y-%m', timestamp) = ?
+            GROUP BY day
+        ''', (month_str,)).fetchall()
+    else:
+        mood_rows = db.execute('''
+            SELECT date(timestamp) as day, AVG(mood_score) as avg_score
+            FROM mood_logs
+            WHERE username = ? AND strftime('%Y-%m', timestamp) = ?
+            GROUP BY day
+        ''', (username, month_str)).fetchall()
+
+    mood_by_day = {row['day']: row['avg_score'] for row in mood_rows}
+
+    # --- Telemetry data (steps / active_hours / sleep_cycles), averaged per day ---
+    telemetry_by_day = {}
+    if metric_type != 'none':
+        if is_global:
+            telemetry_rows = db.execute('''
+                SELECT date(timestamp) as day, AVG(value) as avg_value
+                FROM telemetry_logs
+                WHERE metric_type = ? AND strftime('%Y-%m', timestamp) = ?
+                GROUP BY day
+            ''', (metric_type, month_str)).fetchall()
+        else:
+            telemetry_rows = db.execute('''
+                SELECT date(timestamp) as day, AVG(value) as avg_value
+                FROM telemetry_logs
+                WHERE username = ? AND metric_type = ? AND strftime('%Y-%m', timestamp) = ?
+                GROUP BY day
+            ''', (username, metric_type, month_str)).fetchall()
+
+        telemetry_by_day = {row['day']: row['avg_value'] for row in telemetry_rows}
+
+    labels = []
+    mood_data = []
+    telemetry_data = []
+    for day_num in range(1, days_in_month + 1):
+        day_str = f"{year}-{month:02d}-{day_num:02d}"
+        labels.append(day_str)
+
+        mood_val = mood_by_day.get(day_str)
+        mood_data.append(round(mood_val, 2) if mood_val is not None else None)
+
+        if metric_type != 'none':
+            tele_val = telemetry_by_day.get(day_str)
+            telemetry_data.append(round(tele_val, 2) if tele_val is not None else None)
+
+    response_data = {
+        "labels": labels,
+        "mood_data": mood_data,
+    }
+    if metric_type != 'none':
+        response_data["telemetry_data"] = telemetry_data
+
+    return jsonify(response_data)
+
 @app.route('/api/mood_data/<username>')
 def api_mood_data(username):
     now = datetime.datetime.now()
     year = request.args.get('year', str(now.year))
     month = request.args.get('month', f"{now.month:02d}")
+    metric = request.args.get('metric', 'none') # Capture the new metric
     
-    # FIX: Refactored old inline fetch statement to run using unified monthly telemetry utility
     rows = get_monthly_mood_data(username, year, month)
     
-    return jsonify({
-        "labels": [row[0] for row in rows],
-        "data": [row[1] for row in rows],
+    response_data = {
+        "labels": [row['timestamp'] for row in rows],
+        "data": [row['mood_score'] for row in rows],
         "current_year": int(year),
         "current_month": int(month)
-    })
+    }
+    
+    if metric != 'none':
+        db = get_db()
+        telemetry = db.execute('''
+            SELECT value, timestamp 
+            FROM telemetry_logs 
+            WHERE username = ? AND metric_type = ? 
+            AND strftime('%Y-%m', timestamp) = ?
+            ORDER BY timestamp ASC
+        ''', (username, metric, f"{year}-{month}")).fetchall()
+        
+        response_data['telemetry'] = [row['value'] for row in telemetry]
+        response_data['telemetry_labels'] = [row['timestamp'] for row in telemetry]
+        
+    return jsonify(response_data)
     
 @app.route('/api/log_mood', methods=['POST'])
 def api_log_mood():
@@ -410,6 +553,15 @@ def init_db():
         q2_answer TEXT,
         q3_answer TEXT
     )''')
+    
+    db.execute('''CREATE TABLE IF NOT EXISTS telemetry_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        metric_type TEXT NOT NULL,
+        value REAL NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
+    
     print("Database refreshed and ready with Full Name schema parameters & Security Questions!")
 
 if __name__ == '__main__':

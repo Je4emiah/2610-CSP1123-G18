@@ -1,43 +1,46 @@
 {% extends 'base.html' %}
-{% block title %}
-  Login
-{% endblock %}
+
+{% block title %}Login — MindMetric{% endblock %}
 
 {% block content %}
-  <main class="auth-container">
-    <div class="auth-card">
-      <header class="auth-header">
-        <p class="auth-link-text">
-          <a href="{{ url_for('index') }}" class="auth-link">Go Back</a>
-        </p>
-        <h1 class="auth-title">Login</h1>
-        <p class="auth-subtitle">Welcome back to MindMetric</p>
-      </header>
+<div class="auth-container">
+  <div class="auth-card">
+    <header class="auth-header">
+      <p class="auth-link-text">
+        <a href="{{ url_for('index') }}" class="auth-link">← Go Back</a>
+      </p>
+      <h1 class="auth-title">Login</h1>
+      <p class="auth-subtitle">Welcome back to MindMetric</p>
+    </header>
 
-      <form action="{{ url_for('login') }}" method="POST" class="auth-form">
-        <div class="form-group">
-          <label class="form-label">Username</label>
-          <input type="text" name="username" class="form-input" required placeholder="Enter your username" />
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="password">Password</label>
-          <div style="position: relative; display: flex; align-items: center;">
-            <input type="password" id="password" name="password" class="form-input" placeholder="Enter your password" required style="padding-right: 2.5rem;" />
-            <span onclick="togglePasswordVisibility('password', this)" style="position: absolute; right: 12px; cursor: pointer; user-select: none; font-size: 1.1rem; z-index: 10;">👁️</span>
-          </div>
-        </div>
-        <p class="auth-link-text">
-          <a href="{{ url_for('forgot_password') }}" class="auth-link">Forgot password?</a>
-        </p>
-        <button type="submit" class="btn-auth">Sign In</button>
-      </form>
+    <form action="{{ url_for('login') }}" method="POST">
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <input type="text" id="username" name="username" class="form-input" required placeholder="Enter your username" />
+      </div>
 
-      <footer class="auth-footer">
-        <p class="auth-link-text">
-          <a href="{{ url_for('register') }}" class="auth-link">Create an account?</a>
-        </p>
-      </footer>
-    </div>
-  </main>
-  <script src="{{ url_for('static', filename='js/register.js') }}"></script>
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="password" name="password" class="form-input" placeholder="Enter your password" required />
+          <span class="password-toggle" onclick="togglePasswordVisibility('password', this)">👁️</span>
+        </div>
+      </div>
+
+      <p class="auth-link-text auth-link-text--spaced">
+        <a href="{{ url_for('forgot_password') }}" class="auth-link">Forgot password?</a>
+      </p>
+
+      <button type="submit" class="btn-auth auth-submit-btn">Sign In</button>
+    </form>
+
+    <footer class="auth-footer">
+      <p class="auth-link-text">
+        <a href="{{ url_for('register') }}" class="auth-link">Don't have an account? Create one</a>
+      </p>
+    </footer>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/register.js') }}"></script>
 {% endblock %}
