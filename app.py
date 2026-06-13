@@ -184,9 +184,15 @@ def profile():
         updated_name = request.form.get('full_name')
         selected_gender = request.form.get('gender')
         
-        cursor = db.execute("SELECT profile_pic FROM users WHERE username = ?", (username,))
+        # 🔑 Extract the password update form data fields
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        cursor = db.execute("SELECT password_hash, profile_pic FROM users WHERE username = ?", (username,))
         user_row = cursor.fetchone()
         saved_pic_path = user_row['profile_pic'] if user_row else None
+        current_db_hash = user_row['password_hash'] if user_row else None
         
         file = request.files.get('profile_avatar')
         if file and file.filename != '':
@@ -198,11 +204,33 @@ def profile():
                 flash("Invalid format! Please use PNG, JPG, JPEG, or GIF.", "danger")
                 return redirect(url_for('profile'))
                 
+        # 🛡️ Password Modification Security Processing Pipeline
+        if new_password and new_password.strip() != "":
+            # 1. Verify that the user knows their current password
+            if not current_db_hash or not check_password_hash(current_db_hash, current_password):
+                flash("Security Error: Your current password verification failed.", "danger")
+                return redirect(url_for('profile'))
+                
+            # 2. Check if the matching verification confirm box matches
+            if new_password != confirm_password:
+                flash("Verification Error: Your new password fields do not match.", "danger")
+                return redirect(url_for('profile'))
+                
+            # 3. Check complexity using your existing function framework
+            is_valid, error_msg = is_password_complex(new_password)
+            if not is_valid:
+                flash(f"Security Error: {error_msg}", "danger")
+                return redirect(url_for('profile')) # 💡 STAYS on profile and shows error!
+                
+            # If valid, overwrite our hash update variable targets
+            current_db_hash = generate_password_hash(new_password)
+        
+        # Save updates back into our user registry schema structure
         db.execute("""
             UPDATE users 
-            SET name = ?, gender = ?, profile_pic = ? 
+            SET name = ?, gender = ?, profile_pic = ?, password_hash = ? 
             WHERE username = ?
-        """, (updated_name, selected_gender, saved_pic_path, username))
+        """, (updated_name, selected_gender, saved_pic_path, current_db_hash, username))
         db.commit()
         
         session['name'] = updated_name

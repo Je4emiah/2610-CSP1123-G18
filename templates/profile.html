@@ -54,7 +54,7 @@
       <div class="profile-panel">
         <h4 class="profile-section-heading">👤 Profile Details</h4>
 
-        <form action="{{ url_for('profile') }}" method="POST" class="profile-form-stack">
+<form action="{{ url_for('profile') }}" method="POST" id="passwordUpdateForm">
           <div class="profile-form-group">
             <label class="profile-form-label">Active Account Identifier</label>
             <input type="text" class="profile-form-input static-input" value="{{ session.user_id }}" readonly />
@@ -72,10 +72,10 @@
         </form>
       </div>
 
-      {# Credentials Control #}
+{# Credentials Control #}
       <div class="profile-panel">
         <h4 class="profile-section-heading">🔑 Credentials Control</h4>
-        <form action="{{ url_for('reset_password') }}" method="POST" id="passwordUpdateForm">
+        <form action="{{ url_for('profile') }}" method="POST" id="passwordUpdateForm">
           <input type="hidden" name="username" value="{{ session['user_id'] }}">
 
           <div class="profile-form-group">
