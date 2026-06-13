@@ -28,7 +28,6 @@
         </div>
 
         <input type="hidden" name="full_name" value="{{ user.name if user and user.name else session.user_id }}">
-        <input type="hidden" name="gender" value="{{ user.gender if user and user.gender else '' }}">
       </form>
 
       <h2 class="profile-panel-title profile-panel-title--spaced" id="displayNameText">
@@ -65,17 +64,6 @@
             <label class="profile-form-label" for="full_name">Display Name</label>
             <input type="text" id="full_name" name="full_name" class="profile-form-input"
               value="{{ user.name if user and user.name else '' }}" placeholder="Enter your full name" required />
-          </div>
-
-          <div class="profile-form-group">
-            <label class="profile-form-label" for="gender">Gender Identity</label>
-            <select id="gender" name="gender" class="profile-form-input">
-              <option value="" {% if not user or not user.gender %}selected{% endif %}>Select Option</option>
-              <option value="Female"           {% if user and user.gender == 'Female' %}selected{% endif %}>Female</option>
-              <option value="Male"             {% if user and user.gender == 'Male' %}selected{% endif %}>Male</option>
-              <option value="Other"            {% if user and user.gender == 'Other' %}selected{% endif %}>Other</option>
-              <option value="Prefer not to say" {% if user and user.gender == 'Prefer not to say' %}selected{% endif %}>Prefer not to say</option>
-            </select>
           </div>
 
           <button type="submit" class="profile-action-btn profile-block-btn profile-action-btn--spaced">
