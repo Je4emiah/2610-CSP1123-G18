@@ -180,6 +180,7 @@ async function updateDashboard() {
 document.addEventListener('DOMContentLoaded', () => {
     initFilterSelectors(); // 1. Align the UI dropdown elements first
     updateDashboard();     // 2. Fetch the current calendar date data immediately
+    initInsightSidebar();   // 3. Seed the sidebar preview widgets
 });
 // Global State Management
 const state = {
@@ -223,4 +224,180 @@ function handleDropdownChange() {
 function handlePrivacyToggleChange() {
     state.privacyMode = document.getElementById('privacyToggle').checked;
     updateDashboard();
+}
+
+function getWeeklyInsightData() {
+    const insightDataElement = document.getElementById('weeklyInsightData');
+    if (!insightDataElement) return null;
+
+    try {
+        return JSON.parse(insightDataElement.textContent || '{}');
+    } catch (error) {
+        console.error('Failed to parse weekly insight data:', error);
+        return null;
+    }
+}
+
+function createChatBubble(role, label, messageText, emoji) {
+    const message = document.createElement('div');
+    message.className = `chat-message chat-message--${role}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'chat-message-avatar';
+    avatar.textContent = emoji || (role === 'assistant' ? '🤖' : '🙂');
+
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-message-bubble';
+
+    const title = document.createElement('strong');
+    title.textContent = label;
+
+    const body = document.createElement('p');
+    body.textContent = messageText;
+
+    bubble.append(title, body);
+    message.append(avatar, bubble);
+    return message;
+}
+
+function renderInsightPanel(insight) {
+    const emojiNode = document.getElementById('aiEmoji');
+    const textNode = document.getElementById('insightText');
+    const cacheDateNode = document.getElementById('insightCacheDate');
+    const panel = document.getElementById('section-insight');
+
+    if (emojiNode) emojiNode.textContent = insight.emoji || '🤔';
+    if (textNode) textNode.textContent = insight.review || '';
+    if (cacheDateNode && insight.cached_date) {
+        cacheDateNode.textContent = `Refreshed ${insight.cached_date}`;
+    }
+    if (panel && insight.cached_date) {
+        panel.dataset.cachedDate = insight.cached_date;
+    }
+}
+
+function seedChatPreview(insight, forceReset = false) {
+    const thread = document.getElementById('chatPreviewThread');
+    if (!thread) return;
+
+    if (forceReset) {
+        thread.innerHTML = '';
+        thread.dataset.initialized = '';
+    }
+
+    if (thread.dataset.initialized === 'true') return;
+
+    thread.appendChild(createChatBubble('assistant', 'Gemini Preview', insight.review || 'This preview is ready for your future Gemini connection.', insight.emoji || '🤖'));
+    thread.appendChild(createChatBubble('assistant', 'Preview Note', 'This chatbox is frontend-only for now, so we can test the layout before the live Gemini link is added.', 'ℹ️'));
+    thread.dataset.initialized = 'true';
+    thread.scrollTop = thread.scrollHeight;
+}
+
+function generatePreviewReply(messageText, insight) {
+    const text = messageText.toLowerCase();
+    const panel = document.getElementById('chatPreviewModule');
+    const badgeCount = panel ? parseInt(panel.dataset.badgeCount || '0', 10) : 0;
+    const nextLabel = panel ? panel.dataset.nextLabel || '' : '';
+    const nextDays = panel ? panel.dataset.nextDays || '' : '';
+
+    if (text.includes('badge') || text.includes('milestone')) {
+        if (badgeCount > 0 && nextLabel) {
+            return `You have ${badgeCount} milestone badge${badgeCount === 1 ? '' : 's'} collected already. The next one waiting is ${nextLabel}${nextDays ? ` in ${nextDays} days` : ''}.`;
+        }
+        return 'Your first milestone unlocks at 3 days, so the preview can already show the achievement flow even before it is wired to Gemini.';
+    }
+
+    if (text.includes('streak')) {
+        return 'The dashboard already tracks streak momentum, and this preview is ready to answer streak questions once the live assistant is connected.';
+    }
+
+    if (text.includes('sleep') || text.includes('step') || text.includes('active')) {
+        return `The chart already supports those correlations. For now, this preview can show how Gemini's answer will feel when it is connected later.`;
+    }
+
+    if (text.includes('mood') || text.includes('feeling') || text.includes('trend')) {
+        return insight.review || 'Your current insight is ready, but the live assistant link is intentionally paused for this preview build.';
+    }
+
+    return 'This is a preview shell only, so the chat answer is local for now. The next step is wiring the same layout to Gemini.';
+}
+
+function appendPreviewMessage(role, label, messageText, emoji) {
+    const thread = document.getElementById('chatPreviewThread');
+    if (!thread) return;
+
+    thread.appendChild(createChatBubble(role, label, messageText, emoji));
+    thread.scrollTop = thread.scrollHeight;
+}
+
+function bindChatPreviewInteractions(insight) {
+    const form = document.getElementById('chatPreviewForm');
+    const input = document.getElementById('chatPreviewInput');
+    const thread = document.getElementById('chatPreviewThread');
+    const suggestionButtons = document.querySelectorAll('.chat-suggestion-chip');
+
+    if (!form || !input || !thread) return;
+    if (form.dataset.bound === 'true') return;
+    form.dataset.bound = 'true';
+
+    form.addEventListener('submit', event => {
+        event.preventDefault();
+        const messageText = input.value.trim();
+        if (!messageText) return;
+
+        appendPreviewMessage('user', 'You', messageText, '🙂');
+        input.value = '';
+
+        window.setTimeout(() => {
+            appendPreviewMessage('assistant', 'Gemini Preview', generatePreviewReply(messageText, insight), insight.emoji || '🤖');
+        }, 450);
+    });
+
+    suggestionButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            input.value = button.dataset.previewPrompt || button.textContent || '';
+            input.focus();
+        });
+    });
+}
+
+async function refreshDailyInsight() {
+    try {
+        const response = await fetch('/api/daily_insight');
+        if (!response.ok) return;
+
+        const insight = await response.json();
+        if (!insight || insight.error) return;
+
+        renderInsightPanel(insight);
+        seedChatPreview(insight, true);
+    } catch (error) {
+        console.error('Daily insight refresh failed:', error);
+    }
+}
+
+function startDailyInsightTimer() {
+    const panel = document.getElementById('section-insight');
+    if (!panel) return;
+
+    const checkInsightDate = () => {
+        const cachedDate = panel.dataset.cachedDate;
+        const now = new Date();
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        if (cachedDate && cachedDate === today) return;
+        refreshDailyInsight();
+    };
+
+    checkInsightDate();
+    window.setInterval(checkInsightDate, 60000);
+}
+
+function initInsightSidebar() {
+    const insight = getWeeklyInsightData();
+    if (!insight) return;
+
+    renderInsightPanel(insight);
+    seedChatPreview(insight);
+    bindChatPreviewInteractions(insight);
+    startDailyInsightTimer();
 }

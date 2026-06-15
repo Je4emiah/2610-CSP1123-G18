@@ -3,202 +3,241 @@
 {% block title %}Dashboard — MindMetric{% endblock %}
 
 {% block content %}
-<div class="dashboard-story-wrapper">
+<div class="dashboard-story-wrapper dashboard-two-column-layout">
+  <div class="dashboard-main-column">
 
-  {# --- Section 1: Log Entry --- #}
-  <section class="story-section" id="section-log">
-    <div class="section-content max-width-md">
-      <header>
-        <h1 class="main-title">Your Insights</h1>
-      </header>
-
-      {# Streak Banner #}
-      {% if streak > 0 %}
-        <div class="streak-banner streak-active">
-          <div class="streak-content">
-            <div class="streak-emoji">🔥</div>
-            <div class="streak-details">
-              <h6 class="streak-title">{{ streak }}-Day Streak!</h6>
-              <small class="streak-subtitle">You're doing amazing. Keep building this tracking habit daily!</small>
-            </div>
-          </div>
-          <span class="streak-badge status-active">ACTIVE</span>
-        </div>
-      {% else %}
-        <div class="streak-banner streak-inactive">
-          <div class="streak-content">
-            <div class="streak-emoji">🌱</div>
-            <div class="streak-details">
-              <h6 class="streak-title">Start a New Streak</h6>
-              <small class="streak-subtitle">Log your thoughts today to start your streak counter chain!</small>
-            </div>
-          </div>
-        </div>
-      {% endif %}
-
-      <section class="milestone-panel">
-        <div class="milestone-header">
-          <h2 class="section-label">Milestone Badges</h2>
-          {% if next_milestone %}
-            <p class="milestone-target">Next unlock: {{ next_milestone.label }} in {{ next_milestone.days_remaining }} days</p>
-          {% else %}
-            <p class="milestone-target">All milestone badges unlocked</p>
-          {% endif %}
-        </div>
-
-        {% if milestone_badges %}
-          <div class="milestone-badge-grid">
-            {% for badge in milestone_badges %}
-              <article class="milestone-badge-card is-unlocked" title="{{ badge.description }}">
-                <div class="milestone-badge-emoji">{{ badge.emoji }}</div>
-                <div class="milestone-badge-copy">
-                  <h3>{{ badge.label }}</h3>
-                  <span>Unlocked on {{ badge.achievement_date }}</span>
-                </div>
-              </article>
-            {% endfor %}
-          </div>
-        {% else %}
-          <div class="milestone-empty-state">
-            <p>Start logging to unlock your first badge at 3 days.</p>
-          </div>
-        {% endif %}
-      </section>
-
-      <div class="content-panel">
-        <h2 class="section-label">Log Your Mind</h2>
-        <form id="moodForm" action="{{ url_for('dashboard') }}" method="POST">
-          <div class="form-group">
-            <label for="moodScore" class="field-label">How are you feeling?</label>
-            <select class="input-field" id="moodScore" name="mood_score">
-              <option value="5">🔥 Great</option>
-              <option value="4">😊 Good</option>
-              <option value="3" selected>😐 Neutral</option>
-              <option value="2">☹️ Bad</option>
-              <option value="1">😫 Terrible</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="field-label" for="thought">Quick Notes</label>
-            <textarea id="thought" name="thought" class="input-field dynamic-textarea" placeholder="What's on your mind?"></textarea>
-          </div>
-
-          <button type="submit" class="action-btn block-btn">Save Entry</button>
-        </form>
-      </div>
-    </div>
-  </section>
-
-  {# --- Section 2: AI Insight --- #}
-  <section class="story-section" id="section-insight">
-    <div class="section-content max-width-md text-center">
-      <div class="content-panel insight-module">
-        <h3 class="section-label">Weekly Insight</h3>
-
-        <div class="ai-emoji-display" id="aiEmoji">{{ insight.emoji }}</div>
-
-        <div class="ai-review-container">
-          <p id="insightText" class="insight-text main-review">{{ insight.review }}</p>
-          <p class="insight-text sub-recommendation">
-            Based on <strong>{{ entry_count }} entries</strong> tracked over the last 7 days (Average: {{ avg_score }}/5).
-          </p>
-        </div>
-
-        <button class="nav-item-btn dashboard-chart-spacer" onclick="scrollToSection('section-chart')">View Visual Analytics ↓</button>
-      </div>
-    </div>
-  </section>
-
-  {# --- Section 3: Chart --- #}
-  <section class="story-section" id="section-chart">
-    <div class="section-content max-width-lg">
-      <div class="content-panel">
-
-        <header class="view-header">
-          <h2 class="section-label">Mood Insights</h2>
-          <div class="controls-bar">
-            <select id="monthSelect" class="input-field" onchange="handleDropdownChange()">
-              <option value="01">January</option>
-              <option value="02">February</option>
-              <option value="03">March</option>
-              <option value="04">April</option>
-              <option value="05">May</option>
-              <option value="06">June</option>
-              <option value="07">July</option>
-              <option value="08">August</option>
-              <option value="09">September</option>
-              <option value="10">October</option>
-              <option value="11">November</option>
-              <option value="12">December</option>
-            </select>
-
-            <select id="yearSelect" class="input-field" onchange="handleDropdownChange()">
-              <option value="2025">2025</option>
-              <option value="2026">2026</option>
-              <option value="2027">2027</option>
-            </select>
-
-            <span id="dataCounter" class="status-counter">Loading...</span>
-          </div>
+    {# --- Section 1: Log Entry --- #}
+    <section class="story-section" id="section-log">
+      <div class="section-content max-width-md">
+        <header>
+          <h1 class="main-title">Your Insights</h1>
         </header>
 
-        <!-- Telemetry Selection & Privacy Toggle Panel -->
-        <div class="visualization-filters-panel">
-          <div class="metric-select-block">
-            <label for="metricSelect" class="field-label">Correlation Metric:</label>
-            <select id="metricSelect" class="input-field" onchange="handleDropdownChange()">
-              <optgroup label="Manual Inputs">
-                <option value="none">None (Mood Only)</option>
-              </optgroup>
-              <optgroup label="Synced Google Fit (Environmental)">
-                <option value="steps" selected>👟 Step Count</option>
-                <option value="active_hours">⚡ Active Hours</option>
-                <option value="sleep_cycles">😴 Sleep Cycles</option>
-              </optgroup>
-            </select>
-          </div>
-
-          <div class="privacy-toggle-panel">
-            <div class="privacy-toggle-row">
-              <input class="form-check-input privacy-toggle-input" type="checkbox" role="switch" id="privacyToggle" onchange="handlePrivacyToggleChange()">
-              <label class="form-check-label privacy-toggle-label" for="privacyToggle">Privacy Mode</label>
-              <span id="privacyStatusMarker" class="badge privacy-status-marker privacy-status-marker--local bg-secondary">Local Tracker</span>
+        {# Streak Banner #}
+        {% if streak > 0 %}
+          <div class="streak-banner streak-active">
+            <div class="streak-content">
+              <div class="streak-emoji">🔥</div>
+              <div class="streak-details">
+                <h6 class="streak-title">{{ streak }}-Day Streak!</h6>
+                <small class="streak-subtitle">You're doing amazing. Keep building this tracking habit daily!</small>
+              </div>
             </div>
-            <span id="privacyHintText" class="privacy-hint">Showing personalized mood &amp; telemetry metrics.</span>
+            <span class="streak-badge status-active">ACTIVE</span>
           </div>
-        </div>
+        {% else %}
+          <div class="streak-banner streak-inactive">
+            <div class="streak-content">
+              <div class="streak-emoji">🌱</div>
+              <div class="streak-details">
+                <h6 class="streak-title">Start a New Streak</h6>
+                <small class="streak-subtitle">Log your thoughts today to start your streak counter chain!</small>
+              </div>
+            </div>
+          </div>
+        {% endif %}
 
-        <div class="milestone-chart-strip">
-          <div class="milestone-chart-strip-item">
-            <span class="milestone-strip-label">Collected</span>
-            <strong>{{ milestone_badges|length }} badges</strong>
-          </div>
-          <div class="milestone-chart-strip-item milestone-chart-strip-item--right">
-            <span class="milestone-strip-label">Next</span>
+        <section class="milestone-panel">
+          <div class="milestone-header">
+            <h2 class="section-label">Milestone Badges</h2>
             {% if next_milestone %}
-              <strong>{{ next_milestone.label }} in {{ next_milestone.days_remaining }} days</strong>
+              <p class="milestone-target">Next unlock: {{ next_milestone.label }} in {{ next_milestone.days_remaining }} days</p>
             {% else %}
-              <strong>All milestones complete</strong>
+              <p class="milestone-target">All milestone badges unlocked</p>
             {% endif %}
           </div>
+
+          {% if milestone_badges %}
+            <div class="milestone-badge-grid">
+              {% for badge in milestone_badges %}
+                <article class="milestone-badge-card is-unlocked" title="{{ badge.description }}">
+                  <div class="milestone-badge-emoji">{{ badge.emoji }}</div>
+                  <div class="milestone-badge-copy">
+                    <h3>{{ badge.label }}</h3>
+                    <span>Unlocked on {{ badge.achievement_date }}</span>
+                  </div>
+                </article>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="milestone-empty-state">
+              <p>Start logging to unlock your first badge at 3 days.</p>
+            </div>
+          {% endif %}
+        </section>
+
+        <div class="content-panel">
+          <h2 class="section-label">Log Your Mind</h2>
+          <form id="moodForm" action="{{ url_for('dashboard') }}" method="POST">
+            <div class="form-group">
+              <label for="moodScore" class="field-label">How are you feeling?</label>
+              <select class="input-field" id="moodScore" name="mood_score">
+                <option value="5">🔥 Great</option>
+                <option value="4">😊 Good</option>
+                <option value="3" selected>😐 Neutral</option>
+                <option value="2">☹️ Bad</option>
+                <option value="1">😫 Terrible</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="field-label" for="thought">Quick Notes</label>
+              <textarea id="thought" name="thought" class="input-field dynamic-textarea" placeholder="What's on your mind?"></textarea>
+            </div>
+
+            <button type="submit" class="action-btn block-btn">Save Entry</button>
+          </form>
         </div>
-
-        <div class="chart-view">
-          <canvas id="moodChart" data-username="{{ session.user_id }}" data-milestones='{{ milestone_markers|tojson }}'></canvas>
-        </div>
-
-        <footer id="pagingControls" class="view-footer">
-          <button id="prevBtn" class="nav-item-btn" onclick="adjustMonth(-1)">← Previous Month</button>
-          <span id="rangeLabel" class="range-date-label">Loading Date...</span>
-          <button id="nextBtn" class="nav-item-btn" onclick="adjustMonth(1)">Next Month →</button>
-        </footer>
-
       </div>
-    </div>
-  </section>
+    </section>
 
+    {# --- Section 3: Chart --- #}
+    <section class="story-section" id="section-chart">
+      <div class="section-content max-width-lg">
+        <div class="content-panel">
+
+          <header class="view-header">
+            <h2 class="section-label">Mood Insights</h2>
+            <div class="controls-bar">
+              <select id="monthSelect" class="input-field" onchange="handleDropdownChange()">
+                <option value="01">January</option>
+                <option value="02">February</option>
+                <option value="03">March</option>
+                <option value="04">April</option>
+                <option value="05">May</option>
+                <option value="06">June</option>
+                <option value="07">July</option>
+                <option value="08">August</option>
+                <option value="09">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+
+              <select id="yearSelect" class="input-field" onchange="handleDropdownChange()">
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+              </select>
+
+              <span id="dataCounter" class="status-counter">Loading...</span>
+            </div>
+          </header>
+
+          <!-- Telemetry Selection & Privacy Toggle Panel -->
+          <div class="visualization-filters-panel">
+            <div class="metric-select-block">
+              <label for="metricSelect" class="field-label">Correlation Metric:</label>
+              <select id="metricSelect" class="input-field" onchange="handleDropdownChange()">
+                <optgroup label="Manual Inputs">
+                  <option value="none">None (Mood Only)</option>
+                </optgroup>
+                <optgroup label="Synced Google Fit (Environmental)">
+                  <option value="steps" selected>👟 Step Count</option>
+                  <option value="active_hours">⚡ Active Hours</option>
+                  <option value="sleep_cycles">😴 Sleep Cycles</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="privacy-toggle-panel">
+              <div class="privacy-toggle-row">
+                <input class="form-check-input privacy-toggle-input" type="checkbox" role="switch" id="privacyToggle" onchange="handlePrivacyToggleChange()">
+                <label class="form-check-label privacy-toggle-label" for="privacyToggle">Privacy Mode</label>
+                <span id="privacyStatusMarker" class="badge privacy-status-marker privacy-status-marker--local bg-secondary">Local Tracker</span>
+              </div>
+              <span id="privacyHintText" class="privacy-hint">Showing personalized mood &amp; telemetry metrics.</span>
+            </div>
+          </div>
+
+          <div class="milestone-chart-strip">
+            <div class="milestone-chart-strip-item">
+              <span class="milestone-strip-label">Collected</span>
+              <strong>{{ milestone_badges|length }} badges</strong>
+            </div>
+            <div class="milestone-chart-strip-item milestone-chart-strip-item--right">
+              <span class="milestone-strip-label">Next</span>
+              {% if next_milestone %}
+                <strong>{{ next_milestone.label }} in {{ next_milestone.days_remaining }} days</strong>
+              {% else %}
+                <strong>All milestones complete</strong>
+              {% endif %}
+            </div>
+            <div class="milestone-chart-strip-item milestone-chart-strip-item--roadmap">
+              <span class="milestone-strip-label">Waiting</span>
+              <div class="milestone-roadmap-chips">
+                {% for badge in upcoming_badges[:2] %}
+                  <span class="milestone-roadmap-chip">{{ badge.label }} · {{ badge.days_remaining }} days</span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-view">
+            <canvas id="moodChart" data-username="{{ session.user_id }}" data-milestones='{{ milestone_markers|tojson }}'></canvas>
+          </div>
+
+          <footer id="pagingControls" class="view-footer">
+            <button id="prevBtn" class="nav-item-btn" onclick="adjustMonth(-1)">← Previous Month</button>
+            <span id="rangeLabel" class="range-date-label">Loading Date...</span>
+            <button id="nextBtn" class="nav-item-btn" onclick="adjustMonth(1)">Next Month →</button>
+          </footer>
+
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <aside class="dashboard-sidebar">
+    <section class="content-panel insight-module insight-module--sidebar" id="section-insight" data-cached-date="{{ insight.cached_date }}" data-badge-count="{{ milestone_badges|length }}" data-next-label="{{ next_milestone.label if next_milestone else '' }}" data-next-days="{{ next_milestone.days_remaining if next_milestone else '' }}">
+      <div class="insight-sidebar-header">
+        <div>
+          <h3 class="section-label">Weekly Insight</h3>
+          <p class="insight-sidebar-meta">Daily Gemini cache</p>
+        </div>
+        <span id="insightCacheDate" class="insight-refresh-pill">Refreshed {{ insight.cached_date }}</span>
+      </div>
+
+      <div class="ai-emoji-display insight-emoji-display" id="aiEmoji">{{ insight.emoji }}</div>
+
+      <div class="ai-review-container">
+        <p id="insightText" class="insight-text main-review">{{ insight.review }}</p>
+        <p class="insight-text sub-recommendation">
+          Based on <strong>{{ entry_count }} entries</strong> tracked over the last 7 days (Average: {{ avg_score }}/5).
+        </p>
+      </div>
+
+      <button class="nav-item-btn dashboard-chart-spacer" onclick="scrollToSection('section-chart')">View Visual Analytics ↓</button>
+    </section>
+
+    <section class="content-panel chat-preview-module" id="chatPreviewModule">
+      <div class="chat-preview-header">
+        <div>
+          <h3 class="section-label">Gemini Chat Preview</h3>
+          <p class="chat-preview-subtitle">Frontend-only mockup for the future assistant flow.</p>
+        </div>
+        <span class="chat-preview-pill">Preview only</span>
+      </div>
+
+      <div class="chat-thread" id="chatPreviewThread"></div>
+
+      <div class="chat-quick-actions">
+        <button type="button" class="chat-suggestion-chip" data-preview-prompt="What is my mood trend this week?">Mood trend</button>
+        <button type="button" class="chat-suggestion-chip" data-preview-prompt="How close am I to my next badge?">Badge progress</button>
+        <button type="button" class="chat-suggestion-chip" data-preview-prompt="What should I focus on next?">Next step</button>
+      </div>
+
+      <form class="chat-composer" id="chatPreviewForm">
+        <label class="sr-only" for="chatPreviewInput">Chat with Gemini preview</label>
+        <textarea id="chatPreviewInput" class="chat-input" rows="3" placeholder="Ask about your mood, streak, or habits..."></textarea>
+        <button type="submit" class="action-btn chat-send-btn">Send</button>
+      </form>
+    </section>
+  </aside>
 </div>
+
+<script id="weeklyInsightData" type="application/json">{{ insight|tojson }}</script>
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>

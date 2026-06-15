@@ -130,6 +130,15 @@ def build_milestone_progress(streak_dates):
             "days_remaining": next_badge["days"] - streak,
         }
 
+    upcoming_badges = [
+        {
+            **badge,
+            "days_remaining": badge["days"] - streak,
+        }
+        for badge in MILESTONE_BADGES
+        if streak < badge["days"]
+    ]
+
     milestone_markers = [
         {
             "date": badge["achievement_date"],
@@ -140,7 +149,103 @@ def build_milestone_progress(streak_dates):
         for badge in earned_badges
     ]
 
-    return streak, earned_badges, next_badge, milestone_markers
+    return streak, earned_badges, next_badge, milestone_markers, upcoming_badges
+
+
+def build_weekly_insight_prompt(recent_logs):
+    logs_summary = ""
+    for log in recent_logs:
+        logs_summary += f"- Date: {log['timestamp']}, Mood Score: {log['mood_score']}/5, Note: \"{log['thought_text']}\"\n"
+
+    return f"""
+            You are an empathetic wellness assistant built into the MindMetric web app.
+            Analyze the following mood diary data points from the user's last few entries:
+
+            {logs_summary}
+
+            Provide your response in two parts separated by a vertical pipe character (|).
+            Part 1: Exactly ONE emoji that perfectly represents the user's overall emotional trend or vibe from their notes (e.g., 🌟, 🌿, 🔋, 🌦️, ☕).
+            Part 2: A short, comforting, 2-sentence analytical insight highlighting patterns and giving a gentle, actionable recommendation. Keep the tone warm and professional. Do not use any markdown formatting or asterisks.
+
+            Example format: 🌿|Your mood shows a steady improvement over the last few days. Try to maintain this momentum by keeping up your evening walking habit.
+            """
+
+
+def get_daily_weekly_insight(username, recent_logs, entry_count):
+    current_date = datetime.date.today().isoformat()
+    db = get_db()
+    cached_row = db.execute('''
+        SELECT emoji, review, cached_date, generated_at
+        FROM ai_insight_cache
+        WHERE username = ? AND cached_date = ?
+    ''', (username, current_date)).fetchone()
+
+    if cached_row:
+        return {
+            "emoji": cached_row["emoji"],
+            "review": cached_row["review"],
+            "cached_date": cached_row["cached_date"],
+            "generated_at": cached_row["generated_at"],
+            "cache_status": "cached",
+        }
+
+    weekly_insight = {
+        "emoji": "🤔",
+        "review": "No recent metrics recorded this week yet. Submit your first mood log box above to see your dynamic tracking insights!",
+        "cached_date": current_date,
+        "generated_at": datetime.datetime.now().isoformat(timespec='seconds'),
+        "cache_status": "default",
+    }
+
+    if entry_count > 0:
+        try:
+            client = Client()
+            ai_prompt = build_weekly_insight_prompt(recent_logs)
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=ai_prompt
+            )
+
+            if response.text and "|" in response.text:
+                parts = response.text.strip().split("|", 1)
+                weekly_insight = {
+                    "emoji": parts[0].strip(),
+                    "review": parts[1].strip(),
+                    "cached_date": current_date,
+                    "generated_at": datetime.datetime.now().isoformat(timespec='seconds'),
+                    "cache_status": "fresh",
+                }
+            elif response.text:
+                weekly_insight = {
+                    "emoji": "✨",
+                    "review": response.text.strip(),
+                    "cached_date": current_date,
+                    "generated_at": datetime.datetime.now().isoformat(timespec='seconds'),
+                    "cache_status": "fresh",
+                }
+        except Exception as e:
+            print(f"⚠️ Gemini API Call Failed: {e}")
+            weekly_insight = {
+                "emoji": "⚠️",
+                "review": "Unable to sync with live AI generation channels. Displaying local telemetry matrices.",
+                "cached_date": current_date,
+                "generated_at": datetime.datetime.now().isoformat(timespec='seconds'),
+                "cache_status": "fallback",
+            }
+
+    db.execute('''
+        INSERT OR REPLACE INTO ai_insight_cache (username, cached_date, emoji, review, generated_at)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (
+        username,
+        weekly_insight["cached_date"],
+        weekly_insight["emoji"],
+        weekly_insight["review"],
+        weekly_insight["generated_at"],
+    ))
+    db.commit()
+
+    return weekly_insight
 
 # --- CONTEXT PROCESSOR ---
 @app.context_processor
@@ -307,7 +412,7 @@ def profile():
     ''', (username,)).fetchall()
     log_dates = [row['log_date'] for row in date_rows]
     streak_dates = calculate_current_streak_dates(log_dates)
-    streak, milestone_badges, next_milestone, milestone_markers = build_milestone_progress(streak_dates)
+    streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges = build_milestone_progress(streak_dates)
     
     logs_cursor = db.execute("SELECT COUNT(*) as log_count, AVG(mood_score) as avg_score FROM mood_logs WHERE username = ?", (username,))
     stats = logs_cursor.fetchone()
@@ -315,6 +420,33 @@ def profile():
     avg_score = round(stats['avg_score'], 2) if stats and stats['avg_score'] else "0.00"
     
     return render_template('profile.html', user=account_info, entry_count=entry_count, avg_score=avg_score, streak=streak, milestone_badges=milestone_badges, next_milestone=next_milestone)
+
+
+@app.route('/api/daily_insight')
+def api_daily_insight():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    username = session['user_id']
+    db = get_db()
+    row = db.execute('''
+        SELECT COUNT(*) as entry_count
+        FROM mood_logs
+        WHERE username = ?
+        AND timestamp >= datetime('now', '-7 days', 'localtime')
+    ''', (username,)).fetchone()
+    entry_count = row['entry_count'] if row and row['entry_count'] else 0
+
+    recent_logs = db.execute('''
+        SELECT timestamp, mood_score, thought_text
+        FROM mood_logs
+        WHERE username = ?
+        AND timestamp >= datetime('now', '-7 days', 'localtime')
+        ORDER BY timestamp DESC
+    ''', (username,)).fetchall()
+
+    insight = get_daily_weekly_insight(username, recent_logs, entry_count)
+    return jsonify(insight)
 
 @app.route('/logout')
 def logout():
@@ -401,7 +533,7 @@ def dashboard():
     ''', (username,)).fetchall()
     log_dates = [row['log_date'] for row in date_rows]
     streak_dates = calculate_current_streak_dates(log_dates)
-    streak, milestone_badges, next_milestone, milestone_markers = build_milestone_progress(streak_dates)
+    streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges = build_milestone_progress(streak_dates)
 
     # Calculate metrics over a sliding 7-day window
     row = db.execute('''
@@ -423,57 +555,8 @@ def dashboard():
         ORDER BY timestamp DESC
     ''', (username,)).fetchall()
 
-# --- NEW LIVE GEMINI AI INSIGHTS ---
-    weekly_insight = {
-        "emoji": "🤔",
-        "review": "No recent metrics recorded this week yet. Submit your first mood log box above to see your dynamic tracking insights!"
-    }
-    
-    if entry_count > 0:
-        try:
-            client = Client()
-            
-            logs_summary = ""
-            for log in recent_logs:
-                logs_summary += f"- Date: {log['timestamp']}, Mood Score: {log['mood_score']}/5, Note: \"{log['thought_text']}\"\n"
-            
-            ai_prompt = f"""
-            You are an empathetic wellness assistant built into the MindMetric web app.
-            Analyze the following mood diary data points from the user's last few entries:
-            
-            {logs_summary}
-            
-            Provide your response in two parts separated by a vertical pipe character (|).
-            Part 1: Exactly ONE emoji that perfectly represents the user's overall emotional trend or vibe from their notes (e.g., 🌟, 🌿, 🔋, 🌦️, ☕).
-            Part 2: A short, comforting, 2-sentence analytical insight highlighting patterns and giving a gentle, actionable recommendation. Keep the tone warm and professional. Do not use any markdown formatting or asterisks.
-            
-            Example format: 🌿|Your mood shows a steady improvement over the last few days. Try to maintain this momentum by keeping up your evening walking habit.
-            """
-            
-            response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=ai_prompt
-            )
-            
-            if response.text and "|" in response.text:
-                parts = response.text.strip().split("|", 1)
-                weekly_insight = {
-                    "emoji": parts[0].strip(),
-                    "review": parts[1].strip()
-                }
-            elif response.text:
-                weekly_insight = {
-                    "emoji": "✨",
-                    "review": response.text.strip()
-                }
-                
-        except Exception as e:
-            print(f"⚠️ Gemini API Call Failed: {e}")
-            weekly_insight = {
-                "emoji": "⚠️",
-                "review": "Unable to sync with live AI generation channels. Displaying local telemetry matrices."
-            }
-            
+    weekly_insight = get_daily_weekly_insight(username, recent_logs, entry_count)
+
     return render_template('dashboard.html', 
                            insight=weekly_insight, 
                            entry_count=entry_count, 
@@ -481,7 +564,8 @@ def dashboard():
                            streak=streak,
                            milestone_badges=milestone_badges,
                            next_milestone=next_milestone,
-                           milestone_markers=milestone_markers)
+                           milestone_markers=milestone_markers,
+                           upcoming_badges=upcoming_badges)
 
 @app.route('/history')
 def history():
@@ -680,6 +764,15 @@ def init_db():
         metric_type TEXT NOT NULL,
         value REAL NOT NULL,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
+
+    db.execute('''CREATE TABLE IF NOT EXISTS ai_insight_cache (
+        username TEXT NOT NULL,
+        cached_date TEXT NOT NULL,
+        emoji TEXT NOT NULL,
+        review TEXT NOT NULL,
+        generated_at TEXT NOT NULL,
+        PRIMARY KEY (username, cached_date)
     )''')
     
     print("Database refreshed and ready with Full Name schema parameters & Security Questions!")
