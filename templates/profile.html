@@ -130,17 +130,28 @@
           <hr class="profile-security-divider">
 
           <div class="profile-form-group">
-            <label class="profile-form-label" for="current_password">Current Password</label>
-            <input type="password" id="current_password" name="current_password" class="profile-form-input" placeholder="••••••••" required>
-          </div>
-          <div class="profile-form-group">
-            <label class="profile-form-label" for="new_password">New Password</label>
-            <input type="password" id="new_password" name="new_password" class="profile-form-input" placeholder="••••••••" required>
-          </div>
-          <div class="profile-form-group">
-            <label class="profile-form-label" for="confirm_password">Confirm New Password</label>
-            <input type="password" id="confirm_password" name="confirm_password" class="profile-form-input" placeholder="••••••••" required>
-          </div>
+  <label class="profile-form-label" for="current_password">Current Password</label>
+  <div class="password-wrapper">
+    <input type="password" id="current_password" name="current_password" class="profile-form-input" placeholder="••••••••">
+    <span class="password-toggle">👁️</span>
+  </div>
+</div>
+
+<div class="profile-form-group">
+  <label class="profile-form-label" for="new_password">New Password</label>
+  <div class="password-wrapper">
+    <input type="password" id="new_password" name="new_password" class="profile-form-input" placeholder="••••••••">
+    <span class="password-toggle">👁️</span>
+  </div>
+</div>
+
+<div class="profile-form-group">
+  <label class="profile-form-label" for="confirm_password">Confirm New Password</label>
+  <div class="password-wrapper">
+    <input type="password" id="confirm_password" name="confirm_password" class="profile-form-input" placeholder="••••••••">
+    <span class="password-toggle">👁️</span>
+  </div>
+</div>
 
           <button type="submit" class="profile-action-btn profile-block-btn">Verify &amp; Update Credentials</button>
         </form>
@@ -163,4 +174,5 @@
 
   </div>
 </div>
+<script src="{{ url_for('static', filename='profile.js') }}?v=2"></script>
 {% endblock %}
