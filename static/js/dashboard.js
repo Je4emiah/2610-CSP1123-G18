@@ -30,7 +30,7 @@ async function updateDashboard() {
             marker.innerText = "Global Mode";
             marker.className = "badge privacy-status-marker privacy-status-marker--global bg-danger";
         }
-        if (hint) hint.innerText = "Locked user tracking. Hooked entirely into anonymous community aggregates.";
+        if (hint) hint.innerText = "Showing anonymous community averages.";
     } else {
         if (loggerPanel) loggerPanel.classList.remove('disabled-form-section');
         moodFormInputs.forEach(input => input.disabled = false);

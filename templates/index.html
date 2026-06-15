@@ -23,7 +23,7 @@
   <section class="comparison-section content-panel">
     <div class="section-header">
       <h2 class="main-title">Why Choose MindMetric?</h2>
-      <p class="sub-title sub-title--compact">
+      <p class="sub-title">
         See how we stack up against other popular mood tracking platforms.
       </p>
     </div>
@@ -32,19 +32,19 @@
       <table class="comparison-table">
         <thead>
           <tr>
-            <th class="comparison-table-heading">Features</th>
-            <th class="highlight-column comparison-table-heading comparison-table-heading--highlight">MindMetric (You)</th>
-            <th class="comparison-table-heading">Competitor Horizon</th>
-            <th class="comparison-table-heading">MoodTracker Inc</th>
+            <th>Features</th>
+            <th class="highlight-column">MindMetric (You)</th>
+            <th>Competitor Horizon</th>
+            <th>MoodTracker Inc</th>
           </tr>
         </thead>
         <tbody>
           {% for row in competitors %}
           <tr>
-            <td class="comparison-table-cell comparison-table-cell--feature">{{ row.feature }}</td>
-            <td class="highlight-column comparison-table-cell comparison-table-cell--highlight">{{ row.mindmetric }}</td>
-            <td class="comparison-table-cell">{{ row.competitor_a }}</td>
-            <td class="comparison-table-cell">{{ row.competitor_b }}</td>
+            <td>{{ row.feature }}</td>
+            <td class="highlight-column">{{ row.mindmetric }}</td>
+            <td>{{ row.competitor_a }}</td>
+            <td>{{ row.competitor_b }}</td>
           </tr>
           {% endfor %}
         </tbody>
