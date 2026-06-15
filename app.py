@@ -91,17 +91,56 @@ MILESTONE_BADGES = [
 ]
 
 
-def build_milestone_badges(streak):
-    earned_badges = [
-        {
-            **badge,
-            "unlocked": True,
-        }
-        for badge in MILESTONE_BADGES
-        if streak >= badge["days"]
-    ]
+def calculate_current_streak_dates(log_dates):
+    log_date_set = set(log_dates)
+    today = datetime.date.today()
+    yesterday = today - datetime.timedelta(days=1)
+
+    if today.strftime('%Y-%m-%d') in log_date_set:
+        current_date = today
+    elif yesterday.strftime('%Y-%m-%d') in log_date_set:
+        current_date = yesterday
+    else:
+        return []
+
+    streak_dates = []
+    while current_date.strftime('%Y-%m-%d') in log_date_set:
+        streak_dates.append(current_date.strftime('%Y-%m-%d'))
+        current_date -= datetime.timedelta(days=1)
+
+    return streak_dates
+
+
+def build_milestone_progress(streak_dates):
+    streak = len(streak_dates)
+    earned_badges = []
+
+    for badge in MILESTONE_BADGES:
+        if streak >= badge["days"]:
+            earned_badges.append({
+                **badge,
+                "unlocked": True,
+                "achievement_date": streak_dates[badge["days"] - 1],
+            })
+
     next_badge = next((badge for badge in MILESTONE_BADGES if streak < badge["days"]), None)
-    return earned_badges, next_badge
+    if next_badge:
+        next_badge = {
+            **next_badge,
+            "days_remaining": next_badge["days"] - streak,
+        }
+
+    milestone_markers = [
+        {
+            "date": badge["achievement_date"],
+            "days": badge["days"],
+            "label": badge["label"],
+            "emoji": badge["emoji"],
+        }
+        for badge in earned_badges
+    ]
+
+    return streak, earned_badges, next_badge, milestone_markers
 
 # --- CONTEXT PROCESSOR ---
 @app.context_processor
@@ -259,13 +298,23 @@ def profile():
         
     cursor = db.execute("SELECT username, name, gender, profile_pic FROM users WHERE username = ?", (username,))
     account_info = cursor.fetchone()
+
+    date_rows = db.execute('''
+        SELECT DISTINCT date(timestamp) as log_date
+        FROM mood_logs
+        WHERE username = ?
+        ORDER BY log_date DESC
+    ''', (username,)).fetchall()
+    log_dates = [row['log_date'] for row in date_rows]
+    streak_dates = calculate_current_streak_dates(log_dates)
+    streak, milestone_badges, next_milestone, milestone_markers = build_milestone_progress(streak_dates)
     
     logs_cursor = db.execute("SELECT COUNT(*) as log_count, AVG(mood_score) as avg_score FROM mood_logs WHERE username = ?", (username,))
     stats = logs_cursor.fetchone()
     entry_count = stats['log_count'] if stats else 0
     avg_score = round(stats['avg_score'], 2) if stats and stats['avg_score'] else "0.00"
     
-    return render_template('profile.html', user=account_info, entry_count=entry_count, avg_score=avg_score)
+    return render_template('profile.html', user=account_info, entry_count=entry_count, avg_score=avg_score, streak=streak, milestone_badges=milestone_badges, next_milestone=next_milestone)
 
 @app.route('/logout')
 def logout():
@@ -350,19 +399,9 @@ def dashboard():
         WHERE username = ? 
         ORDER BY log_date DESC
     ''', (username,)).fetchall()
-
-    streak = 0
-    today_str = datetime.date.today().strftime('%Y-%m-%d')
-    yesterday_str = (datetime.date.today() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
     log_dates = [row['log_date'] for row in date_rows]
-
-    if today_str in log_dates or yesterday_str in log_dates:
-        current_date = datetime.date.today() if today_str in log_dates else datetime.date.today() - datetime.timedelta(days=1)
-        while current_date.strftime('%Y-%m-%d') in log_dates:
-            streak += 1
-            current_date -= datetime.timedelta(days=1)
-
-    milestone_badges, next_milestone = build_milestone_badges(streak)
+    streak_dates = calculate_current_streak_dates(log_dates)
+    streak, milestone_badges, next_milestone, milestone_markers = build_milestone_progress(streak_dates)
 
     # Calculate metrics over a sliding 7-day window
     row = db.execute('''
@@ -441,7 +480,8 @@ def dashboard():
                            avg_score=avg_score,
                            streak=streak,
                            milestone_badges=milestone_badges,
-                           next_milestone=next_milestone)
+                           next_milestone=next_milestone,
+                           milestone_markers=milestone_markers)
 
 @app.route('/history')
 def history():

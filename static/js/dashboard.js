@@ -7,6 +7,7 @@ async function updateDashboard() {
     const counterElement = document.getElementById('dataCounter');
     const labelElement = document.getElementById('rangeLabel');
     const username = canvas.dataset.username;
+    const milestoneMarkers = JSON.parse(canvas.dataset.milestones || '[]');
     const ctx = canvas.getContext('2d');
 
     if (counterElement) counterElement.innerText = "Refreshing...";
@@ -143,6 +144,18 @@ async function updateDashboard() {
         }
 
         const labels = data.labels ? data.labels.map(label => label.split(' ')[0] || label) : [];
+        const milestoneDates = new Set(milestoneMarkers.map(marker => marker.date));
+        const pointRadius = labels.map(label => milestoneDates.has(label) ? 9 : 5);
+        const pointHoverRadius = labels.map(label => milestoneDates.has(label) ? 11 : 7);
+        const pointBackgroundColor = labels.map(label => milestoneDates.has(label) ? '#f59e0b' : '#ffffff');
+        const pointBorderColor = labels.map(label => milestoneDates.has(label) ? '#f59e0b' : '#00D4FF');
+        const pointStyle = labels.map(label => milestoneDates.has(label) ? 'star' : 'circle');
+
+        datasets[0].pointRadius = pointRadius;
+        datasets[0].pointHoverRadius = pointHoverRadius;
+        datasets[0].pointBackgroundColor = pointBackgroundColor;
+        datasets[0].pointBorderColor = pointBorderColor;
+        datasets[0].pointStyle = pointStyle;
 
         myChart = new Chart(ctx, {
             type: 'line',

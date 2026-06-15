@@ -40,7 +40,7 @@
         <div class="milestone-header">
           <h2 class="section-label">Milestone Badges</h2>
           {% if next_milestone %}
-            <p class="milestone-target">Next unlock: {{ next_milestone.days }} days</p>
+            <p class="milestone-target">Next unlock: {{ next_milestone.label }} in {{ next_milestone.days_remaining }} days</p>
           {% else %}
             <p class="milestone-target">All milestone badges unlocked</p>
           {% endif %}
@@ -53,7 +53,7 @@
                 <div class="milestone-badge-emoji">{{ badge.emoji }}</div>
                 <div class="milestone-badge-copy">
                   <h3>{{ badge.label }}</h3>
-                  <span>{{ badge.days }} days</span>
+                  <span>Unlocked on {{ badge.achievement_date }}</span>
                 </div>
               </article>
             {% endfor %}
@@ -169,8 +169,23 @@
           </div>
         </div>
 
+        <div class="milestone-chart-strip">
+          <div class="milestone-chart-strip-item">
+            <span class="milestone-strip-label">Collected</span>
+            <strong>{{ milestone_badges|length }} badges</strong>
+          </div>
+          <div class="milestone-chart-strip-item milestone-chart-strip-item--right">
+            <span class="milestone-strip-label">Next</span>
+            {% if next_milestone %}
+              <strong>{{ next_milestone.label }} in {{ next_milestone.days_remaining }} days</strong>
+            {% else %}
+              <strong>All milestones complete</strong>
+            {% endif %}
+          </div>
+        </div>
+
         <div class="chart-view">
-          <canvas id="moodChart" data-username="{{ session.user_id }}"></canvas>
+          <canvas id="moodChart" data-username="{{ session.user_id }}" data-milestones='{{ milestone_markers|tojson }}'></canvas>
         </div>
 
         <footer id="pagingControls" class="view-footer">

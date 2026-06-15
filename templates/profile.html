@@ -47,6 +47,35 @@
       </div>
     </div>
 
+    <div class="profile-panel profile-achievements-panel">
+      <div class="profile-achievements-header">
+        <h4 class="profile-section-heading">🏅 Achievements Collected</h4>
+        <span class="profile-achievements-count">{{ milestone_badges|length }} unlocked</span>
+      </div>
+
+      {% if milestone_badges %}
+        <div class="profile-achievements-grid">
+          {% for badge in milestone_badges %}
+            <article class="profile-achievement-card" title="{{ badge.description }}">
+              <div class="profile-achievement-emoji">{{ badge.emoji }}</div>
+              <div class="profile-achievement-copy">
+                <h5>{{ badge.label }}</h5>
+                <p>Unlocked on {{ badge.achievement_date }}</p>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="profile-achievements-empty">
+          <p>Nothing collected yet. Your first badge unlocks at 3 days.</p>
+        </div>
+      {% endif %}
+
+      {% if next_milestone %}
+        <p class="profile-achievements-next">Next unlock: {{ next_milestone.label }} in {{ next_milestone.days_remaining }} days.</p>
+      {% endif %}
+    </div>
+
     {# --- Profile Management Grid --- #}
     <div class="profile-management-grid">
 
