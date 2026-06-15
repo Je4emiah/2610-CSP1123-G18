@@ -83,6 +83,26 @@ def get_monthly_mood_data(username, year, month):
     """
     return db.execute(query, (username, f"{year}-{month}")).fetchall()
 
+MILESTONE_BADGES = [
+    {"days": 3, "label": "First Spark", "emoji": "🌱", "description": "You have started building the habit."},
+    {"days": 7, "label": "One Week", "emoji": "⚡", "description": "A full week of consistency."},
+    {"days": 14, "label": "Two Weeks", "emoji": "🔥", "description": "Your streak is gaining momentum."},
+    {"days": 30, "label": "One Month", "emoji": "🏆", "description": "A major milestone worth celebrating."},
+]
+
+
+def build_milestone_badges(streak):
+    earned_badges = [
+        {
+            **badge,
+            "unlocked": True,
+        }
+        for badge in MILESTONE_BADGES
+        if streak >= badge["days"]
+    ]
+    next_badge = next((badge for badge in MILESTONE_BADGES if streak < badge["days"]), None)
+    return earned_badges, next_badge
+
 # --- CONTEXT PROCESSOR ---
 @app.context_processor
 def inject_user():
@@ -342,6 +362,8 @@ def dashboard():
             streak += 1
             current_date -= datetime.timedelta(days=1)
 
+    milestone_badges, next_milestone = build_milestone_badges(streak)
+
     # Calculate metrics over a sliding 7-day window
     row = db.execute('''
         SELECT COUNT(*) as entry_count, AVG(mood_score) as avg_score 
@@ -417,7 +439,9 @@ def dashboard():
                            insight=weekly_insight, 
                            entry_count=entry_count, 
                            avg_score=avg_score,
-                           streak=streak)
+                           streak=streak,
+                           milestone_badges=milestone_badges,
+                           next_milestone=next_milestone)
 
 @app.route('/history')
 def history():

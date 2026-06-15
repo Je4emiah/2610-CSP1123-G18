@@ -5,3 +5,4 @@ __pycache__/
 seed.py
 init_db.py
 .mindmetric-env/
+*.db

@@ -36,6 +36,35 @@
         </div>
       {% endif %}
 
+      <section class="milestone-panel">
+        <div class="milestone-header">
+          <h2 class="section-label">Milestone Badges</h2>
+          {% if next_milestone %}
+            <p class="milestone-target">Next unlock: {{ next_milestone.days }} days</p>
+          {% else %}
+            <p class="milestone-target">All milestone badges unlocked</p>
+          {% endif %}
+        </div>
+
+        {% if milestone_badges %}
+          <div class="milestone-badge-grid">
+            {% for badge in milestone_badges %}
+              <article class="milestone-badge-card is-unlocked" title="{{ badge.description }}">
+                <div class="milestone-badge-emoji">{{ badge.emoji }}</div>
+                <div class="milestone-badge-copy">
+                  <h3>{{ badge.label }}</h3>
+                  <span>{{ badge.days }} days</span>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="milestone-empty-state">
+            <p>Start logging to unlock your first badge at 3 days.</p>
+          </div>
+        {% endif %}
+      </section>
+
       <div class="content-panel">
         <h2 class="section-label">Log Your Mind</h2>
         <form id="moodForm" action="{{ url_for('dashboard') }}" method="POST">
