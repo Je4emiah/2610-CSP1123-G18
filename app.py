@@ -344,20 +344,35 @@ def profile():
     username = session['user_id']
     db = get_db()
     
+    # 1. Fetch current database record first to establish fallback values and security baselines
+    cursor = db.execute("""
+        SELECT username, name, gender, profile_pic, password_hash, q1_answer, q2_answer, q3_answer 
+        FROM users 
+        WHERE username = ?
+    """, (username,))
+    user_row = cursor.fetchone()
+
+    # Define fallback markers based on current database state
+    existing_name = user_row['name'] if user_row else ""
+    existing_gender = user_row['gender'] if user_row else None
+    saved_pic_path = user_row['profile_pic'] if user_row else None
+    current_db_hash = user_row['password_hash'] if user_row else None
+    
     if request.method == 'POST':
-        updated_name = request.form.get('full_name')
-        selected_gender = request.form.get('gender')
+        # 2. Extract profile details (fall back to database defaults if fields are missing across separate forms)
+        updated_name = request.form.get('full_name') or existing_name
+        selected_gender = request.form.get('gender') or existing_gender
         
-        # 🔑 Extract the password update form data fields
+        # Extract the credentials control and security answers form fields
         current_password = request.form.get('current_password')
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
         
-        cursor = db.execute("SELECT password_hash, profile_pic FROM users WHERE username = ?", (username,))
-        user_row = cursor.fetchone()
-        saved_pic_path = user_row['profile_pic'] if user_row else None
-        current_db_hash = user_row['password_hash'] if user_row else None
+        form_q1 = request.form.get('q1', '').lower().strip()
+        form_q2 = request.form.get('q2', '').lower().strip()
+        form_q3 = request.form.get('q3', '').lower().strip()
         
+        # Handle avatar image file upload updates
         file = request.files.get('profile_avatar')
         if file and file.filename != '':
             if allowed_file(file.filename):
@@ -368,28 +383,34 @@ def profile():
                 flash("Invalid format! Please use PNG, JPG, JPEG, or GIF.", "danger")
                 return redirect(url_for('profile'))
                 
-        # 🛡️ Password Modification Security Processing Pipeline
+        # 3. Credentials Modification Pipeline Activation
         if new_password and new_password.strip() != "":
-            # 1. Verify that the user knows their current password
+            
+            # Tier A: Validate three-tier security question answers
+            if not user_row or user_row['q1_answer'] != form_q1 or user_row['q2_answer'] != form_q2 or user_row['q3_answer'] != form_q3:
+                flash("Security Error: Incorrect answers to security questions.", "danger")
+                return redirect(url_for('profile'))
+
+            # Tier B: Verify password matching constraints against the current hash
             if not current_db_hash or not check_password_hash(current_db_hash, current_password):
                 flash("Security Error: Your current password verification failed.", "danger")
                 return redirect(url_for('profile'))
                 
-            # 2. Check if the matching verification confirm box matches
+            # Tier C: Ensure verification fields match exactly
             if new_password != confirm_password:
                 flash("Verification Error: Your new password fields do not match.", "danger")
                 return redirect(url_for('profile'))
                 
-            # 3. Check complexity using your existing function framework
+            # Tier D: Run standard context complexity evaluations
             is_valid, error_msg = is_password_complex(new_password)
             if not is_valid:
                 flash(f"Security Error: {error_msg}", "danger")
-                return redirect(url_for('profile')) # 💡 STAYS on profile and shows error!
+                return redirect(url_for('profile'))
                 
-            # If valid, overwrite our hash update variable targets
+            # Reassign target update hash configuration variables
             current_db_hash = generate_password_hash(new_password)
         
-        # Save updates back into our user registry schema structure
+        # 4. Atomically commit updates down to the registry schema engine layers
         db.execute("""
             UPDATE users 
             SET name = ?, gender = ?, profile_pic = ?, password_hash = ? 
@@ -401,9 +422,7 @@ def profile():
         flash("Profile updated successfully!", "success")
         return redirect(url_for('profile'))
         
-    cursor = db.execute("SELECT username, name, gender, profile_pic FROM users WHERE username = ?", (username,))
-    account_info = cursor.fetchone()
-
+    # --- GET request handling logic ---
     date_rows = db.execute('''
         SELECT DISTINCT date(timestamp) as log_date
         FROM mood_logs
@@ -411,6 +430,7 @@ def profile():
         ORDER BY log_date DESC
     ''', (username,)).fetchall()
     log_dates = [row['log_date'] for row in date_rows]
+    
     streak_dates = calculate_current_streak_dates(log_dates)
     streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges = build_milestone_progress(streak_dates)
     
@@ -419,7 +439,13 @@ def profile():
     entry_count = stats['log_count'] if stats else 0
     avg_score = round(stats['avg_score'], 2) if stats and stats['avg_score'] else "0.00"
     
-    return render_template('profile.html', user=account_info, entry_count=entry_count, avg_score=avg_score, streak=streak, milestone_badges=milestone_badges, next_milestone=next_milestone)
+    return render_template('profile.html', 
+                           user=user_row, 
+                           entry_count=entry_count, 
+                           avg_score=avg_score, 
+                           streak=streak, 
+                           milestone_badges=milestone_badges, 
+                           next_milestone=next_milestone)
 
 @app.route('/delete_profile_pic', methods=['POST'])
 def delete_profile_pic():
