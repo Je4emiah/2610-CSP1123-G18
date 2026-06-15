@@ -2,3 +2,6 @@
 .vscode/
 __pycache__/
 *.dbgt
+seed.py
+init_db.py
+.mindmetric-env/
