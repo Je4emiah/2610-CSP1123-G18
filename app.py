@@ -421,6 +421,33 @@ def profile():
     
     return render_template('profile.html', user=account_info, entry_count=entry_count, avg_score=avg_score, streak=streak, milestone_badges=milestone_badges, next_milestone=next_milestone)
 
+@app.route('/delete_profile_pic', methods=['POST'])
+def delete_profile_pic():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    username = session['user_id']
+    db = get_db()
+    
+    # 1. Look up the current file path to see if we should remove it from disk
+    cursor = db.execute("SELECT profile_pic FROM users WHERE username = ?", (username,))
+    row = cursor.fetchone()
+    
+    if row and row['profile_pic']:
+        old_file_path = os.path.join('static', row['profile_pic'])
+        # Optional safety check: delete the actual file from the uploads folder
+        if os.path.exists(old_file_path):
+            try:
+                os.remove(old_file_path)
+            except Exception as e:
+                print(f"File deletion system log error: {e}")
+                
+    # 2. Update database registry schema target parameters back to None/Null
+    db.execute("UPDATE users SET profile_pic = NULL WHERE username = ?", (username,))
+    db.commit()
+    
+    flash("Profile picture removed successfully!", "success")
+    return redirect(url_for('profile'))
 
 @app.route('/api/daily_insight')
 def api_daily_insight():

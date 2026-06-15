@@ -30,6 +30,13 @@
         <input type="hidden" name="full_name" value="{{ user.name if user and user.name else session.user_id }}">
       </form>
 
+<form action="{{ url_for('delete_profile_pic') }}" method="POST" class="mt-2" 
+            onsubmit="return confirm('Are you sure you want to remove your profile picture?');">
+        <button type="submit" class="btn btn-sm btn-outline-danger style-delete-pic-btn" style="border: none; background: transparent; color: #dc3545; font-size: 0.9rem; cursor: pointer;">
+          🗑️ Remove Picture
+        </button>
+      </form>
+
       <h2 class="profile-panel-title profile-panel-title--spaced" id="displayNameText">
         {{ user.name if user and user.name else session.user_id }}
       </h2>
