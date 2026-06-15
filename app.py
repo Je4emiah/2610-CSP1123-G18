@@ -6,7 +6,13 @@ from flask import Flask, render_template, request, url_for, redirect, jsonify, s
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import timedelta
-from google.genai import Client
+
+try:
+    from google.genai import Client
+    GEMINI_AVAILABLE = True
+except Exception:
+    Client = None
+    GEMINI_AVAILABLE = False
 
 app = Flask(__name__)
 app.secret_key = 'mmu_project_secret_key'

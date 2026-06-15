@@ -54,7 +54,7 @@
       <div class="profile-panel">
         <h4 class="profile-section-heading">👤 Profile Details</h4>
 
-<form action="{{ url_for('profile') }}" method="POST" id="passwordUpdateForm">
+<form action="{{ url_for('profile') }}" method="POST" id="profileDetailsForm">
           <div class="profile-form-group">
             <label class="profile-form-label">Active Account Identifier</label>
             <input type="text" class="profile-form-input static-input" value="{{ session.user_id }}" readonly />
