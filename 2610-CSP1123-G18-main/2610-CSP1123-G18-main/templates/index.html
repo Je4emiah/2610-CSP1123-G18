@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}MindMetric — Understand Your Mind{% endblock %}
+
+{% block content %}
+<div class="page-shell">
+  <header class="hero-section">
+    <div class="hero-container">
+      <h1 class="hero-title">
+        Understand Your Mind. <br><span class="hero-subtitle">Track Your Momentum.</span>
+      </h1>
+      <p class="hero-description">
+        MindMetric helps you log your daily thoughts, visualize deep emotional trends over months and
+        years, and optimize your mental well-being securely.
+      </p>
+      <div class="hero-cta-group">
+        <a href="{{ url_for('register') }}" class="btn btn-light">Get Started Free</a>
+        <a href="{{ url_for('login') }}" class="btn btn-outline-light">Sign In</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="comparison-section content-panel">
+    <div class="section-header">
+      <h2 class="main-title">Why Choose MindMetric?</h2>
+      <p class="sub-title">
+        See how we stack up against other popular mood tracking platforms.
+      </p>
+    </div>
+
+    <div class="table-responsive-wrapper">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Features</th>
+            <th class="highlight-column">MindMetric (You)</th>
+            <th>Competitor Horizon</th>
+            <th>MoodTracker Inc</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in competitors %}
+          <tr>
+            <td>{{ row.feature }}</td>
+            <td class="highlight-column">{{ row.mindmetric }}</td>
+            <td>{{ row.competitor_a }}</td>
+            <td>{{ row.competitor_b }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <p class="table-footnote">
+      * Data points collected based on standard consumer application tiers in 2026.
+    </p>
+  </section>
+</div>
+{% endblock %}
