@@ -1549,3 +1549,28 @@
     border-top: 1px dashed var(--border);
     margin: 0.75rem 0;
 }
+
+/* ==========================================
+   MindMetric Profile Password Toggle Fix
+   ========================================== */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.password-toggle {
+    cursor: pointer;
+    pointer-events: auto !important; /* Forces the browser to allow clicks */
+    position: absolute;
+    right: 15px;                    /* Aligns it cleanly inside the right edge of the input */
+    z-index: 10;                     /* Ensures it sits safely on top of the input layer */
+    user-select: none;               /* Prevents text-highlighting the emoji on double-click */
+    font-size: 1.1rem;
+}
+
+/* Optional: Ensures the input text doesn't hide behind the emoji */
+.password-wrapper input {
+    padding-right: 40px !important;
+}

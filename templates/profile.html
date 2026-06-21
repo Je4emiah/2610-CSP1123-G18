@@ -174,5 +174,62 @@
 
   </div>
 </div>
-<script src="{{ url_for('static', filename='profile.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const togglePasswordVisibility = (inputId, iconElement) => {
+        const targetInput = document.getElementById(inputId);
+        if (targetInput) {
+            if (targetInput.type === "password") {
+                targetInput.type = "text";
+                iconElement.textContent = "🙈";
+            } else {
+                targetInput.type = "password";
+                iconElement.textContent = "👁️";
+            }
+        }
+    };
+
+    const togglers = document.querySelectorAll('.password-toggle');
+    togglers.forEach(toggler => {
+        toggler.addEventListener('click', function() {
+            const associatedWrapper = this.closest('.password-wrapper');
+            if (associatedWrapper) {
+                const associatedInput = associatedWrapper.querySelector('input');
+                if (associatedInput) {
+                    togglePasswordVisibility(associatedInput.id, this);
+                }
+            }
+        });
+    });
+
+    const passwordForm = document.getElementById('passwordUpdateForm');
+    if (passwordForm) {
+        passwordForm.onsubmit = function (event) {
+            const currentPassword = document.getElementById('current_password').value;
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+
+            if (newPassword.trim() !== "") {
+                if (currentPassword === newPassword) {
+                    event.preventDefault();
+                    alert('Security Fault: Your new password cannot be the same as your current password.');
+                    return false;
+                }
+                if (newPassword !== confirmPassword) {
+                    event.preventDefault();
+                    alert('Verification check failed: Your new password inputs do not match.');
+                    return false;
+                }
+                const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?\":{}|<> ]).{6,}$/;
+                if (!strongPasswordRegex.test(newPassword)) {
+                    event.preventDefault();
+                    alert('Security Fault: Your new password must be at least 6 characters long and contain uppercase, lowercase, a number, and a special character (e.g., !, @, #, $, %).');
+                    return false;
+                }
+            }
+            return true;
+        };
+    }
+});
+</script>
 {% endblock %}
