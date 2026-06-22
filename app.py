@@ -198,33 +198,45 @@ def get_daily_weekly_insight(username, recent_logs, entry_count):
     }
 
     if entry_count > 0:
-        try:
-            client = Client()
-            ai_prompt = build_weekly_insight_prompt(recent_logs)
-            response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=ai_prompt
-            )
+        api_key = os.environ.get('GOOGLE_API_KEY') or os.environ.get('GEMINI_API_KEY')
+        models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-pro']
+        response = None
+        last_error = None
 
-            if response.text and "|" in response.text:
-                parts = response.text.strip().split("|", 1)
-                weekly_insight = {
-                    "emoji": parts[0].strip(),
-                    "review": parts[1].strip(),
-                    "cached_date": current_date,
-                    "generated_at": datetime.datetime.now().isoformat(timespec='seconds'),
-                    "cache_status": "fresh",
-                }
-            elif response.text:
-                weekly_insight = {
-                    "emoji": "✨",
-                    "review": response.text.strip(),
-                    "cached_date": current_date,
-                    "generated_at": datetime.datetime.now().isoformat(timespec='seconds'),
-                    "cache_status": "fresh",
-                }
-        except Exception as e:
-            print(f"⚠️ Gemini API Call Failed: {e}")
+        ai_prompt = build_weekly_insight_prompt(recent_logs)
+
+        for model in models_to_try:
+            try:
+                client = Client(api_key=api_key)
+                response = client.models.generate_content(
+                    model=model,
+                    contents=ai_prompt
+                )
+                if response and response.text:
+                    break
+            except Exception as e:
+                last_error = e
+                continue
+
+        if response and response.text and "|" in response.text:
+            parts = response.text.strip().split("|", 1)
+            weekly_insight = {
+                "emoji": parts[0].strip(),
+                "review": parts[1].strip(),
+                "cached_date": current_date,
+                "generated_at": datetime.datetime.now().isoformat(timespec='seconds'),
+                "cache_status": "fresh",
+            }
+        elif response and response.text:
+            weekly_insight = {
+                "emoji": "✨",
+                "review": response.text.strip(),
+                "cached_date": current_date,
+                "generated_at": datetime.datetime.now().isoformat(timespec='seconds'),
+                "cache_status": "fresh",
+            }
+        else:
+            print(f"⚠️ Gemini API Call Failed: {last_error}")
             weekly_insight = {
                 "emoji": "⚠️",
                 "review": "Unable to sync with live AI generation channels. Displaying local telemetry matrices.",
@@ -286,6 +298,8 @@ def login():
             flash("Invalid username or password.", "danger")
             return redirect(url_for('login'))
             
+    if 'user_id' in session:
+        return redirect(url_for('dashboard'))
     return render_template('login.html')
 
 @app.route('/forgot_password', methods=['GET', 'POST'])
@@ -481,6 +495,21 @@ def api_daily_insight():
         return jsonify({"error": "Unauthorized"}), 401
 
     username = session['user_id']
+    force = request.args.get('force', '').lower() == 'true'
+
+    if force:
+        last_refresh = session.get('last_insight_refresh')
+        if last_refresh:
+            elapsed = (datetime.datetime.now() - datetime.datetime.fromisoformat(last_refresh)).total_seconds()
+            if elapsed < 300:
+                remaining = int(300 - elapsed)
+                return jsonify({"error": f"Please wait {remaining} seconds before refreshing.", "cooldown_remaining": remaining}), 429
+        db = get_db()
+        db.execute('DELETE FROM ai_insight_cache WHERE username = ? AND cached_date = ?',
+                   (username, datetime.date.today().isoformat()))
+        db.commit()
+        session['last_insight_refresh'] = datetime.datetime.now().isoformat()
+
     db = get_db()
     row = db.execute('''
         SELECT COUNT(*) as entry_count
@@ -500,6 +529,69 @@ def api_daily_insight():
 
     insight = get_daily_weekly_insight(username, recent_logs, entry_count)
     return jsonify(insight)
+
+@app.route('/api/chat', methods=['POST'])
+def api_chat():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    username = session['user_id']
+    data = request.get_json()
+    user_message = data.get('message', '').strip() if data else ''
+    if not user_message:
+        return jsonify({"error": "Message is required."}), 400
+
+    last_chat = session.get('last_chat_time')
+    if last_chat:
+        elapsed = (datetime.datetime.now() - datetime.datetime.fromisoformat(last_chat)).total_seconds()
+        if elapsed < 120:
+            remaining = int(120 - elapsed)
+            return jsonify({"error": f"Please wait {remaining} seconds.", "cooldown_remaining": remaining}), 429
+
+    db = get_db()
+    recent_logs = db.execute('''
+        SELECT timestamp, mood_score, thought_text
+        FROM mood_logs
+        WHERE username = ?
+        AND timestamp >= datetime('now', '-7 days', 'localtime')
+        ORDER BY timestamp DESC LIMIT 10
+    ''', (username,)).fetchall()
+
+    insight_row = db.execute('''
+        SELECT emoji, review
+        FROM ai_insight_cache
+        WHERE username = ? AND cached_date = ?
+    ''', (username, datetime.date.today().isoformat())).fetchone()
+
+    context = "You are an empathetic wellness assistant in the MindMetric mood tracker app.\n\n"
+    context += "The user's recent mood entries (last 7 days):\n"
+    for log in recent_logs:
+        context += f"- {log['timestamp']}: Mood {log['mood_score']}/5 - \"{log['thought_text'] or 'No note'}\"\n"
+    if insight_row:
+        context += f"\nToday's AI insight: {insight_row['emoji']} - {insight_row['review']}\n"
+    context += f"\nThe user asks: {user_message}\n\nRespond conversationally, warmly, and concisely (2-4 sentences). Do not use markdown."
+
+    api_key = os.environ.get('GOOGLE_API_KEY') or os.environ.get('GEMINI_API_KEY')
+    models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-pro']
+    response = None
+    last_error = None
+
+    for model in models_to_try:
+        try:
+            client = Client(api_key=api_key)
+            response = client.models.generate_content(model=model, contents=context)
+            if response and response.text:
+                break
+        except Exception as e:
+            last_error = e
+            continue
+
+    if response and response.text:
+        session['last_chat_time'] = datetime.datetime.now().isoformat()
+        return jsonify({"reply": response.text.strip(), "cooldown": 120})
+    else:
+        print(f"Chat Gemini error: {last_error}")
+        return jsonify({"error": "AI service unavailable. Please try again later."}), 503
 
 @app.route('/logout')
 def logout():
@@ -559,6 +651,8 @@ def register():
             flash("Username already exists! Please choose a different one.", "danger")
             return redirect(url_for('register'))
                 
+    if 'user_id' in session:
+        return redirect(url_for('dashboard'))
     return render_template('register.html')
 
 @app.route('/dashboard', methods=['GET', 'POST'])

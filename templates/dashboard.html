@@ -196,7 +196,11 @@
           <h3 class="section-label">Weekly Insight</h3>
           <p class="insight-sidebar-meta">Daily Gemini cache</p>
         </div>
-        <span id="insightCacheDate" class="insight-refresh-pill">Refreshed {{ insight.cached_date }}</span>
+        <div class="insight-sidebar-actions">
+          <span id="insightCacheDate" class="insight-refresh-pill">Refreshed {{ insight.cached_date }}</span>
+          <button id="refreshInsightBtn" class="nav-item-btn" onclick="handleRefreshInsight()">↻ Refresh</button>
+          <span id="insightCooldown" class="insight-cooldown d-none"></span>
+        </div>
       </div>
 
       <div class="ai-emoji-display insight-emoji-display" id="aiEmoji">{{ insight.emoji }}</div>
@@ -214,10 +218,10 @@
     <section class="content-panel chat-preview-module" id="chatPreviewModule">
       <div class="chat-preview-header">
         <div>
-          <h3 class="section-label">Gemini Chat Preview</h3>
-          <p class="chat-preview-subtitle">Frontend-only mockup for the future assistant flow.</p>
+          <h3 class="section-label">Gemini Chat</h3>
+          <p class="chat-preview-subtitle">Ask Gemini about your mood trends and habits.</p>
         </div>
-        <span class="chat-preview-pill">Preview only</span>
+        <span id="chatCooldown" class="chat-cooldown d-none"></span>
       </div>
 
       <div class="chat-thread" id="chatPreviewThread"></div>
@@ -229,9 +233,9 @@
       </div>
 
       <form class="chat-composer" id="chatPreviewForm">
-        <label class="sr-only" for="chatPreviewInput">Chat with Gemini preview</label>
+        <label class="sr-only" for="chatPreviewInput">Chat with Gemini</label>
         <textarea id="chatPreviewInput" class="chat-input" rows="3" placeholder="Ask about your mood, streak, or habits..."></textarea>
-        <button type="submit" class="action-btn chat-send-btn">Send</button>
+        <button type="submit" class="action-btn chat-send-btn" id="chatSendBtn">Send</button>
       </form>
     </section>
   </aside>

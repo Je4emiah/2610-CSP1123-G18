@@ -306,6 +306,27 @@
     white-space: nowrap;
 }
 
+.insight-sidebar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.insight-cooldown {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.chat-cooldown {
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 .ai-emoji-display {
     font-size: 4.5rem;
     line-height: 1;
