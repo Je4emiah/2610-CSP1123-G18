@@ -287,39 +287,9 @@ function seedChatPreview(insight, forceReset = false) {
 
     if (thread.dataset.initialized === 'true') return;
 
-    thread.appendChild(createChatBubble('assistant', 'Gemini Preview', insight.review || 'This preview is ready for your future Gemini connection.', insight.emoji || '🤖'));
-    thread.appendChild(createChatBubble('assistant', 'Preview Note', 'This chatbox is frontend-only for now, so we can test the layout before the live Gemini link is added.', 'ℹ️'));
+    thread.appendChild(createChatBubble('assistant', 'Gemini', '💡 Try asking about your mood trends, badge progress, or habits! Click a suggestion above to get started.', '💡'));
     thread.dataset.initialized = 'true';
     thread.scrollTop = thread.scrollHeight;
-}
-
-function generatePreviewReply(messageText, insight) {
-    const text = messageText.toLowerCase();
-    const panel = document.getElementById('chatPreviewModule');
-    const badgeCount = panel ? parseInt(panel.dataset.badgeCount || '0', 10) : 0;
-    const nextLabel = panel ? panel.dataset.nextLabel || '' : '';
-    const nextDays = panel ? panel.dataset.nextDays || '' : '';
-
-    if (text.includes('badge') || text.includes('milestone')) {
-        if (badgeCount > 0 && nextLabel) {
-            return `You have ${badgeCount} milestone badge${badgeCount === 1 ? '' : 's'} collected already. The next one waiting is ${nextLabel}${nextDays ? ` in ${nextDays} days` : ''}.`;
-        }
-        return 'Your first milestone unlocks at 3 days, so the preview can already show the achievement flow even before it is wired to Gemini.';
-    }
-
-    if (text.includes('streak')) {
-        return 'The dashboard already tracks streak momentum, and this preview is ready to answer streak questions once the live assistant is connected.';
-    }
-
-    if (text.includes('sleep') || text.includes('step') || text.includes('active')) {
-        return `The chart already supports those correlations. For now, this preview can show how Gemini's answer will feel when it is connected later.`;
-    }
-
-    if (text.includes('mood') || text.includes('feeling') || text.includes('trend')) {
-        return insight.review || 'Your current insight is ready, but the live assistant link is intentionally paused for this preview build.';
-    }
-
-    return 'This is a preview shell only, so the chat answer is local for now. The next step is wiring the same layout to Gemini.';
 }
 
 function appendPreviewMessage(role, label, messageText, emoji) {
@@ -330,13 +300,119 @@ function appendPreviewMessage(role, label, messageText, emoji) {
     thread.scrollTop = thread.scrollHeight;
 }
 
-function bindChatPreviewInteractions(insight) {
+// --- Insight Refresh with 5-min cooldown ---
+async function handleRefreshInsight() {
+    const btn = document.getElementById('refreshInsightBtn');
+    const cooldownEl = document.getElementById('insightCooldown');
+    if (!btn) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Refreshing...';
+
+    try {
+        const response = await fetch('/api/daily_insight?force=true');
+        const data = await response.json();
+
+        if (response.status === 429) {
+            const remaining = data.cooldown_remaining || 300;
+            btn.textContent = '↻ Refresh';
+            btn.disabled = true;
+            cooldownEl.classList.remove('d-none');
+            startCountdown(remaining, btn, cooldownEl);
+            return;
+        }
+
+        if (data.error) {
+            console.error('Insight refresh error:', data.error);
+            btn.textContent = '↻ Refresh';
+            btn.disabled = false;
+            return;
+        }
+
+        renderInsightPanel(data);
+        seedChatPreview(data, true);
+        btn.textContent = '↻ Refresh';
+        btn.disabled = false;
+    } catch (error) {
+        console.error('Insight refresh failed:', error);
+        btn.textContent = '↻ Refresh';
+        btn.disabled = false;
+    }
+}
+
+function startCountdown(seconds, btn, el) {
+    let remaining = seconds;
+    const origLabel = btn ? btn.textContent : '';
+    el.textContent = `Cooldown ${remaining}s`;
+    el.classList.remove('d-none');
+    if (btn) btn.textContent = `Wait ${remaining}s`;
+
+    const interval = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+            clearInterval(interval);
+            el.classList.add('d-none');
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = origLabel;
+            }
+        } else {
+            el.textContent = `Cooldown ${remaining}s`;
+            if (btn) btn.textContent = `Wait ${remaining}s`;
+        }
+    }, 1000);
+}
+
+// --- Real Gemini Chat with 2-min cooldown ---
+async function sendChatMessage(message) {
+    const thread = document.getElementById('chatPreviewThread');
+    const sendBtn = document.getElementById('chatSendBtn');
+    const cooldownEl = document.getElementById('chatCooldown');
+    if (!thread) return;
+
+    const typingBubble = createChatBubble('assistant', 'Gemini', 'Thinking...', '🤖');
+    thread.appendChild(typingBubble);
+    thread.scrollTop = thread.scrollHeight;
+
+    sendBtn.disabled = true;
+
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message })
+        });
+        const data = await response.json();
+
+        if (typingBubble.parentNode) typingBubble.remove();
+
+        if (response.status === 429) {
+            const remaining = data.cooldown_remaining || 120;
+            startCountdown(remaining, sendBtn, cooldownEl);
+            return;
+        }
+
+        if (data.error) {
+            appendPreviewMessage('assistant', 'Gemini', data.error, '⚠️');
+            sendBtn.disabled = false;
+            return;
+        }
+
+        appendPreviewMessage('assistant', 'Gemini', data.reply, '🤖');
+        sendBtn.disabled = false;
+    } catch (error) {
+        if (typingBubble.parentNode) typingBubble.remove();
+        appendPreviewMessage('assistant', 'Gemini', 'Connection error. Please try again.', '⚠️');
+        sendBtn.disabled = false;
+    }
+}
+
+function bindChatInteractions(insight) {
     const form = document.getElementById('chatPreviewForm');
     const input = document.getElementById('chatPreviewInput');
-    const thread = document.getElementById('chatPreviewThread');
     const suggestionButtons = document.querySelectorAll('.chat-suggestion-chip');
 
-    if (!form || !input || !thread) return;
+    if (!form || !input) return;
     if (form.dataset.bound === 'true') return;
     form.dataset.bound = 'true';
 
@@ -344,13 +420,8 @@ function bindChatPreviewInteractions(insight) {
         event.preventDefault();
         const messageText = input.value.trim();
         if (!messageText) return;
-
-        appendPreviewMessage('user', 'You', messageText, '🙂');
         input.value = '';
-
-        window.setTimeout(() => {
-            appendPreviewMessage('assistant', 'Gemini Preview', generatePreviewReply(messageText, insight), insight.emoji || '🤖');
-        }, 450);
+        sendChatMessage(messageText);
     });
 
     suggestionButtons.forEach(button => {
@@ -398,6 +469,6 @@ function initInsightSidebar() {
 
     renderInsightPanel(insight);
     seedChatPreview(insight);
-    bindChatPreviewInteractions(insight);
+    bindChatInteractions(insight);
     startDailyInsightTimer();
 }

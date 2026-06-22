@@ -13,10 +13,12 @@
         MindMetric helps you log your daily thoughts, visualize deep emotional trends over months and
         years, and optimize your mental well-being securely.
       </p>
+      {% if not current_user %}
       <div class="hero-cta-group">
         <a href="{{ url_for('register') }}" class="btn btn-light">Get Started Free</a>
         <a href="{{ url_for('login') }}" class="btn btn-outline-light">Sign In</a>
       </div>
+      {% endif %}
     </div>
   </header>
 

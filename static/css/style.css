@@ -306,6 +306,30 @@
     white-space: nowrap;
 }
 
+.insight-sidebar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.insight-cooldown {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.chat-cooldown {
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-weight: 700;
+    white-space: nowrap;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+}
+
 .ai-emoji-display {
     font-size: 4.5rem;
     line-height: 1;
@@ -785,6 +809,13 @@
     font-family: inherit;
 }
 
+.chat-send-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
 .chat-send-btn {
     align-self: flex-end;
 }
@@ -822,6 +853,9 @@
         text-align: left;
     }
 
+    .chat-send-row {
+        flex-wrap: wrap;
+    }
     .chat-send-btn {
         width: 100%;
     }
