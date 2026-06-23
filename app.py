@@ -930,24 +930,15 @@ with app.app_context():
     except Exception as e:
         print(f"Database setup notice: {e}")
 
+# 🔄 This fires automatically right before the very first visitor loads any page
+@app.before_request
+def initialize_app_on_first_request():
+    try:
+        init_db()
+        print("Database tables initialized securely via before_request hook!")
+    except Exception as e:
+        print(f"Database hook initialization notice: {e}")
+
 if __name__ == '__main__':
-    # Automatically initialize database tables on startup if they don't exist
-    with app.app_context():
-        try:
-            init_db()
-            print("Database initialized successfully!")
-        except Exception as e:
-            print(f"Database setup notice: {e}")
-            
-    app.run(debug=True)
-    
-if __name__ == '__main__':
-    # Automatically initialize database tables on startup if they don't exist
-    with app.app_context():
-        try:
-            init_db()
-            print("Database initialized successfully!")
-        except Exception as e:
-            print(f"Database setup notice: {e}")
-            
+    # This block only runs when running locally on your laptop
     app.run(debug=True)
