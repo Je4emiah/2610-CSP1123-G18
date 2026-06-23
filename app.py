@@ -924,6 +924,23 @@ def init_db():
     
     print("Database refreshed and ready with Full Name schema parameters & Security Questions!")
 
+with app.app_context():
+    try:
+        init_db()
+    except Exception as e:
+        print(f"Database setup notice: {e}")
+
+if __name__ == '__main__':
+    # Automatically initialize database tables on startup if they don't exist
+    with app.app_context():
+        try:
+            init_db()
+            print("Database initialized successfully!")
+        except Exception as e:
+            print(f"Database setup notice: {e}")
+            
+    app.run(debug=True)
+    
 if __name__ == '__main__':
     # Automatically initialize database tables on startup if they don't exist
     with app.app_context():
