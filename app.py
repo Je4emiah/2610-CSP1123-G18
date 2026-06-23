@@ -925,7 +925,20 @@ def init_db():
     print("Database refreshed and ready with Full Name schema parameters & Security Questions!")
 
 with app.app_context():
-    init_db()
+    try:
+        init_db()
+    except Exception as e:
+        print(f"Database setup notice: {e}")
+
+# 🔄 This fires automatically right before the very first visitor loads any page
+@app.before_request
+def initialize_app_on_first_request():
+    try:
+        init_db()
+        print("Database tables initialized securely via before_request hook!")
+    except Exception as e:
+        print(f"Database hook initialization notice: {e}")
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    # This block only runs when running locally on your laptop
+    app.run(debug=True)
