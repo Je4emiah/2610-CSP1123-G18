@@ -427,6 +427,19 @@
     font-size: 0.95rem;
 }
 
+.chart-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+@media (max-width: 640px) {
+    .chart-actions {
+        flex-direction: column;
+    }
+}
+
 /* Visualization filters panel */
 .visualization-filters-panel {
     display: flex;

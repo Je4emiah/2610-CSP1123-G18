@@ -73,6 +73,16 @@
     background-color: #334155 !important;
 }
 
+[data-bs-theme="dark"] .badge-round.streak-badge {
+    background: #5c4b00;
+    color: #ffe69c;
+}
+
+[data-bs-theme="dark"] .badge-round.freeze-badge {
+    background: #1a4731;
+    color: #a3d9b1;
+}
+
 /* ==========================================================================
    2. GLOBAL DOCUMENT RESET
    ========================================================================== */
@@ -125,6 +135,33 @@ body {
     align-items: center;
     gap: 1rem;
     flex-wrap: nowrap;
+}
+
+.header-badges {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.badge-round {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.badge-round.streak-badge {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.badge-round.freeze-badge {
+    background: #d4edda;
+    color: #155724;
 }
 
 .content-wrapper {

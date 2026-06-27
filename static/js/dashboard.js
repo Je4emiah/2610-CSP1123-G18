@@ -181,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initFilterSelectors(); // 1. Align the UI dropdown elements first
     updateDashboard();     // 2. Fetch the current calendar date data immediately
     initInsightSidebar();   // 3. Seed the sidebar preview widgets
+    bindImportExport();     // 4. Wire up Export / Import buttons
 });
 // Global State Management
 const state = {
@@ -461,6 +462,56 @@ function startDailyInsightTimer() {
 
     checkInsightDate();
     window.setInterval(checkInsightDate, 60000);
+}
+
+function bindImportExport() {
+    const exportBtn = document.getElementById('exportBtn');
+    const importBtn = document.getElementById('importBtn');
+    const importInput = document.getElementById('importFileInput');
+    if (!exportBtn || !importBtn || !importInput) return;
+
+    exportBtn.addEventListener('click', async () => {
+        try {
+            const res = await fetch('/api/export');
+            const data = await res.json();
+            if (data.error) { alert(data.error); return; }
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mindmetric-export-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            alert('Export failed.');
+        }
+    });
+
+    importBtn.addEventListener('click', () => importInput.click());
+
+    importInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            const res = await fetch('/api/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if (result.error) {
+                alert(result.error);
+            } else {
+                alert(`Imported: ${result.imported.mood_logs} mood logs, ${result.imported.telemetry_logs} telemetry logs.`);
+            }
+        } catch (e) {
+            alert('Import failed. Check the file format.');
+        }
+        importInput.value = '';
+        updateDashboard();
+    });
 }
 
 function initInsightSidebar() {

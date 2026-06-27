@@ -91,13 +91,44 @@ def close_connection(exception):
         db.close()
 
 def save_mood_entry(username, score, thought):
-    """Inserts a single mood log record into the database."""
+    """Inserts a single mood log record and auto-consumes a freeze if yesterday was missed."""
     try:
         db = get_db()
+
+        last_row = db.execute('''
+            SELECT DATE(timestamp) as log_date FROM mood_logs
+            WHERE username = %s AND DATE(timestamp) < CURRENT_DATE
+            ORDER BY timestamp DESC LIMIT 1
+        ''', (username,)).fetchone()
+
         db.execute('''
             INSERT INTO mood_logs (username, mood_score, thought_text, timestamp)
             VALUES (%s, %s, %s, NOW())
         ''', (username, score, thought))
+
+        if last_row and last_row['log_date']:
+            last_str = str(last_row['log_date'])
+            last_date = datetime.datetime.strptime(last_str, '%Y-%m-%d').date()
+            today = datetime.date.today()
+            days_since = (today - last_date).days
+
+            if days_since == 2:
+                user = db.execute('SELECT freezes FROM users WHERE username = %s', (username,)).fetchone()
+                if user and user['freezes'] > 0:
+                    db.execute('UPDATE users SET freezes = freezes - 1 WHERE username = %s', (username,))
+                    frozen_date = last_date + datetime.timedelta(days=1)
+                    if db._is_sqlite:
+                        db.execute('''
+                            INSERT OR REPLACE INTO streak_freezes (username, frozen_date, consumed_at)
+                            VALUES (?, ?, ?)
+                        ''', (username, frozen_date.strftime('%Y-%m-%d'), datetime.datetime.now().isoformat()))
+                    else:
+                        db.execute('''
+                            INSERT INTO streak_freezes (username, frozen_date, consumed_at)
+                            VALUES (%s, %s, %s)
+                            ON CONFLICT (username, frozen_date) DO UPDATE SET consumed_at = EXCLUDED.consumed_at
+                        ''', (username, frozen_date.strftime('%Y-%m-%d'), datetime.datetime.now().isoformat()))
+
         db.commit()
         return True
     except Exception as e:
@@ -118,13 +149,22 @@ def get_monthly_mood_data(username, year, month):
 
 MILESTONE_BADGES = [
     {"days": 3, "label": "First Spark", "emoji": "🌱", "description": "You have started building the habit."},
-    {"days": 7, "label": "One Week", "emoji": "⚡", "description": "A full week of consistency."},
-    {"days": 14, "label": "Two Weeks", "emoji": "🔥", "description": "Your streak is gaining momentum."},
-    {"days": 30, "label": "One Month", "emoji": "🏆", "description": "A major milestone worth celebrating."},
+    {"days": 7, "label": "Rhythm Seeker", "emoji": "⚡", "description": "A full week of consistency."},
+    {"days": 14, "label": "Momentum Keeper", "emoji": "🔥", "description": "Your streak is gaining momentum."},
+    {"days": 30, "label": "Trailblazer", "emoji": "🏆", "description": "A major milestone worth celebrating."},
 ]
 
 
-def calculate_current_streak_dates(log_dates):
+def calculate_current_streak_dates(log_dates, username=None):
+    log_date_set = set(log_dates)
+
+    if username:
+        db = get_db()
+        frozen_rows = db.execute('''
+            SELECT frozen_date FROM streak_freezes WHERE username = %s
+        ''', (username,)).fetchall()
+        for row in frozen_rows:
+            log_date_set.add(row['frozen_date'])
     log_date_set = set(log_dates)
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(days=1)
@@ -312,7 +352,27 @@ def get_daily_weekly_insight(username, recent_logs, entry_count):
 @app.context_processor
 def inject_user():
     """Exposes session tracking states globally across all HTML templates."""
-    return dict(current_user=session.get('name') if session.get('name') else session.get('user_id'))
+    data = dict(current_user=session.get('name') if session.get('name') else session.get('user_id'))
+    username = session.get('user_id')
+    if username:
+        try:
+            db = get_db()
+            rows = db.execute('''
+                SELECT DISTINCT DATE(timestamp) as log_date FROM mood_logs
+                WHERE username = %s ORDER BY log_date DESC
+            ''', (username,)).fetchall()
+            log_dates = [row['log_date'] for row in rows]
+            streak_dates = calculate_current_streak_dates(log_dates, username)
+            data['streak'] = len(streak_dates)
+            user = db.execute('SELECT freezes FROM users WHERE username = %s', (username,)).fetchone()
+            data['freezes'] = user['freezes'] if user else 0
+        except Exception:
+            data['streak'] = 0
+            data['freezes'] = 0
+    else:
+        data['streak'] = 0
+        data['freezes'] = 0
+    return data
 
 # --- ROUTES ---
 @app.route('/')
@@ -494,9 +554,9 @@ def profile():
     ''', (username,)).fetchall()
     log_dates = [row['log_date'] for row in date_rows]
     
-    streak_dates = calculate_current_streak_dates(log_dates)
+    streak_dates = calculate_current_streak_dates(log_dates, username)
     streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges = build_milestone_progress(streak_dates)
-    
+
     logs_cursor = db.execute("SELECT COUNT(*) as log_count, AVG(mood_score) as avg_score FROM mood_logs WHERE username = %s", (username,))
     stats = logs_cursor.fetchone()
     entry_count = stats['log_count'] if stats else 0
@@ -728,8 +788,17 @@ def dashboard():
         ORDER BY log_date DESC
     ''', (username,)).fetchall()
     log_dates = [row['log_date'] for row in date_rows]
-    streak_dates = calculate_current_streak_dates(log_dates)
+    streak_dates = calculate_current_streak_dates(log_dates, username)
     streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges = build_milestone_progress(streak_dates)
+
+    # Award freeze on 7-day streak milestones (cap at 2)
+    user_row = db.execute('SELECT freezes, last_freeze_streak FROM users WHERE username = %s', (username,)).fetchone()
+    freezes = user_row['freezes'] if user_row else 0
+    last_freeze_streak = user_row['last_freeze_streak'] if user_row else 0
+    if streak > 0 and streak % 7 == 0 and streak > last_freeze_streak and freezes < 2:
+        db.execute('UPDATE users SET freezes = freezes + 1, last_freeze_streak = %s WHERE username = %s',
+                   (streak, username))
+        freezes += 1
 
     # Calculate metrics over a sliding 7-day window
     row = db.execute('''
@@ -758,6 +827,7 @@ def dashboard():
                            entry_count=entry_count, 
                            avg_score=avg_score,
                            streak=streak,
+                           freezes=freezes,
                            milestone_badges=milestone_badges,
                            next_milestone=next_milestone,
                            milestone_markers=milestone_markers,
@@ -930,6 +1000,85 @@ def api_log_mood():
         return jsonify({"status": "success"})
     return jsonify({"status": "error"}), 500
 
+
+def _rows_to_dicts(rows):
+    """Convert DB rows to plain dicts, coercing datetimes to ISO strings."""
+    result = []
+    for row in rows:
+        d = dict(row)
+        for k, v in d.items():
+            if isinstance(v, (datetime.datetime, datetime.date)):
+                d[k] = v.isoformat()
+        result.append(d)
+    return result
+
+
+@app.route('/api/export')
+def api_export():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    username = session['user_id']
+    db = get_db()
+
+    mood_logs = db.execute('''
+        SELECT mood_score, thought_text, timestamp
+        FROM mood_logs
+        WHERE username = %s
+        ORDER BY timestamp ASC
+    ''', (username,)).fetchall()
+
+    telemetry_logs = db.execute('''
+        SELECT metric_type, value, timestamp
+        FROM telemetry_logs
+        WHERE username = %s
+        ORDER BY timestamp ASC
+    ''', (username,)).fetchall()
+
+    return jsonify({
+        "exported_at": datetime.datetime.now().isoformat(),
+        "user_id": username,
+        "mood_logs": _rows_to_dicts(mood_logs),
+        "telemetry_logs": _rows_to_dicts(telemetry_logs),
+    })
+
+
+@app.route('/api/import', methods=['POST'])
+def api_import():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    username = session['user_id']
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    db = get_db()
+    imported = {"mood_logs": 0, "telemetry_logs": 0}
+    skipped = {"mood_logs": 0, "telemetry_logs": 0}
+
+    for entry in data.get('mood_logs', []):
+        try:
+            db.execute('''
+                INSERT INTO mood_logs (username, mood_score, thought_text, timestamp)
+                VALUES (%s, %s, %s, %s)
+            ''', (username, entry['mood_score'], entry.get('thought_text', ''), entry['timestamp']))
+            imported['mood_logs'] += 1
+        except Exception:
+            skipped['mood_logs'] += 1
+
+    for entry in data.get('telemetry_logs', []):
+        try:
+            db.execute('''
+                INSERT INTO telemetry_logs (username, metric_type, value, timestamp)
+                VALUES (%s, %s, %s, %s)
+            ''', (username, entry['metric_type'], entry['value'], entry['timestamp']))
+            imported['telemetry_logs'] += 1
+        except Exception:
+            skipped['telemetry_logs'] += 1
+
+    db.commit()
+    return jsonify({"imported": imported, "skipped": skipped})
+
+
 # --- DATABASE SCHEMAS DEFINITION AND INITIALIZATION ---
 
 def init_db():
@@ -951,7 +1100,9 @@ def init_db():
             profile_pic TEXT,
             q1_answer TEXT,
             q2_answer TEXT,
-            q3_answer TEXT
+            q3_answer TEXT,
+            freezes INTEGER DEFAULT 1,
+            last_freeze_streak INTEGER DEFAULT 0
         )''')
         db.execute('''CREATE TABLE IF NOT EXISTS telemetry_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -967,6 +1118,12 @@ def init_db():
             review TEXT NOT NULL,
             generated_at TEXT NOT NULL,
             PRIMARY KEY (username, cached_date)
+        )''')
+        db.execute('''CREATE TABLE IF NOT EXISTS streak_freezes (
+            username TEXT NOT NULL,
+            frozen_date TEXT NOT NULL,
+            consumed_at TEXT NOT NULL,
+            PRIMARY KEY (username, frozen_date)
         )''')
     else:
         db.execute('''CREATE TABLE IF NOT EXISTS mood_logs (
@@ -985,7 +1142,9 @@ def init_db():
             profile_pic TEXT,
             q1_answer TEXT,
             q2_answer TEXT,
-            q3_answer TEXT
+            q3_answer TEXT,
+            freezes INTEGER DEFAULT 1,
+            last_freeze_streak INTEGER DEFAULT 0
         )''')
         db.execute('''CREATE TABLE IF NOT EXISTS telemetry_logs (
             id SERIAL PRIMARY KEY,
@@ -1001,6 +1160,12 @@ def init_db():
             review TEXT NOT NULL,
             generated_at TEXT NOT NULL,
             PRIMARY KEY (username, cached_date)
+        )''')
+        db.execute('''CREATE TABLE IF NOT EXISTS streak_freezes (
+            username TEXT NOT NULL,
+            frozen_date TEXT NOT NULL,
+            consumed_at TEXT NOT NULL,
+            PRIMARY KEY (username, frozen_date)
         )''')
     db.commit()
     print("Database schemas initialized.")

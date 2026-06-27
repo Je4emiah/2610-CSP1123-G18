@@ -24,6 +24,11 @@
           {% if current_user %}
             <a class="nav-item" href="{{ url_for('dashboard') }}">Dashboard</a>
 
+            <span class="header-badges">
+              <span class="badge-round streak-badge">🔥 {{ streak }}</span>
+              <span class="badge-round freeze-badge">❄️ {{ freezes }}/2</span>
+            </span>
+
             <div class="dropdown">
               <button class="nav-item dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 Hi, {{ current_user }}
