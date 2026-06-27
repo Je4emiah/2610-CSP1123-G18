@@ -7,6 +7,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import timedelta
 from google.genai import Client
+import psycopg2
+import psycopg2.extras
 
 app = Flask(__name__)
 app.secret_key = 'mmu_project_secret_key'
@@ -42,17 +44,48 @@ def is_password_complex(password):
     return True, ""
 
 # --- DATABASE HELPERS ---
+
+class DBWrapper:
+    """Unified wrapper for SQLite (local dev) and PostgreSQL (Render)."""
+    def __init__(self, conn, is_sqlite):
+        self.conn = conn
+        self._is_sqlite = is_sqlite
+
+    def execute(self, sql, params=None):
+        if params is None:
+            params = ()
+        if self._is_sqlite:
+            sql = sql.replace('%s', '?')
+            sql = sql.replace("NOW() - INTERVAL '7 days'", "datetime('now', '-7 days', 'localtime')")
+            sql = sql.replace("NOW()", "datetime('now', 'localtime')")
+            sql = sql.replace("to_char(timestamp, 'YYYY-MM')", "strftime('%Y-%m', timestamp)")
+            return self.conn.execute(sql, params)
+        cur = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql, params)
+        return cur
+
+    def commit(self):
+        self.conn.commit()
+
+    def close(self):
+        self.conn.close()
+
+
 def get_db():
-    """Establishes a thread-safe database connection cached within the request context."""
     db = getattr(g, '_database', None)
     if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-        db.row_factory = sqlite3.Row
+        database_url = os.environ.get('DATABASE_URL')
+        if database_url and database_url.startswith('postgres'):
+            conn = psycopg2.connect(database_url)
+            db = g._database = DBWrapper(conn, is_sqlite=False)
+        else:
+            conn = sqlite3.connect(DATABASE)
+            conn.row_factory = sqlite3.Row
+            db = g._database = DBWrapper(conn, is_sqlite=True)
     return db
 
 @app.teardown_appcontext
 def close_connection(exception):
-    """Automatically tears down and closes the database connection at the end of the request lifecycle."""
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
@@ -63,7 +96,7 @@ def save_mood_entry(username, score, thought):
         db = get_db()
         db.execute('''
             INSERT INTO mood_logs (username, mood_score, thought_text, timestamp)
-            VALUES (?, ?, ?, datetime('now', 'localtime'))
+            VALUES (%s, %s, %s, NOW())
         ''', (username, score, thought))
         db.commit()
         return True
@@ -77,8 +110,8 @@ def get_monthly_mood_data(username, year, month):
     query = """
         SELECT timestamp, mood_score 
         FROM mood_logs 
-        WHERE username = ? 
-        AND strftime('%Y-%m', timestamp) = ?
+        WHERE username = %s 
+        AND to_char(timestamp, 'YYYY-MM') = %s
         ORDER BY timestamp ASC
     """
     return db.execute(query, (username, f"{year}-{month}")).fetchall()
@@ -177,7 +210,7 @@ def get_daily_weekly_insight(username, recent_logs, entry_count):
     cached_row = db.execute('''
         SELECT emoji, review, cached_date, generated_at
         FROM ai_insight_cache
-        WHERE username = ? AND cached_date = ?
+        WHERE username = %s AND cached_date = %s
     ''', (username, current_date)).fetchone()
 
     if cached_row:
@@ -245,16 +278,32 @@ def get_daily_weekly_insight(username, recent_logs, entry_count):
                 "cache_status": "fallback",
             }
 
-    db.execute('''
-        INSERT OR REPLACE INTO ai_insight_cache (username, cached_date, emoji, review, generated_at)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (
-        username,
-        weekly_insight["cached_date"],
-        weekly_insight["emoji"],
-        weekly_insight["review"],
-        weekly_insight["generated_at"],
-    ))
+    if db._is_sqlite:
+        db.execute('''
+            INSERT OR REPLACE INTO ai_insight_cache (username, cached_date, emoji, review, generated_at)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (
+            username,
+            weekly_insight["cached_date"],
+            weekly_insight["emoji"],
+            weekly_insight["review"],
+            weekly_insight["generated_at"],
+        ))
+    else:
+        db.execute('''
+            INSERT INTO ai_insight_cache (username, cached_date, emoji, review, generated_at)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (username, cached_date) DO UPDATE SET
+                emoji = EXCLUDED.emoji,
+                review = EXCLUDED.review,
+                generated_at = EXCLUDED.generated_at
+        ''', (
+            username,
+            weekly_insight["cached_date"],
+            weekly_insight["emoji"],
+            weekly_insight["review"],
+            weekly_insight["generated_at"],
+        ))
     db.commit()
 
     return weekly_insight
@@ -285,7 +334,7 @@ def login():
         remember = request.form.get('remember_me')
         
         db = get_db()
-        cursor = db.execute("SELECT password_hash, name FROM users WHERE username = ?", (username,))
+        cursor = db.execute("SELECT password_hash, name FROM users WHERE username = %s", (username,))
         user = cursor.fetchone()
 
         if user and check_password_hash(user['password_hash'], password):
@@ -311,7 +360,7 @@ def forgot_password():
         a3 = request.form.get('q3', '').lower().strip()
         
         db = get_db()
-        user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+        user = db.execute('SELECT * FROM users WHERE username = %s', (username,)).fetchone()
         
         if user and user['q1_answer'] == a1 and user['q2_answer'] == a2 and user['q3_answer'] == a3:
             return render_template('forgot_password.html', user_found=True, username=username, q1=a1, q2=a2, q3=a3)
@@ -338,13 +387,13 @@ def reset_password():
         return redirect(url_for('forgot_password'))
 
     db = get_db()
-    user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+    user = db.execute('SELECT * FROM users WHERE username = %s', (username,)).fetchone()
     if not user:
         flash("User profile data record not found.", "danger")
         return redirect(url_for('forgot_password'))
 
     hashed_pw = generate_password_hash(new_password)
-    db.execute('UPDATE users SET password_hash = ? WHERE username = ?', (hashed_pw, username))
+    db.execute('UPDATE users SET password_hash = %s WHERE username = %s', (hashed_pw, username))
     db.commit()
     
     flash("Account recovered successfully! You can now log in with your new password.", "success")
@@ -362,7 +411,7 @@ def profile():
     cursor = db.execute("""
         SELECT username, name, gender, profile_pic, password_hash, q1_answer, q2_answer, q3_answer 
         FROM users 
-        WHERE username = ?
+        WHERE username = %s
     """, (username,))
     user_row = cursor.fetchone()
 
@@ -427,8 +476,8 @@ def profile():
         # 4. Atomically commit updates down to the registry schema engine layers
         db.execute("""
             UPDATE users 
-            SET name = ?, gender = ?, profile_pic = ?, password_hash = ? 
-            WHERE username = ?
+            SET name = %s, gender = %s, profile_pic = %s, password_hash = %s 
+            WHERE username = %s
         """, (updated_name, selected_gender, saved_pic_path, current_db_hash, username))
         db.commit()
         
@@ -438,9 +487,9 @@ def profile():
         
     # --- GET request handling logic ---
     date_rows = db.execute('''
-        SELECT DISTINCT date(timestamp) as log_date
+        SELECT DISTINCT DATE(timestamp) as log_date
         FROM mood_logs
-        WHERE username = ?
+        WHERE username = %s
         ORDER BY log_date DESC
     ''', (username,)).fetchall()
     log_dates = [row['log_date'] for row in date_rows]
@@ -448,7 +497,7 @@ def profile():
     streak_dates = calculate_current_streak_dates(log_dates)
     streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges = build_milestone_progress(streak_dates)
     
-    logs_cursor = db.execute("SELECT COUNT(*) as log_count, AVG(mood_score) as avg_score FROM mood_logs WHERE username = ?", (username,))
+    logs_cursor = db.execute("SELECT COUNT(*) as log_count, AVG(mood_score) as avg_score FROM mood_logs WHERE username = %s", (username,))
     stats = logs_cursor.fetchone()
     entry_count = stats['log_count'] if stats else 0
     avg_score = round(stats['avg_score'], 2) if stats and stats['avg_score'] else "0.00"
@@ -470,7 +519,7 @@ def delete_profile_pic():
     db = get_db()
     
     # 1. Look up the current file path to see if we should remove it from disk
-    cursor = db.execute("SELECT profile_pic FROM users WHERE username = ?", (username,))
+    cursor = db.execute("SELECT profile_pic FROM users WHERE username = %s", (username,))
     row = cursor.fetchone()
     
     if row and row['profile_pic']:
@@ -483,7 +532,7 @@ def delete_profile_pic():
                 print(f"File deletion system log error: {e}")
                 
     # 2. Update database registry schema target parameters back to None/Null
-    db.execute("UPDATE users SET profile_pic = NULL WHERE username = ?", (username,))
+    db.execute("UPDATE users SET profile_pic = NULL WHERE username = %s", (username,))
     db.commit()
     
     flash("Profile picture removed successfully!", "success")
@@ -505,7 +554,7 @@ def api_daily_insight():
                 remaining = int(300 - elapsed)
                 return jsonify({"error": f"Please wait {remaining} seconds before refreshing.", "cooldown_remaining": remaining}), 429
         db = get_db()
-        db.execute('DELETE FROM ai_insight_cache WHERE username = ? AND cached_date = ?',
+        db.execute('DELETE FROM ai_insight_cache WHERE username = %s AND cached_date = %s',
                    (username, datetime.date.today().isoformat()))
         db.commit()
         session['last_insight_refresh'] = datetime.datetime.now().isoformat()
@@ -514,16 +563,16 @@ def api_daily_insight():
     row = db.execute('''
         SELECT COUNT(*) as entry_count
         FROM mood_logs
-        WHERE username = ?
-        AND timestamp >= datetime('now', '-7 days', 'localtime')
+        WHERE username = %s
+        AND timestamp >= NOW() - INTERVAL '7 days'
     ''', (username,)).fetchone()
     entry_count = row['entry_count'] if row and row['entry_count'] else 0
 
     recent_logs = db.execute('''
         SELECT timestamp, mood_score, thought_text
         FROM mood_logs
-        WHERE username = ?
-        AND timestamp >= datetime('now', '-7 days', 'localtime')
+        WHERE username = %s
+        AND timestamp >= NOW() - INTERVAL '7 days'
         ORDER BY timestamp DESC
     ''', (username,)).fetchall()
 
@@ -552,15 +601,15 @@ def api_chat():
     recent_logs = db.execute('''
         SELECT timestamp, mood_score, thought_text
         FROM mood_logs
-        WHERE username = ?
-        AND timestamp >= datetime('now', '-7 days', 'localtime')
+        WHERE username = %s
+        AND timestamp >= NOW() - INTERVAL '7 days'
         ORDER BY timestamp DESC LIMIT 10
     ''', (username,)).fetchall()
 
     insight_row = db.execute('''
         SELECT emoji, review
         FROM ai_insight_cache
-        WHERE username = ? AND cached_date = ?
+        WHERE username = %s AND cached_date = %s
     ''', (username, datetime.date.today().isoformat())).fetchone()
 
     context = "You are an empathetic wellness assistant in the MindMetric mood tracker app.\n\n"
@@ -606,8 +655,8 @@ def delete_account():
     username = session['user_id']
     try:
         db = get_db()
-        db.execute("DELETE FROM mood_logs WHERE username = ?", (username,))
-        db.execute("DELETE FROM users WHERE username = ?", (username,))
+        db.execute("DELETE FROM mood_logs WHERE username = %s", (username,))
+        db.execute("DELETE FROM users WHERE username = %s", (username,))
         db.commit()
         session.clear()
         return redirect(url_for('index'))
@@ -642,12 +691,12 @@ def register():
             db = get_db()
             db.execute("""
                 INSERT INTO users (username, name, password_hash, q1_answer, q2_answer, q3_answer) 
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s)
             """, (username, full_name, hashed_pw, q1, q2, q3))
             db.commit()
             flash("Account created successfully! Please log in.", "success")
             return redirect(url_for('login'))
-        except sqlite3.IntegrityError:
+        except Exception:
             flash("Username already exists! Please choose a different one.", "danger")
             return redirect(url_for('register'))
                 
@@ -673,9 +722,9 @@ def dashboard():
 
     # --- STREAK CALCULATOR ---
     date_rows = db.execute('''
-        SELECT DISTINCT date(timestamp) as log_date 
+        SELECT DISTINCT DATE(timestamp) as log_date 
         FROM mood_logs 
-        WHERE username = ? 
+        WHERE username = %s 
         ORDER BY log_date DESC
     ''', (username,)).fetchall()
     log_dates = [row['log_date'] for row in date_rows]
@@ -686,8 +735,8 @@ def dashboard():
     row = db.execute('''
         SELECT COUNT(*) as entry_count, AVG(mood_score) as avg_score 
         FROM mood_logs 
-        WHERE username = ? 
-        AND timestamp >= datetime('now', '-7 days', 'localtime')
+        WHERE username = %s 
+        AND timestamp >= NOW() - INTERVAL '7 days'
     ''', (username,)).fetchone()
     
     entry_count = row['entry_count'] if row['entry_count'] else 0
@@ -697,8 +746,8 @@ def dashboard():
     recent_logs = db.execute('''
         SELECT timestamp, mood_score, thought_text 
         FROM mood_logs 
-        WHERE username = ? 
-        AND timestamp >= datetime('now', '-7 days', 'localtime')
+        WHERE username = %s 
+        AND timestamp >= NOW() - INTERVAL '7 days'
         ORDER BY timestamp DESC
     ''', (username,)).fetchall()
 
@@ -724,7 +773,7 @@ def history():
     raw_logs = db.execute('''
         SELECT id, mood_score, thought_text, timestamp 
         FROM mood_logs 
-        WHERE username = ? 
+        WHERE username = %s 
         ORDER BY timestamp DESC
     ''', (username,)).fetchall()
     
@@ -744,7 +793,7 @@ def delete_entry(log_id):
         
     try:
         db = get_db()
-        db.execute("DELETE FROM mood_logs WHERE id = ? AND username = ?", (log_id, session['user_id']))
+        db.execute("DELETE FROM mood_logs WHERE id = %s AND username = %s", (log_id, session['user_id']))
         db.commit()
         return '', 200
     except Exception as e:
@@ -778,16 +827,16 @@ def api_telemetry_data(username):
     # --- Mood data, averaged per day ---
     if is_global:
         mood_rows = db.execute('''
-            SELECT date(timestamp) as day, AVG(mood_score) as avg_score
+            SELECT DATE(timestamp) as day, AVG(mood_score) as avg_score
             FROM mood_logs
-            WHERE strftime('%Y-%m', timestamp) = ?
+            WHERE to_char(timestamp, 'YYYY-MM') = %s
             GROUP BY day
         ''', (month_str,)).fetchall()
     else:
         mood_rows = db.execute('''
-            SELECT date(timestamp) as day, AVG(mood_score) as avg_score
+            SELECT DATE(timestamp) as day, AVG(mood_score) as avg_score
             FROM mood_logs
-            WHERE username = ? AND strftime('%Y-%m', timestamp) = ?
+            WHERE username = %s AND to_char(timestamp, 'YYYY-MM') = %s
             GROUP BY day
         ''', (username, month_str)).fetchall()
 
@@ -798,16 +847,16 @@ def api_telemetry_data(username):
     if metric_type != 'none':
         if is_global:
             telemetry_rows = db.execute('''
-                SELECT date(timestamp) as day, AVG(value) as avg_value
+                SELECT DATE(timestamp) as day, AVG(value) as avg_value
                 FROM telemetry_logs
-                WHERE metric_type = ? AND strftime('%Y-%m', timestamp) = ?
+                WHERE metric_type = %s AND to_char(timestamp, 'YYYY-MM') = %s
                 GROUP BY day
             ''', (metric_type, month_str)).fetchall()
         else:
             telemetry_rows = db.execute('''
-                SELECT date(timestamp) as day, AVG(value) as avg_value
+                SELECT DATE(timestamp) as day, AVG(value) as avg_value
                 FROM telemetry_logs
-                WHERE username = ? AND metric_type = ? AND strftime('%Y-%m', timestamp) = ?
+                WHERE username = %s AND metric_type = %s AND to_char(timestamp, 'YYYY-MM') = %s
                 GROUP BY day
             ''', (username, metric_type, month_str)).fetchall()
 
@@ -857,8 +906,8 @@ def api_mood_data(username):
         telemetry = db.execute('''
             SELECT value, timestamp 
             FROM telemetry_logs 
-            WHERE username = ? AND metric_type = ? 
-            AND strftime('%Y-%m', timestamp) = ?
+            WHERE username = %s AND metric_type = %s 
+            AND to_char(timestamp, 'YYYY-MM') = %s
             ORDER BY timestamp ASC
         ''', (username, metric, f"{year}-{month}")).fetchall()
         
@@ -885,44 +934,76 @@ def api_log_mood():
 
 def init_db():
     db = get_db()
-    db.execute('''CREATE TABLE IF NOT EXISTS mood_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL,
-        mood_score INTEGER NOT NULL,
-        thought_text TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )''')
-
-    db.execute('''CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        name TEXT NOT NULL,
-        password_hash TEXT NOT NULL,
-        gender TEXT,
-        profile_pic TEXT,
-        q1_answer TEXT,
-        q2_answer TEXT,
-        q3_answer TEXT
-    )''')
-    
-    db.execute('''CREATE TABLE IF NOT EXISTS telemetry_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL,
-        metric_type TEXT NOT NULL,
-        value REAL NOT NULL,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )''')
-
-    db.execute('''CREATE TABLE IF NOT EXISTS ai_insight_cache (
-        username TEXT NOT NULL,
-        cached_date TEXT NOT NULL,
-        emoji TEXT NOT NULL,
-        review TEXT NOT NULL,
-        generated_at TEXT NOT NULL,
-        PRIMARY KEY (username, cached_date)
-    )''')
-    
-    print("Database refreshed and ready with Full Name schema parameters & Security Questions!")
+    if db._is_sqlite:
+        db.execute('''CREATE TABLE IF NOT EXISTS mood_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            mood_score INTEGER NOT NULL,
+            thought_text TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )''')
+        db.execute('''CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            name TEXT NOT NULL,
+            password_hash TEXT NOT NULL,
+            gender TEXT,
+            profile_pic TEXT,
+            q1_answer TEXT,
+            q2_answer TEXT,
+            q3_answer TEXT
+        )''')
+        db.execute('''CREATE TABLE IF NOT EXISTS telemetry_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            metric_type TEXT NOT NULL,
+            value REAL NOT NULL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )''')
+        db.execute('''CREATE TABLE IF NOT EXISTS ai_insight_cache (
+            username TEXT NOT NULL,
+            cached_date TEXT NOT NULL,
+            emoji TEXT NOT NULL,
+            review TEXT NOT NULL,
+            generated_at TEXT NOT NULL,
+            PRIMARY KEY (username, cached_date)
+        )''')
+    else:
+        db.execute('''CREATE TABLE IF NOT EXISTS mood_logs (
+            id SERIAL PRIMARY KEY,
+            username TEXT NOT NULL,
+            mood_score INTEGER NOT NULL,
+            thought_text TEXT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )''')
+        db.execute('''CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            name TEXT NOT NULL,
+            password_hash TEXT NOT NULL,
+            gender TEXT,
+            profile_pic TEXT,
+            q1_answer TEXT,
+            q2_answer TEXT,
+            q3_answer TEXT
+        )''')
+        db.execute('''CREATE TABLE IF NOT EXISTS telemetry_logs (
+            id SERIAL PRIMARY KEY,
+            username TEXT NOT NULL,
+            metric_type TEXT NOT NULL,
+            value REAL NOT NULL,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )''')
+        db.execute('''CREATE TABLE IF NOT EXISTS ai_insight_cache (
+            username TEXT NOT NULL,
+            cached_date TEXT NOT NULL,
+            emoji TEXT NOT NULL,
+            review TEXT NOT NULL,
+            generated_at TEXT NOT NULL,
+            PRIMARY KEY (username, cached_date)
+        )''')
+    db.commit()
+    print("Database schemas initialized.")
 
 with app.app_context():
     try:
