@@ -33,7 +33,7 @@
 <form action="{{ url_for('delete_profile_pic') }}" method="POST" class="mt-2" 
             onsubmit="return confirm('Are you sure you want to remove your profile picture?');">
         <button type="submit" class="btn btn-sm btn-outline-danger style-delete-pic-btn" style="border: none; background: transparent; color: #dc3545; font-size: 0.9rem; cursor: pointer;">
-          🗑️ Remove Picture
+          Remove Picture
         </button>
       </form>
 
@@ -60,7 +60,7 @@
 
     <div class="profile-panel profile-achievements-panel">
       <div class="profile-achievements-header">
-        <h4 class="profile-section-heading">🏅 Achievements Collected</h4>
+        <h4 class="profile-section-heading">Achievements Collected</h4>
         <span class="profile-achievements-count">{{ milestone_badges|length }} unlocked</span>
       </div>
 
@@ -92,7 +92,7 @@
 
       {# Profile Details #}
       <div class="profile-panel">
-        <h4 class="profile-section-heading">👤 Profile Details</h4>
+        <h4 class="profile-section-heading">Profile Details</h4>
 
 <form action="{{ url_for('profile') }}" method="POST" id="passwordUpdateForm">
           <div class="profile-form-group">
@@ -114,7 +114,7 @@
 
 {# Credentials Control #}
       <div class="profile-panel">
-        <h4 class="profile-section-heading">🔑 Credentials Control</h4>
+        <h4 class="profile-section-heading">Credentials Control</h4>
         <form action="{{ url_for('profile') }}" method="POST" id="passwordUpdateForm">
           <input type="hidden" name="username" value="{{ session['user_id'] }}">
 
@@ -165,14 +165,14 @@
 
     {# --- Danger Zone --- #}
     <div class="profile-panel purge-danger-zone profile-danger-zone--spaced">
-      <p class="profile-field-label profile-field-label--danger">⚠️ System Hazard Controls</p>
+      <p class="profile-field-label profile-field-label--danger">System Hazard Controls</p>
       <p class="profile-notice-text profile-notice-text--spaced">Purging completely drops user records and clears all tracking entries from the dataset permanently.</p>
       <form action="{{ url_for('delete_account') }}" method="POST"
         onsubmit="return confirm('CRITICAL PROMPT: Confirm permanent deletion? This action is non-reversible.');">
         <button type="submit" class="profile-delete-btn profile-delete-btn--rounded">Delete Account &amp; Logs</button>
       </form>
       <a href="{{ url_for('dashboard') }}" class="profile-secondary-link profile-secondary-link--small profile-back-link">
-        ← Back to Dashboard
+        Back to Dashboard
       </a>
     </div>
 

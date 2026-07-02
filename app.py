@@ -263,7 +263,7 @@ def get_daily_weekly_insight(username, recent_logs, entry_count):
         }
 
     weekly_insight = {
-        "emoji": "🤔",
+        "emoji": "",
         "review": "No recent metrics recorded this week yet. Submit your first mood log box above to see your dynamic tracking insights!",
         "cached_date": current_date,
         "generated_at": datetime.datetime.now().isoformat(timespec='seconds'),
@@ -302,16 +302,16 @@ def get_daily_weekly_insight(username, recent_logs, entry_count):
             }
         elif response and response.text:
             weekly_insight = {
-                "emoji": "✨",
+                "emoji": "",
                 "review": response.text.strip(),
                 "cached_date": current_date,
                 "generated_at": datetime.datetime.now().isoformat(timespec='seconds'),
                 "cache_status": "fresh",
             }
         else:
-            print(f"⚠️ Gemini API Call Failed: {last_error}")
+            print(f"Gemini API Call Failed: {last_error}")
             weekly_insight = {
-                "emoji": "💡",
+                "emoji": "",
                 "review": "Log your moods daily to unlock personalized AI insights. Every entry helps refine your emotional pattern analysis!",
                 "cached_date": current_date,
                 "generated_at": datetime.datetime.now().isoformat(timespec='seconds'),
@@ -378,11 +378,11 @@ def inject_user():
 @app.route('/')
 def index():
     competitors = [
-        {"feature": "Automated Mood Analytics", "mindmetric": "✅ Advanced (Monthly/Yearly)", "competitor_a": "❌ Basic Only", "competitor_b": "⚠️ Premium Only"},
-        {"feature": "Secure 3-Tier Account Recovery", "mindmetric": "✅ Yes", "competitor_a": "❌ Email Only", "competitor_b": "❌ Email Only"},
-        {"feature": "Custom Profile Avatars & Personalization", "mindmetric": "✅ Yes", "competitor_a": "⚠️ Premium Only", "competitor_b": "❌ No"},
-        {"feature": "Data Privacy & Localized Storage", "mindmetric": "✅ Full Encryption", "competitor_a": "⚠️ Shared Data", "competitor_b": "⚠️ Cloud Only"},
-        {"feature": "Pricing", "mindmetric": "💎 100% Free", "competitor_a": "$9.99/mo", "competitor_b": "$4.99/mo"},
+        {"feature": "Automated Mood Analytics", "mindmetric": "Advanced (Monthly/Yearly)", "competitor_a": "Basic Only", "competitor_b": "Premium Only"},
+        {"feature": "3-Tier Account Recovery", "mindmetric": "Full Support", "competitor_a": "Email Only", "competitor_b": "Email Only"},
+        {"feature": "Profile Customization", "mindmetric": "Full Access", "competitor_a": "Premium Only", "competitor_b": "Not Available"},
+        {"feature": "Data Privacy", "mindmetric": "End-to-End Encryption", "competitor_a": "Shared Data", "competitor_b": "Cloud Only"},
+        {"feature": "Pricing", "mindmetric": "Free Forever", "competitor_a": "$9.99/month", "competitor_b": "$4.99/month"},
     ]
     return render_template('index.html', competitors=competitors)
 
@@ -677,7 +677,7 @@ def api_chat():
     for log in recent_logs:
         context += f"- {log['timestamp']}: Mood {log['mood_score']}/5 - \"{log['thought_text'] or 'No note'}\"\n"
     if insight_row:
-        context += f"\nToday's AI insight: {insight_row['emoji']} - {insight_row['review']}\n"
+        context += f"\nToday's AI insight: {insight_row['review']}\n"
     context += f"\nThe user asks: {user_message}\n\nRespond conversationally, warmly, and concisely (2-4 sentences). Do not use markdown."
 
     api_key = os.environ.get('GOOGLE_API_KEY') or os.environ.get('GEMINI_API_KEY')

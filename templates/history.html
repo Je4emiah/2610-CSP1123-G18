@@ -21,10 +21,10 @@
   </div>
 
   <div class="filter-actions-wrapper">
-    <button class="filter-tab tab-all active-all" onclick="filterMood('all', this)">⚡ All Logs</button>
-    <button class="filter-tab tab-good" onclick="filterMood('good', this)">😊 High Energy (4-5)</button>
-    <button class="filter-tab tab-neutral" onclick="filterMood('neutral', this)">😐 Stable (3)</button>
-    <button class="filter-tab tab-bad" onclick="filterMood('bad', this)">⚠️ Needs Attention (1-2)</button>
+    <button class="filter-tab tab-all active-all" onclick="filterMood('all', this)">All Logs</button>
+    <button class="filter-tab tab-good" onclick="filterMood('good', this)">High Energy (4-5)</button>
+    <button class="filter-tab tab-neutral" onclick="filterMood('neutral', this)">Stable (3)</button>
+    <button class="filter-tab tab-bad" onclick="filterMood('bad', this)">Needs Attention (1-2)</button>
   </div>
 
   <div class="diary-feed-list">
@@ -61,7 +61,7 @@
       {% endfor %}
     {% else %}
       <div class="empty-state-card">
-        <div class="empty-state-graphic">📝</div>
+        <div class="empty-state-graphic"><i class="fas fa-book-open fa-3x"></i></div>
         <h4 class="empty-state-heading">Your Digital Diary is Empty</h4>
         <p class="empty-state-text">You haven't recorded any metrics yet. Start logging your telemetry vectors to map out insights!</p>
         <a href="{{ url_for('dashboard') }}" class="action-btn btn-sm">

@@ -267,7 +267,7 @@ function createChatBubble(role, label, messageText, emoji) {
 
     const avatar = document.createElement('div');
     avatar.className = 'chat-message-avatar';
-    avatar.textContent = emoji || (role === 'assistant' ? '🤖' : '🙂');
+    avatar.textContent = emoji || (role === 'assistant' ? 'G' : 'U');
 
     const bubble = document.createElement('div');
     bubble.className = 'chat-message-bubble';
@@ -289,7 +289,7 @@ function renderInsightPanel(insight) {
     const cacheDateNode = document.getElementById('insightCacheDate');
     const panel = document.getElementById('section-insight');
 
-    if (emojiNode) emojiNode.textContent = insight.emoji || '🤔';
+    if (emojiNode) emojiNode.textContent = insight.emoji || '';
     if (textNode) textNode.textContent = insight.review || '';
     if (cacheDateNode && insight.cached_date) {
         cacheDateNode.textContent = `Refreshed ${insight.cached_date}`;
@@ -310,7 +310,7 @@ function seedChatPreview(insight, forceReset = false) {
 
     if (thread.dataset.initialized === 'true') return;
 
-    thread.appendChild(createChatBubble('assistant', 'Gemini', '💡 Try asking about your mood trends, badge progress, or habits! Click a suggestion above to get started.', '💡'));
+    thread.appendChild(createChatBubble('assistant', 'Gemini', 'Try asking about your mood trends, badge progress, or habits. Click a suggestion above to get started.', 'G'));
     thread.dataset.initialized = 'true';
     thread.scrollTop = thread.scrollHeight;
 }
@@ -338,7 +338,7 @@ async function handleRefreshInsight() {
 
         if (response.status === 429) {
             const remaining = data.cooldown_remaining || 300;
-            btn.textContent = '↻ Refresh';
+            btn.textContent = 'Refresh';
             btn.disabled = true;
             cooldownEl.classList.remove('d-none');
             startCountdown(remaining, btn, cooldownEl);
@@ -347,18 +347,18 @@ async function handleRefreshInsight() {
 
         if (data.error) {
             console.error('Insight refresh error:', data.error);
-            btn.textContent = '↻ Refresh';
+            btn.textContent = 'Refresh';
             btn.disabled = false;
             return;
         }
 
         renderInsightPanel(data);
         seedChatPreview(data, true);
-        btn.textContent = '↻ Refresh';
+        btn.textContent = 'Refresh';
         btn.disabled = false;
     } catch (error) {
         console.error('Insight refresh failed:', error);
-        btn.textContent = '↻ Refresh';
+        btn.textContent = 'Refresh';
         btn.disabled = false;
     }
 }
@@ -393,7 +393,7 @@ async function sendChatMessage(message) {
     const cooldownEl = document.getElementById('chatCooldown');
     if (!thread) return;
 
-    const typingBubble = createChatBubble('assistant', 'Gemini', 'Thinking...', '🤖');
+    const typingBubble = createChatBubble('assistant', 'Gemini', 'Thinking...', 'G');
     thread.appendChild(typingBubble);
     thread.scrollTop = thread.scrollHeight;
 
@@ -416,16 +416,16 @@ async function sendChatMessage(message) {
         }
 
         if (data.error) {
-            appendPreviewMessage('assistant', 'Gemini', data.error, '⚠️');
+            appendPreviewMessage('assistant', 'Gemini', data.error, 'G');
             sendBtn.disabled = false;
             return;
         }
 
-        appendPreviewMessage('assistant', 'Gemini', data.reply, '🤖');
+        appendPreviewMessage('assistant', 'Gemini', data.reply, 'G');
         sendBtn.disabled = false;
     } catch (error) {
         if (typingBubble.parentNode) typingBubble.remove();
-        appendPreviewMessage('assistant', 'Gemini', 'Connection error. Please try again.', '⚠️');
+        appendPreviewMessage('assistant', 'Gemini', 'Connection error. Please try again.', 'G');
         sendBtn.disabled = false;
     }
 }

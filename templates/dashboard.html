@@ -19,7 +19,7 @@
             <div class="streak-content">
               <div class="streak-emoji">🔥</div>
               <div class="streak-details">
-                <h6 class="streak-title">{{ streak }}-Day Streak!</h6>
+                <h6 class="streak-title">{{ streak }}-Day Streak</h6>
                 <small class="streak-subtitle">You're doing amazing. Keep building this tracking habit daily!</small>
               </div>
             </div>
@@ -143,10 +143,10 @@
                 <optgroup label="Manual Inputs">
                   <option value="none">None (Mood Only)</option>
                 </optgroup>
-                <optgroup label="Synced Google Fit (Environmental)">
-                  <option value="steps" selected>👟 Step Count</option>
-                  <option value="active_hours">⚡ Active Hours</option>
-                  <option value="sleep_cycles">😴 Sleep Cycles</option>
+                <optgroup label="Synced Google Fit">
+                  <option value="steps" selected>Step Count</option>
+                  <option value="active_hours">Active Hours</option>
+                  <option value="sleep_cycles">Sleep Cycles</option>
                 </optgroup>
               </select>
             </div>
@@ -189,14 +189,14 @@
           </div>
 
           <footer id="pagingControls" class="view-footer">
-            <button id="prevBtn" class="nav-item-btn" onclick="adjustMonth(-1)">← Previous Month</button>
+            <button id="prevBtn" class="nav-item-btn" onclick="adjustMonth(-1)">Previous Month</button>
             <span id="rangeLabel" class="range-date-label">Loading Date...</span>
-            <button id="nextBtn" class="nav-item-btn" onclick="adjustMonth(1)">Next Month →</button>
+            <button id="nextBtn" class="nav-item-btn" onclick="adjustMonth(1)">Next Month</button>
           </footer>
 
           <div class="chart-actions">
-            <button id="exportBtn" class="nav-item-btn">⬇ Export Data</button>
-            <button id="importBtn" class="nav-item-btn">⬆ Import Data</button>
+            <button id="exportBtn" class="nav-item-btn">Export Data</button>
+            <button id="importBtn" class="nav-item-btn">Import Data</button>
             <input type="file" id="importFileInput" accept=".json" style="display:none">
           </div>
 
@@ -215,12 +215,14 @@
         </div>
         <div class="insight-sidebar-actions">
           <span id="insightCacheDate" class="insight-refresh-pill">Refreshed {{ insight.cached_date }}</span>
-          <button id="refreshInsightBtn" class="nav-item-btn" onclick="handleRefreshInsight()">↻ Refresh</button>
+          <button id="refreshInsightBtn" class="nav-item-btn" onclick="handleRefreshInsight()">Refresh</button>
           <span id="insightCooldown" class="insight-cooldown d-none"></span>
         </div>
       </div>
 
+      {% if insight.emoji %}
       <div class="ai-emoji-display insight-emoji-display" id="aiEmoji">{{ insight.emoji }}</div>
+      {% endif %}
 
       <div class="ai-review-container">
         <p id="insightText" class="insight-text main-review">{{ insight.review }}</p>

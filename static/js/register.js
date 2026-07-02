@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (passwordInput && !strongPasswordRegex.test(val)) {
                 e.preventDefault(); // Stop form submission to Flask backend immediately
                 if (errorBanner) {
-                    errorBanner.innerHTML = '⚠️ <strong>Security Fault:</strong> Password must be at least 6 characters long and contain uppercase, lowercase, a number, and a special character (e.g., !, @, #, $, %).';
+                    errorBanner.innerHTML = '<strong>Security Fault:</strong> Password must be at least 6 characters long and contain uppercase, lowercase, a number, and a special character (e.g., !, @, #, $, %).';
                     
                     // FIX: Strip d-none class structural layout constraints so it instantly pops up!
                     errorBanner.classList.remove('d-none');
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (passwordInput && confirmInput && val !== confirmInput.value) {
                 e.preventDefault();
                 if (errorBanner) {
-                    errorBanner.innerHTML = '⚠️ <strong>Verification Fault:</strong> Password inputs do not match.';
+                    errorBanner.innerHTML = '<strong>Verification Fault:</strong> Password inputs do not match.';
                     
                     errorBanner.classList.remove('d-none');
                     errorBanner.style.display = 'block';

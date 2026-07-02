@@ -4,10 +4,12 @@
 
 {% block content %}
 <div class="page-shell">
+
+  {# --- Hero --- #}
   <header class="hero-section">
     <div class="hero-container">
       <h1 class="hero-title">
-        Understand Your Mind. <br><span class="hero-subtitle">Track Your Momentum.</span>
+        Understand Your Mind.<br><span class="hero-subtitle">Track Your Momentum.</span>
       </h1>
       <p class="hero-description">
         MindMetric helps you log your daily thoughts, visualize deep emotional trends over months and
@@ -15,18 +17,91 @@
       </p>
       {% if not current_user %}
       <div class="hero-cta-group">
-        <a href="{{ url_for('register') }}" class="btn btn-light">Get Started Free</a>
-        <a href="{{ url_for('login') }}" class="btn btn-outline-light">Sign In</a>
+        <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started Free</a>
+        <a href="{{ url_for('login') }}" class="btn btn-secondary">Sign In</a>
       </div>
       {% endif %}
     </div>
   </header>
 
-  <section class="comparison-section content-panel">
+  {# --- What is MindMetric --- #}
+  <section class="feature-section">
     <div class="section-header">
-      <h2 class="main-title">Why Choose MindMetric?</h2>
-      <p class="sub-title sub-title--compact">
-        See how we stack up against other popular mood tracking platforms.
+      <span class="section-label">What is MindMetric</span>
+      <h2 class="main-title">Your Personal Mood Intelligence Platform</h2>
+      <p class="sub-title">
+        MindMetric is a privacy-first mood tracking application that combines daily journaling with AI-powered
+        analytics. It helps you understand your emotional patterns, build consistent habits through streak
+        tracking, and gain actionable insights — all while keeping your data encrypted and under your control.
+      </p>
+    </div>
+
+    <div class="cards-grid">
+      <div class="feature-card">
+        <div class="feature-card-icon">🧠</div>
+        <h3>AI-Powered Insights</h3>
+        <p>Gemini AI analyzes your mood entries weekly, surfacing patterns and correlations you might otherwise miss.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon">📊</div>
+        <h3>Visual Analytics</h3>
+        <p>Interactive charts display your mood trends over days, months, and years — with milestone markers for your achievements.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon">🔒</div>
+        <h3>Privacy First</h3>
+        <p>Your data stays encrypted and local. You control who sees what, with optional privacy mode for anonymous browsing.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon">🏆</div>
+        <h3>Gamified Streaks</h3>
+        <p>Build consistent habits with streak tracking, milestone badges, and streak freezes — stay motivated without the pressure.</p>
+      </div>
+    </div>
+  </section>
+
+  {# --- How It Works --- #}
+  <section class="feature-section">
+    <div class="section-header">
+      <span class="section-label">How It Works</span>
+      <h2 class="main-title">Three Simple Steps</h2>
+      <p class="sub-title">
+        Getting started takes less than a minute. Log your mood, review your patterns, and let AI guide you.
+      </p>
+    </div>
+
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <h3>Log Your Mood</h3>
+        <p>Rate your mood on a scale of 1–5 and add optional notes. Each entry takes just a few seconds.</p>
+      </div>
+      <div class="step-connector">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <h3>Review Your Trends</h3>
+        <p>Visualize your emotional patterns through interactive charts. Track your streak, milestones, and weekly averages.</p>
+      </div>
+      <div class="step-connector">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <h3>Get AI Insights</h3>
+        <p>Gemini generates weekly reviews of your emotional state and answers your questions about mood patterns and habits.</p>
+      </div>
+    </div>
+  </section>
+
+  {# --- Why MindMetric (Comparison Table) --- #}
+  <section class="feature-section">
+    <div class="section-header">
+      <span class="section-label">Why MindMetric</span>
+      <h2 class="main-title">A Cut Above the Rest</h2>
+      <p class="sub-title">
+        See how MindMetric compares to other popular mood tracking platforms.
       </p>
     </div>
 
@@ -34,19 +109,19 @@
       <table class="comparison-table">
         <thead>
           <tr>
-            <th>Features</th>
-            <th class="highlight-column">MindMetric (You)</th>
+            <th>Feature</th>
+            <th class="highlight-column">MindMetric</th>
             <th>Competitor Horizon</th>
             <th>MoodTracker Inc</th>
           </tr>
         </thead>
-        <tbody> 
+        <tbody>
           {% for row in competitors %}
           <tr>
-            <td >{{ row.feature }}</td>
-            <td >{{ row.mindmetric }}</td>
-            <td >{{ row.competitor_a }}</td>
-            <td >{{ row.competitor_b }}</td>
+            <td class="feature-name">{{ row.feature }}</td>
+            <td class="highlight-column"><span class="badge-pro">✓ {{ row.mindmetric }}</span></td>
+            <td>{{ row.competitor_a }}</td>
+            <td>{{ row.competitor_b }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -54,8 +129,22 @@
     </div>
 
     <p class="table-footnote">
-      * Data points collected based on standard consumer application tiers in 2026.
+      Data collected based on standard consumer application tiers in 2026.
     </p>
   </section>
+
+  {# --- CTA --- #}
+  {% if not current_user %}
+  <section class="feature-section cta-section">
+    <div class="cta-card">
+      <h2 class="main-title">Ready to Understand Your Mind?</h2>
+      <p class="sub-title">
+        Join MindMetric today and start your journey toward better emotional awareness.
+      </p>
+      <a href="{{ url_for('register') }}" class="btn btn-primary">Create Free Account</a>
+    </div>
+  </section>
+  {% endif %}
+
 </div>
 {% endblock %}

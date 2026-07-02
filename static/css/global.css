@@ -91,6 +91,44 @@
     color: #a3d9b1;
 }
 
+/* Privacy Shield — blur sensitive content, nav stays functional */
+[data-privacy-shield="active"] .streak-banner,
+[data-privacy-shield="active"] .milestone-panel,
+[data-privacy-shield="active"] .mood-value-label,
+[data-privacy-shield="active"] .insight-text,
+[data-privacy-shield="active"] .ai-emoji-display,
+[data-privacy-shield="active"] .chat-thread,
+[data-privacy-shield="active"] .chat-message,
+[data-privacy-shield="active"] .profile-stats-divider,
+[data-privacy-shield="active"] .profile-achievements-panel,
+[data-privacy-shield="active"] .diary-card-body,
+[data-privacy-shield="active"] .milestone-chart-strip,
+[data-privacy-shield="active"] .chart-view {
+    filter: blur(8px);
+    user-select: none;
+    pointer-events: none;
+    transition: filter 0.3s ease;
+}
+
+[data-privacy-shield="active"] .content-wrapper {
+    position: relative;
+}
+
+[data-privacy-shield="active"] .content-wrapper::after {
+    content: "🔒 Privacy Shield Active";
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    padding: 0.5rem 1rem;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    z-index: 9999;
+    pointer-events: none;
+}
+
 /* ==========================================================================
    2. GLOBAL DOCUMENT RESET
    ========================================================================== */
@@ -118,6 +156,9 @@ body {
     background: var(--bg-panel);
     border-bottom: 1px solid var(--border);
     box-shadow: var(--shadow-soft);
+    position: sticky;
+    top: 0;
+    z-index: 1020;
 }
 
 .primary-nav {

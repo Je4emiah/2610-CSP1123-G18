@@ -26,7 +26,7 @@
 
             <span class="header-badges">
               <span class="badge-round streak-badge">🔥 {{ streak }}</span>
-              <span class="badge-round freeze-badge">❄️ {{ freezes }}/2</span>
+              <span class="badge-round freeze-badge">❄️ {{ freezes }}</span>
             </span>
 
             <div class="dropdown">
@@ -35,14 +35,19 @@
               </button>
               <ul class="dropdown-menu dropdown-menu-end shadow">
                 <li>
-                  <a class="dropdown-item" href="{{ url_for('profile') }}">👤 Profile</a>
+                  <a class="dropdown-item" href="{{ url_for('profile') }}">Profile</a>
                 </li>
                 <li>
-                  <a class="dropdown-item" href="{{ url_for('history') }}">📁 Diary History</a>
+                  <a class="dropdown-item" href="{{ url_for('history') }}">Diary History</a>
                 </li>
                 <li>
                   <button class="dropdown-item" id="themeToggle">
                     <span id="themeIcon"></span> Switch Theme
+                  </button>
+                </li>
+                <li>
+                  <button class="dropdown-item" id="privacyShieldToggle">
+                    <span id="privacyShieldIcon">👁</span> Privacy Shield
                   </button>
                 </li>
                 <li><hr class="dropdown-divider" /></li>
@@ -71,7 +76,7 @@
           <div class="flash-stack">
             {% for category, message in messages %}
               <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert">
-                {% if category == 'success' %} ✨ {% else %} ⚠️ {% endif %} {{ message }}
+                {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
               </div>
             {% endfor %}
