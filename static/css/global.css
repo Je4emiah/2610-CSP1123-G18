@@ -55,9 +55,17 @@
 [data-bs-theme="dark"] .profile-form-input,
 [data-bs-theme="dark"] .form-input,
 [data-bs-theme="dark"] select {
-    background-color: #1e293b !important;
-    color: #ffffff !important;
-    border-color: #475569 !important;
+    background-color: #1e293b;
+    color: #e2e8f0;
+    border-color: #475569;
+}
+
+[data-bs-theme="dark"] .mood-slider-wrapper input[type="range"] {
+    background: #475569;
+}
+
+[data-bs-theme="dark"] .mood-value-label {
+    color: #60a5fa;
 }
 
 [data-bs-theme="dark"] .dropdown-menu {
@@ -231,6 +239,116 @@ body {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
     outline: none;
+}
+
+/* Mood slider */
+.mood-slider-wrapper {
+    padding: 0.5rem 0;
+}
+
+.mood-slider-wrapper input[type="range"] {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--border);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+}
+
+.mood-slider-wrapper input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.mood-slider-wrapper input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+}
+
+.mood-slider-wrapper input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    cursor: pointer;
+}
+
+.mood-slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.3rem;
+    padding: 0 1px;
+}
+
+.mood-value-label {
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: 0.4rem;
+}
+
+/* Note toggle (collapsible) */
+.note-dropdown-group {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-interactive);
+    overflow: hidden;
+}
+
+.note-toggle-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.note-toggle-btn:hover {
+    background: rgba(0,0,0,0.03);
+}
+
+[data-bs-theme="dark"] .note-toggle-btn:hover {
+    background: rgba(255,255,255,0.04);
+}
+
+.note-chevron {
+    transition: transform 0.25s ease;
+}
+
+.note-collapse {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    padding: 0 1rem;
+}
+
+.note-collapse.open {
+    max-height: 200px;
+    padding: 0 1rem 1rem;
+}
+
+.note-collapse .input-field {
+    margin-top: 0;
 }
 
 .dynamic-textarea {

@@ -20,7 +20,7 @@ async function updateDashboard() {
 
     // Update logger panel elements and privacy mode markers based on current privacy state
     const loggerPanel = document.querySelector('.logger-module');
-    const moodFormInputs = document.querySelectorAll('#moodForm select, #moodForm textarea, #moodForm button');
+    const moodFormInputs = document.querySelectorAll('#moodForm input, #moodForm textarea, #moodForm button');
     const marker = document.getElementById('privacyStatusMarker');
     const hint = document.getElementById('privacyHintText');
     
@@ -182,7 +182,29 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDashboard();     // 2. Fetch the current calendar date data immediately
     initInsightSidebar();   // 3. Seed the sidebar preview widgets
     bindImportExport();     // 4. Wire up Export / Import buttons
+    initMoodSlider();       // 5. Wire up the mood slider
+    initNoteToggle();       // 6. Wire up the Add Note toggle
 });
+
+function initNoteToggle() {
+    const btn = document.getElementById('toggleNoteBtn');
+    const collapse = document.getElementById('noteCollapse');
+    if (!btn || !collapse) return;
+    btn.addEventListener('click', () => {
+        const isOpen = collapse.classList.toggle('open');
+        btn.querySelector('span').textContent = isOpen ? '- Remove Note' : '+ Add Note';
+    });
+}
+
+function initMoodSlider() {
+    const slider = document.getElementById('moodScore');
+    const label = document.getElementById('moodValueLabel');
+    if (!slider || !label) return;
+    const labels = {1:'Terrible', 2:'Bad', 3:'Neutral', 4:'Good', 5:'Great'};
+    const update = () => { label.textContent = labels[slider.value] || 'Neutral'; };
+    slider.addEventListener('input', update);
+    update();
+}
 // Global State Management
 const state = {
     year: new Date().getFullYear(),
