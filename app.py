@@ -91,7 +91,7 @@ def close_connection(exception):
         db.close()
 
 def save_mood_entry(username, score, thought):
-    """Inserts a single mood log record and auto-consumes a freeze if yesterday was missed."""
+    """Inserts a single mood log record and auto-consumes freezes for missed days."""
     try:
         db = get_db()
 
@@ -112,22 +112,27 @@ def save_mood_entry(username, score, thought):
             today = datetime.date.today()
             days_since = (today - last_date).days
 
-            if days_since == 2:
+            if days_since > 1:
                 user = db.execute('SELECT freezes FROM users WHERE username = %s', (username,)).fetchone()
-                if user and user['freezes'] > 0:
-                    db.execute('UPDATE users SET freezes = freezes - 1 WHERE username = %s', (username,))
-                    frozen_date = last_date + datetime.timedelta(days=1)
-                    if db._is_sqlite:
-                        db.execute('''
-                            INSERT OR REPLACE INTO streak_freezes (username, frozen_date, consumed_at)
-                            VALUES (?, ?, ?)
-                        ''', (username, frozen_date.strftime('%Y-%m-%d'), datetime.datetime.now().isoformat()))
-                    else:
-                        db.execute('''
-                            INSERT INTO streak_freezes (username, frozen_date, consumed_at)
-                            VALUES (%s, %s, %s)
-                            ON CONFLICT (username, frozen_date) DO UPDATE SET consumed_at = EXCLUDED.consumed_at
-                        ''', (username, frozen_date.strftime('%Y-%m-%d'), datetime.datetime.now().isoformat()))
+                available = user['freezes'] if user else 0
+                missed_days = days_since - 1
+                to_consume = min(missed_days, available)
+                if to_consume > 0:
+                    for i in range(to_consume):
+                        freeze_date = last_date + datetime.timedelta(days=i + 1)
+                        if db._is_sqlite:
+                            db.execute('''
+                                INSERT OR REPLACE INTO streak_freezes (username, frozen_date, consumed_at)
+                                VALUES (?, ?, ?)
+                            ''', (username, freeze_date.strftime('%Y-%m-%d'), datetime.datetime.now().isoformat()))
+                        else:
+                            db.execute('''
+                                INSERT INTO streak_freezes (username, frozen_date, consumed_at)
+                                VALUES (%s, %s, %s)
+                                ON CONFLICT (username, frozen_date) DO UPDATE SET consumed_at = EXCLUDED.consumed_at
+                            ''', (username, freeze_date.strftime('%Y-%m-%d'), datetime.datetime.now().isoformat()))
+                    db.execute('UPDATE users SET freezes = freezes - %s WHERE username = %s',
+                               (to_consume, username))
 
         db.commit()
         return True
@@ -155,8 +160,8 @@ MILESTONE_BADGES = [
 ]
 
 
-def calculate_current_streak_dates(log_dates, username=None):
-    log_date_set = set(log_dates)
+def calculate_current_streak_dates(log_dates, username=None, freezes=0):
+    log_date_set = {d for d in log_dates if d}
 
     if username:
         db = get_db()
@@ -165,13 +170,25 @@ def calculate_current_streak_dates(log_dates, username=None):
         ''', (username,)).fetchall()
         for row in frozen_rows:
             log_date_set.add(row['frozen_date'])
-    log_date_set = set(log_dates)
+
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(days=1)
+    today_str = today.strftime('%Y-%m-%d')
+    yesterday_str = yesterday.strftime('%Y-%m-%d')
 
-    if today.strftime('%Y-%m-%d') in log_date_set:
+    if today_str not in log_date_set and yesterday_str not in log_date_set and freezes > 0:
+        valid_dates = [d for d in log_date_set if d]
+        if valid_dates:
+            last_date = datetime.datetime.strptime(max(valid_dates), '%Y-%m-%d').date()
+            for i in range(1, freezes + 1):
+                virtual_date = last_date + datetime.timedelta(days=i)
+                virtual_str = virtual_date.strftime('%Y-%m-%d')
+                if virtual_str <= today_str:
+                    log_date_set.add(virtual_str)
+
+    if today_str in log_date_set:
         current_date = today
-    elif yesterday.strftime('%Y-%m-%d') in log_date_set:
+    elif yesterday_str in log_date_set:
         current_date = yesterday
     else:
         return []
@@ -362,13 +379,25 @@ def inject_user():
                 WHERE username = %s ORDER BY log_date DESC
             ''', (username,)).fetchall()
             log_dates = [row['log_date'] for row in rows]
-            streak_dates = calculate_current_streak_dates(log_dates, username)
+            user_freezes = db.execute('SELECT freezes FROM users WHERE username = %s', (username,)).fetchone()
+            data['freezes'] = user_freezes['freezes'] if user_freezes else 0
+            streak_dates = calculate_current_streak_dates(log_dates, username, data['freezes'])
             data['streak'] = len(streak_dates)
-            user = db.execute('SELECT freezes FROM users WHERE username = %s', (username,)).fetchone()
-            data['freezes'] = user['freezes'] if user else 0
+
+            frozen_rows = db.execute('''
+                SELECT frozen_date FROM streak_freezes WHERE username = %s
+            ''', (username,)).fetchall()
+            frozen_date_set = {row['frozen_date'] for row in frozen_rows}
+            frozen_in_streak = sorted(frozen_date_set.intersection(streak_dates))
+            data['freeze_used'] = len(frozen_in_streak) > 0
+            data['frozen_count'] = len(frozen_date_set)
+            data['last_frozen_date'] = frozen_in_streak[-1] if frozen_in_streak else None
         except Exception:
             data['streak'] = 0
             data['freezes'] = 0
+            data['freeze_used'] = False
+            data['frozen_count'] = 0
+            data['last_frozen_date'] = None
     else:
         data['streak'] = 0
         data['freezes'] = 0
@@ -553,8 +582,10 @@ def profile():
         ORDER BY log_date DESC
     ''', (username,)).fetchall()
     log_dates = [row['log_date'] for row in date_rows]
-    
-    streak_dates = calculate_current_streak_dates(log_dates, username)
+
+    freeze_row = db.execute('SELECT freezes FROM users WHERE username = %s', (username,)).fetchone()
+    profile_freezes = freeze_row['freezes'] if freeze_row else 0
+    streak_dates = calculate_current_streak_dates(log_dates, username, profile_freezes)
     streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges = build_milestone_progress(streak_dates)
 
     logs_cursor = db.execute("SELECT COUNT(*) as log_count, AVG(mood_score) as avg_score FROM mood_logs WHERE username = %s", (username,))
@@ -569,6 +600,61 @@ def profile():
                            streak=streak, 
                            milestone_badges=milestone_badges, 
                            next_milestone=next_milestone)
+
+@app.route('/google_fit', methods=['GET', 'POST'])
+def google_fit():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    username = session['user_id']
+    db = get_db()
+
+    if request.method == 'POST':
+        metric_type = request.form.get('metric_type', '').strip()
+        raw_value = request.form.get('value', '').strip()
+        entry_date = request.form.get('entry_date', '').strip()
+
+        if metric_type not in ('steps', 'active_hours', 'sleep_cycles'):
+            flash("Invalid metric type.", "danger")
+            return redirect(url_for('google_fit'))
+
+        if not raw_value:
+            flash("Value is required.", "danger")
+            return redirect(url_for('google_fit'))
+
+        try:
+            value = float(raw_value)
+            if value < 0:
+                raise ValueError
+        except ValueError:
+            flash("Value must be a positive number.", "danger")
+            return redirect(url_for('google_fit'))
+
+        if entry_date:
+            try:
+                entry_ts = datetime.datetime.strptime(entry_date, '%Y-%m-%d').isoformat()
+            except ValueError:
+                flash("Invalid date format. Use YYYY-MM-DD.", "danger")
+                return redirect(url_for('google_fit'))
+        else:
+            entry_ts = datetime.datetime.now().isoformat()
+
+        db.execute('''
+            INSERT INTO telemetry_logs (username, metric_type, value, timestamp)
+            VALUES (%s, %s, %s, %s)
+        ''', (username, metric_type, value, entry_ts))
+        db.commit()
+        flash("Telemetry entry saved!", "success")
+        return redirect(url_for('google_fit'))
+
+    entries = db.execute('''
+        SELECT metric_type, value, timestamp FROM telemetry_logs
+        WHERE username = %s
+        ORDER BY timestamp DESC
+        LIMIT 20
+    ''', (username,)).fetchall()
+
+    today = datetime.date.today().strftime('%Y-%m-%d')
+    return render_template('google_fit.html', entries=entries, today=today)
 
 @app.route('/delete_profile_pic', methods=['POST'])
 def delete_profile_pic():
@@ -788,13 +874,11 @@ def dashboard():
         ORDER BY log_date DESC
     ''', (username,)).fetchall()
     log_dates = [row['log_date'] for row in date_rows]
-    streak_dates = calculate_current_streak_dates(log_dates, username)
-    streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges = build_milestone_progress(streak_dates)
-
-    # Award freeze on 7-day streak milestones (cap at 2)
     user_row = db.execute('SELECT freezes, last_freeze_streak FROM users WHERE username = %s', (username,)).fetchone()
     freezes = user_row['freezes'] if user_row else 0
     last_freeze_streak = user_row['last_freeze_streak'] if user_row else 0
+    streak_dates = calculate_current_streak_dates(log_dates, username, freezes)
+    streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges = build_milestone_progress(streak_dates)
     if streak > 0 and streak % 7 == 0 and streak > last_freeze_streak and freezes < 2:
         db.execute('UPDATE users SET freezes = freezes + 1, last_freeze_streak = %s WHERE username = %s',
                    (streak, username))
@@ -946,9 +1030,19 @@ def api_telemetry_data(username):
             tele_val = telemetry_by_day.get(day_str)
             telemetry_data.append(round(tele_val, 2) if tele_val is not None else None)
 
+    # --- Frozen dates for the requested month ---
+    frozen_dates = []
+    if not is_global:
+        frozen_rows = db.execute('''
+            SELECT frozen_date FROM streak_freezes
+            WHERE username = %s AND frozen_date LIKE %s
+        ''', (username, f"{year}-{month:02d}%")).fetchall()
+        frozen_dates = [row['frozen_date'] for row in frozen_rows]
+
     response_data = {
         "labels": labels,
         "mood_data": mood_data,
+        "frozen_dates": frozen_dates,
     }
     if metric_type != 'none':
         response_data["telemetry_data"] = telemetry_data
@@ -1176,7 +1270,7 @@ with app.app_context():
     except Exception as e:
         print(f"Database setup notice: {e}")
 
-# 🔄 This fires automatically right before the very first visitor loads any page
+# This fires automatically right before the very first visitor loads any page
 @app.before_request
 def initialize_app_on_first_request():
     try:

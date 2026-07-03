@@ -59,6 +59,9 @@ async function updateDashboard() {
             counterElement.style.color = count === 0 ? "#ef4444" : "#94a3b8";
         }
 
+        // Render calendar with mood colors and frozen indicators
+        renderCalendar(data);
+
         // Cleanup checking if an existing canvas chart component is active
         if (myChart) { 
             myChart.destroy(); 
@@ -90,13 +93,13 @@ async function updateDashboard() {
             let color = '#2563eb';
             if (state.metricType === 'steps') {
                 telemetryLabel = 'Step Count';
-                color = '#10b981'; // Sleek Emerald
+                color = '#10b981';
             } else if (state.metricType === 'active_hours') {
                 telemetryLabel = 'Active Hours';
-                color = '#f59e0b'; // Sleek Amber
+                color = '#f59e0b';
             } else if (state.metricType === 'sleep_cycles') {
                 telemetryLabel = 'Sleep Cycles';
-                color = '#8b5cf6'; // Sleek Purple
+                color = '#8b5cf6';
             }
 
             datasets.push({
@@ -184,6 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindImportExport();     // 4. Wire up Export / Import buttons
     initMoodSlider();       // 5. Wire up the mood slider
     initNoteToggle();       // 6. Wire up the Add Note toggle
+    initViewToggle();       // 7. Wire up Calendar/Chart toggle
 });
 
 function initNoteToggle() {
@@ -210,7 +214,8 @@ const state = {
     year: new Date().getFullYear(),
     month: new Date().getMonth() + 1,
     metricType: 'none',
-    privacyMode: false
+    privacyMode: false,
+    viewMode: 'calendar'
 };
 
 function initFilterSelectors() {
@@ -247,6 +252,100 @@ function handleDropdownChange() {
 function handlePrivacyToggleChange() {
     state.privacyMode = document.getElementById('privacyToggle').checked;
     updateDashboard();
+}
+
+function renderCalendar(data) {
+    const container = document.getElementById('calendarView');
+    if (!container) return;
+
+    const year = state.year;
+    const month = state.month;
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const firstDayOfWeek = new Date(year, month - 1, 1).getDay();
+
+    const moodByDay = {};
+    data.labels.forEach((label, i) => {
+        if (data.mood_data[i] !== null) {
+            const dayNum = parseInt(label.split('-')[2]);
+            moodByDay[dayNum] = data.mood_data[i];
+        }
+    });
+
+    const frozenSet = new Set(data.frozen_dates || []);
+
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    let html = '<div class="cal-header"><div class="cal-day-names">';
+    dayNames.forEach(name => { html += `<span>${name}</span>`; });
+    html += '</div></div><div class="cal-grid">';
+
+    for (let i = 0; i < firstDayOfWeek; i++) {
+        html += '<div class="cal-cell cal-empty"></div>';
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const score = moodByDay[day];
+        const isFrozen = frozenSet.has(dateStr);
+        const isToday = dateStr === todayStr;
+
+        let moodClass = '';
+        if (score !== undefined) {
+            if (score >= 4) moodClass = 'cal-mood-good';
+            else if (score >= 3) moodClass = 'cal-mood-neutral';
+            else moodClass = 'cal-mood-bad';
+        }
+
+        let classes = 'cal-cell';
+        if (moodClass) classes += ` ${moodClass}`;
+        if (isFrozen) classes += ' cal-frozen';
+        if (isToday) classes += ' cal-today';
+
+        const scoreText = score !== undefined ? `Mood: ${score.toFixed(1)}` : 'No entry';
+        const freezeText = isFrozen ? ' ❄️ Frozen' : '';
+        const frozenIcon = isFrozen ? '❄️' : '';
+
+        html += `<div class="${classes}" title="${scoreText}${freezeText}"><span class="cal-day-num">${day}</span>${frozenIcon ? `<span class="cal-frozen-icon">${frozenIcon}</span>` : ''}</div>`;
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function initViewToggle() {
+    const calendarBtn = document.getElementById('viewCalendarBtn');
+    const chartBtn = document.getElementById('viewChartBtn');
+    const calendarView = document.getElementById('calendarView');
+    const chartCanvas = document.getElementById('moodChart');
+    if (!calendarBtn || !chartBtn) return;
+
+    calendarBtn.addEventListener('click', () => {
+        state.viewMode = 'calendar';
+        calendarBtn.classList.add('active');
+        chartBtn.classList.remove('active');
+        if (calendarView) calendarView.classList.remove('d-none');
+        if (chartCanvas) chartCanvas.classList.add('d-none');
+    });
+
+    chartBtn.addEventListener('click', () => {
+        state.viewMode = 'chart';
+        chartBtn.classList.add('active');
+        calendarBtn.classList.remove('active');
+        if (calendarView) calendarView.classList.add('d-none');
+        if (chartCanvas) chartCanvas.classList.remove('d-none');
+    });
+
+    // Default to calendar
+    calendarBtn.click();
+}
+
+function getMoodColor(score) {
+    if (score === undefined || score === null) return 'transparent';
+    if (score >= 4) return '#28a745';
+    if (score >= 3) return '#ffc107';
+    return '#dc3545';
 }
 
 function getWeeklyInsightData() {

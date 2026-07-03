@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Google Fit — MindMetric{% endblock %}
+
+{% block content %}
+<div class="profile-view-wrapper">
+  <div class="profile-layout-container">
+
+    <div class="profile-panel profile-text-center profile-summary-card">
+      <h2 class="profile-panel-title">Google Fit Integration</h2>
+      <p class="profile-panel-subtitle">Sync your activity data or enter it manually</p>
+    </div>
+
+    <div class="profile-management-grid">
+      <div class="profile-panel">
+        <h4 class="profile-section-heading">Connect Google Fit</h4>
+        <p class="profile-notice-text">
+          Link your Google Fit account to automatically import steps, active hours, and sleep data.
+        </p>
+        <button class="profile-action-btn profile-block-btn" disabled title="Coming soon">
+          Connect Google Fit
+        </button>
+        <p class="profile-notice-text" style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+          OAuth integration is under development. You can still enter data manually below.
+        </p>
+      </div>
+
+      <div class="profile-panel">
+        <h4 class="profile-section-heading">Manual Entry</h4>
+        <form action="{{ url_for('google_fit') }}" method="POST">
+          <div class="profile-form-group">
+            <label class="profile-form-label" for="metric_type">Metric Type</label>
+            <select id="metric_type" name="metric_type" class="profile-form-input" required>
+              <option value="">-- Select --</option>
+              <option value="steps">Step Count</option>
+              <option value="active_hours">Active Hours</option>
+              <option value="sleep_cycles">Sleep Cycles</option>
+            </select>
+          </div>
+
+          <div class="profile-form-group">
+            <label class="profile-form-label" for="value">Value</label>
+            <input type="number" id="value" name="value" class="profile-form-input"
+                   step="any" min="0" placeholder="e.g. 8000" required>
+          </div>
+
+          <div class="profile-form-group">
+            <label class="profile-form-label" for="entry_date">Date (optional, defaults to today)</label>
+            <input type="date" id="entry_date" name="entry_date" class="profile-form-input"
+                   value="{{ today }}">
+          </div>
+
+          <button type="submit" class="profile-action-btn profile-block-btn">Save Entry</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="profile-panel" style="margin-top: 0;">
+      <h4 class="profile-section-heading">Recent Entries</h4>
+      {% if entries %}
+        <div style="overflow-x: auto;">
+          <table class="table" style="margin-bottom: 0;">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Value</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for e in entries %}
+              <tr>
+                <td>
+                  {% if e.metric_type == 'steps' %}Step Count
+                  {% elif e.metric_type == 'active_hours' %}Active Hours
+                  {% elif e.metric_type == 'sleep_cycles' %}Sleep Cycles
+                  {% else %}{{ e.metric_type }}
+                  {% endif %}
+                </td>
+                <td>{{ e.value }}</td>
+                <td>{{ e.timestamp[:10] if e.timestamp else '' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="profile-notice-text">No entries yet. Use the manual form above to add your first telemetry data point.</p>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

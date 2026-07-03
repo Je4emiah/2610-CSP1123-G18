@@ -632,3 +632,46 @@ body {
     color: var(--text-muted);
     font-size: 0.9rem;
 }
+
+/* ==========================================================================
+   9. FREEZE INDICATORS (dashboard streak banner)
+   ========================================================================== */
+.freeze-status-line {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.3rem;
+    flex-wrap: wrap;
+}
+
+.freeze-indicator {
+    font-size: 0.78rem;
+    color: #0f766e;
+    background: rgba(15, 118, 110, 0.1);
+    padding: 0.1rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+[data-bs-theme="dark"] .freeze-indicator {
+    color: #5eead4;
+    background: rgba(94, 234, 212, 0.1);
+}
+
+.freeze-count-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.freeze-info-icon {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    cursor: help;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.freeze-info-icon:hover {
+    opacity: 1;
+}

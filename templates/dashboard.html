@@ -21,6 +21,19 @@
               <div class="streak-details">
                 <h6 class="streak-title">{{ streak }}-Day Streak</h6>
                 <small class="streak-subtitle">You're doing amazing. Keep building this tracking habit daily!</small>
+                <div class="freeze-status-line">
+                  {% if freeze_used %}
+                    <span class="freeze-indicator">❄️ Freeze used{% if last_frozen_date %} on {{ last_frozen_date }}{% endif %}</span>
+                  {% endif %}
+                  <span class="freeze-count-label">
+                    {% if freezes > 0 %}
+                      ❄️ {{ freezes }}/2 freezes remaining
+                    {% else %}
+                      ⚠️ No freezes remaining
+                    {% endif %}
+                  </span>
+                  <span class="freeze-info-icon" title="Freezes auto-fill one missed day without breaking your streak. You earn one every 7-day milestone (max 2).">ⓘ</span>
+                </div>
               </div>
             </div>
             <span class="streak-badge status-active">ACTIVE</span>
@@ -32,6 +45,16 @@
               <div class="streak-details">
                 <h6 class="streak-title">Start a New Streak</h6>
                 <small class="streak-subtitle">Log your thoughts today to start your streak counter chain!</small>
+                <div class="freeze-status-line">
+                  <span class="freeze-count-label">
+                    {% if freezes > 0 %}
+                      ❄️ {{ freezes }}/2 freezes available
+                    {% else %}
+                      ❄️ No freezes available
+                    {% endif %}
+                  </span>
+                  <span class="freeze-info-icon" title="Freezes auto-fill one missed day without breaking your streak. You earn one every 7-day milestone (max 2).">ⓘ</span>
+                </div>
               </div>
             </div>
           </div>
@@ -161,6 +184,11 @@
             </div>
           </div>
 
+          <div class="view-toggle">
+            <button id="viewCalendarBtn" class="view-toggle-btn active">Calendar</button>
+            <button id="viewChartBtn" class="view-toggle-btn">Chart</button>
+          </div>
+
           <div class="milestone-chart-strip">
             <div class="milestone-chart-strip-item">
               <span class="milestone-strip-label">Collected</span>
@@ -185,7 +213,8 @@
           </div>
 
           <div class="chart-view">
-            <canvas id="moodChart" data-username="{{ session.user_id }}" data-milestones='{{ milestone_markers|tojson }}'></canvas>
+            <div id="calendarView" class="calendar-view"></div>
+            <canvas id="moodChart" class="d-none" data-username="{{ session.user_id }}" data-milestones='{{ milestone_markers|tojson }}'></canvas>
           </div>
 
           <footer id="pagingControls" class="view-footer">

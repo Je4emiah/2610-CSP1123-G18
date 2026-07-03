@@ -7,66 +7,128 @@
    1. HERO SECTION (index.html)
    ========================================================================== */
 .hero-section {
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-    color: #ffffff;
-    padding: 80px 20px;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
-    margin-bottom: 2rem;
-
+    padding: 4rem 2rem;
+    position: relative;
+    background:
+        radial-gradient(ellipse at 20% 50%, rgba(108, 92, 231, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 50%, rgba(0, 206, 201, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 0%, rgba(253, 121, 168, 0.06) 0%, transparent 40%);
+    margin-bottom: 0;
 }
 
 .hero-container {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
+    position: relative;
+    z-index: 1;
 }
 
 .hero-title {
-    font-size: 3rem;
-    font-weight: 800;
-    margin-bottom: 20px;
-    line-height: 1.2;
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, var(--text-main) 0%, #a78bfa 40%, #6ee7b7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .hero-subtitle {
-    color: #c7d2fe;
+    background: none;
+    -webkit-text-fill-color: initial;
+    color: var(--text-muted);
+    display: block;
+    font-weight: 600;
 }
 
 .hero-description {
-    font-size: 1.2rem;
-    color: #e0e7ff;
-    margin-bottom: 30px;
-    line-height: 1.6;
+    font-size: clamp(1rem, 1.8vw, 1.2rem);
+    color: var(--text-muted);
+    max-width: 620px;
+    margin: 0 auto 2rem;
+    line-height: 1.7;
 }
 
 .hero-cta-group {
     display: flex;
-    gap: 15px;
+    gap: 1rem;
+    flex-wrap: wrap;
     justify-content: center;
 }
 
-/* Hero button overrides (use Bootstrap btn-primary/secondary) */
+/* Floating design badges */
+.hero-floating-badges {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.hero-floating-badges span {
+    position: absolute;
+    padding: 0.4rem 1rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    color: var(--text-muted);
+    animation: heroFloat 6s ease-in-out infinite;
+}
+
+.hero-floating-badges span:nth-child(1) { top: 18%; left: 8%; animation-delay: 0s; }
+.hero-floating-badges span:nth-child(2) { top: 28%; right: 10%; animation-delay: 1.2s; }
+.hero-floating-badges span:nth-child(3) { top: 60%; left: 5%; animation-delay: 2.4s; }
+.hero-floating-badges span:nth-child(4) { bottom: 25%; right: 8%; animation-delay: 0.6s; }
+
+@keyframes heroFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+}
+
+/* Hero buttons */
 .hero-section .btn-primary {
-    background: #fff;
-    color: #4f46e5;
-    border: none;
+    padding: 0.85rem 2.2rem;
+    border-radius: 12px;
     font-weight: 700;
+    font-size: 0.95rem;
+    border: none;
+    background: linear-gradient(135deg, #6c5ce7, #a78bfa);
+    color: #fff;
+    box-shadow: 0 4px 24px rgba(108, 92, 231, 0.35);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
 }
 
 .hero-section .btn-primary:hover {
-    background: #f3f4f6;
-    color: #4f46e5;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(108, 92, 231, 0.5);
 }
 
 .hero-section .btn-secondary {
-    background: transparent;
-    color: #fff;
-    border: 2px solid rgba(255, 255, 255, 0.6);
+    padding: 0.85rem 2.2rem;
+    border-radius: 12px;
     font-weight: 600;
+    font-size: 0.95rem;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
 }
 
 .hero-section .btn-secondary:hover {
     background: rgba(255, 255, 255, 0.12);
-    border-color: #fff;
+    transform: translateY(-2px);
 }
 
 /* ==========================================================================
@@ -181,7 +243,27 @@
     padding: 2rem 1.5rem;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                 box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
 }
+
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 16px 16px 0 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.feature-card:hover::before { opacity: 1; }
+.feature-card:nth-child(1)::before { background: linear-gradient(90deg, #6c5ce7, #a78bfa); }
+.feature-card:nth-child(2)::before { background: linear-gradient(90deg, #00cec9, #6ee7b7); }
+.feature-card:nth-child(3)::before { background: linear-gradient(90deg, #fd79a8, #f472b6); }
+.feature-card:nth-child(4)::before { background: linear-gradient(90deg, #fab005, #fbbf24); }
 
 .feature-card:hover {
     transform: translateY(-6px);
@@ -230,6 +312,12 @@
     background: var(--bg-panel);
     border: 1px solid var(--border);
     border-radius: 16px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.step-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
 }
 
 .step-number {
@@ -241,7 +329,7 @@
     justify-content: center;
     font-size: 1.2rem;
     font-weight: 800;
-    background: #7c3aed;
+    background: linear-gradient(135deg, #6c5ce7, #a78bfa);
     color: #fff;
     margin: 0 auto 1rem;
 }
@@ -578,6 +666,138 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-interactive);
     padding: 1rem;
+}
+
+/* View toggle (Calendar / Chart) */
+.view-toggle {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    width: fit-content;
+}
+
+.view-toggle-btn {
+    padding: 0.4rem 1.2rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.view-toggle-btn.active {
+    background: var(--accent);
+    color: #fff;
+}
+
+.view-toggle-btn:not(.active):hover {
+    background: var(--bg-panel);
+    color: var(--text-main);
+}
+
+/* Calendar view */
+.calendar-view {
+    min-height: 340px;
+}
+
+.cal-day-names {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    padding: 0 0.25rem;
+}
+
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+}
+
+.cal-cell {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-main);
+    background: transparent;
+    position: relative;
+    min-height: 44px;
+    transition: background 0.2s ease;
+}
+
+.cal-cell.cal-empty {
+    background: transparent;
+}
+
+.cal-cell:not(.cal-empty):hover {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.cal-cell.cal-today {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    font-weight: 700;
+}
+
+.cal-mood-good {
+    background: rgba(40, 167, 69, 0.2);
+}
+
+[data-bs-theme="dark"] .cal-mood-good {
+    background: rgba(40, 167, 69, 0.25);
+}
+
+.cal-mood-neutral {
+    background: rgba(255, 193, 7, 0.2);
+}
+
+[data-bs-theme="dark"] .cal-mood-neutral {
+    background: rgba(255, 193, 7, 0.25);
+}
+
+.cal-mood-bad {
+    background: rgba(220, 53, 69, 0.2);
+}
+
+[data-bs-theme="dark"] .cal-mood-bad {
+    background: rgba(220, 53, 69, 0.25);
+}
+
+.cal-frozen {
+    background: rgba(56, 189, 248, 0.15) !important;
+}
+
+[data-bs-theme="dark"] .cal-frozen {
+    background: rgba(56, 189, 248, 0.2) !important;
+}
+
+.cal-frozen-icon {
+    font-size: 0.6rem;
+    line-height: 1;
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    opacity: 0.8;
+}
+
+.cal-day-num {
+    line-height: 1;
 }
 
 .status-counter {
