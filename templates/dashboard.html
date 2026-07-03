@@ -217,6 +217,13 @@
             <canvas id="moodChart" class="d-none" data-username="{{ session.user_id }}" data-milestones='{{ milestone_markers|tojson }}'></canvas>
           </div>
 
+          <div id="chartNavigator" class="chart-navigator d-none">
+            <canvas id="navigatorCanvas"></canvas>
+            <div id="navHandleLeft" class="nav-handle nav-handle--left"></div>
+            <div id="navHandleRight" class="nav-handle nav-handle--right"></div>
+            <div id="navSelection" class="nav-selection"></div>
+          </div>
+
           <footer id="pagingControls" class="view-footer">
             <button id="prevBtn" class="nav-item-btn" onclick="adjustMonth(-1)">Previous Month</button>
             <span id="rangeLabel" class="range-date-label">Loading Date...</span>
@@ -224,6 +231,9 @@
           </footer>
 
           <div class="chart-actions">
+            <div class="chart-zoom-controls">
+              <button id="zoomResetBtn" class="nav-item-btn" onclick="resetZoom()" title="Reset zoom">Reset Zoom</button>
+            </div>
             <button id="exportBtn" class="nav-item-btn">Export Data</button>
             <button id="importBtn" class="nav-item-btn">Import Data</button>
             <input type="file" id="importFileInput" accept=".json" style="display:none">

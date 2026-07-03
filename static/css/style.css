@@ -668,6 +668,53 @@
     padding: 1rem;
 }
 
+/* Chart navigator (mini range slider) */
+.chart-navigator {
+    position: relative;
+    height: 50px;
+    margin-top: 8px;
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-interactive);
+    padding: 4px;
+}
+
+.nav-handle {
+    position: absolute;
+    top: 0;
+    width: 10px;
+    height: 100%;
+    background: rgba(0, 212, 255, 0.35);
+    border: 2px solid #00D4FF;
+    cursor: ew-resize;
+    z-index: 10;
+    border-radius: 2px;
+    transition: background 0.15s;
+}
+
+.nav-handle:hover {
+    background: rgba(0, 212, 255, 0.55);
+}
+
+.nav-handle--left {
+    left: 0;
+}
+
+.nav-handle--right {
+    left: calc(100% - 10px);
+}
+
+.nav-selection {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: rgba(0, 212, 255, 0.06);
+    border-top: 2px solid rgba(0, 212, 255, 0.4);
+    border-bottom: 2px solid rgba(0, 212, 255, 0.4);
+    pointer-events: none;
+    z-index: 5;
+}
+
 /* View toggle (Calendar / Chart) */
 .view-toggle {
     display: flex;

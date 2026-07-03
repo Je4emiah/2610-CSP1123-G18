@@ -1039,9 +1039,29 @@ def api_telemetry_data(username):
         ''', (username, f"{year}-{month:02d}%")).fetchall()
         frozen_dates = [row['frozen_date'] for row in frozen_rows]
 
+    # --- Raw individual entries for scatter plotting (shows multiple entries per day) ---
+    mood_entries = []
+    if not is_global:
+        raw_rows = db.execute('''
+            SELECT timestamp, mood_score, thought_text
+            FROM mood_logs
+            WHERE username = %s AND to_char(timestamp, 'YYYY-MM') = %s
+            ORDER BY timestamp ASC
+        ''', (username, month_str)).fetchall()
+        for r in raw_rows:
+            ts = r['timestamp']
+            if isinstance(ts, (datetime.datetime, datetime.date)):
+                ts = ts.isoformat()
+            mood_entries.append({
+                "timestamp": ts,
+                "score": r['mood_score'],
+                "thought": (r['thought_text'] or '')[:80]
+            })
+
     response_data = {
         "labels": labels,
         "mood_data": mood_data,
+        "mood_entries": mood_entries,
         "frozen_dates": frozen_dates,
     }
     if metric_type != 'none':

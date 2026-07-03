@@ -1,4 +1,7 @@
 let myChart = null;
+let navChart = null;
+let allLabels = [], allMoodData = [], allTelemetryData = [];
+let leftIndex = 0, rightIndex = 0;
 
 async function updateDashboard() {
     const canvas = document.getElementById('moodChart');
@@ -68,14 +71,23 @@ async function updateDashboard() {
             myChart = null;
         }
 
+        // Store full data for navigator
+        allLabels = data.labels ? data.labels.map(l => l.split(' ')[0] || l) : [];
+        allMoodData = data.mood_data || [];
+        allTelemetryData = data.telemetry_data || [];
+        leftIndex = 0;
+        rightIndex = Math.max(0, allLabels.length - 1);
+
+        const milestoneDates = new Set(milestoneMarkers.map(m => m.date));
+
+        // Prepare Chart datasets
         const gradient = ctx.createLinearGradient(0, 0, 0, 400);
         gradient.addColorStop(0, 'rgba(0, 212, 255, 0.4)');
         gradient.addColorStop(1, 'rgba(0, 212, 255, 0)');
 
-        // Prepare Chart datasets
         const datasets = [{
             label: 'Mood Level',
-            data: data.mood_data || [],
+            data: allMoodData.slice(),
             borderColor: '#00D4FF',
             backgroundColor: gradient,
             borderWidth: 4,
@@ -88,23 +100,16 @@ async function updateDashboard() {
         }];
 
         // Multi-axis logic mapping a secondary linear trend line
-        if (state.metricType !== 'none' && data.telemetry_data) {
+        if (state.metricType !== 'none' && allTelemetryData.length) {
             let telemetryLabel = 'Metric';
             let color = '#2563eb';
-            if (state.metricType === 'steps') {
-                telemetryLabel = 'Step Count';
-                color = '#10b981';
-            } else if (state.metricType === 'active_hours') {
-                telemetryLabel = 'Active Hours';
-                color = '#f59e0b';
-            } else if (state.metricType === 'sleep_cycles') {
-                telemetryLabel = 'Sleep Cycles';
-                color = '#8b5cf6';
-            }
+            if (state.metricType === 'steps') { telemetryLabel = 'Step Count'; color = '#10b981'; }
+            else if (state.metricType === 'active_hours') { telemetryLabel = 'Active Hours'; color = '#f59e0b'; }
+            else if (state.metricType === 'sleep_cycles') { telemetryLabel = 'Sleep Cycles'; color = '#8b5cf6'; }
 
             datasets.push({
                 label: telemetryLabel,
-                data: data.telemetry_data,
+                data: allTelemetryData.slice(),
                 borderColor: color,
                 backgroundColor: 'transparent',
                 borderWidth: 3,
@@ -146,24 +151,22 @@ async function updateDashboard() {
             };
         }
 
-        const labels = data.labels ? data.labels.map(label => label.split(' ')[0] || label) : [];
-        const milestoneDates = new Set(milestoneMarkers.map(marker => marker.date));
-        const pointRadius = labels.map(label => milestoneDates.has(label) ? 9 : 5);
-        const pointHoverRadius = labels.map(label => milestoneDates.has(label) ? 11 : 7);
-        const pointBackgroundColor = labels.map(label => milestoneDates.has(label) ? '#f59e0b' : '#ffffff');
-        const pointBorderColor = labels.map(label => milestoneDates.has(label) ? '#f59e0b' : '#00D4FF');
-        const pointStyle = labels.map(label => milestoneDates.has(label) ? 'star' : 'circle');
+        const pointRadius = allLabels.map(l => milestoneDates.has(l) ? 9 : 5);
+        const pointHoverRadius = allLabels.map(l => milestoneDates.has(l) ? 11 : 7);
+        const pointBg = allLabels.map(l => milestoneDates.has(l) ? '#f59e0b' : '#ffffff');
+        const pointBc = allLabels.map(l => milestoneDates.has(l) ? '#f59e0b' : '#00D4FF');
+        const pointStyle = allLabels.map(l => milestoneDates.has(l) ? 'star' : 'circle');
 
         datasets[0].pointRadius = pointRadius;
         datasets[0].pointHoverRadius = pointHoverRadius;
-        datasets[0].pointBackgroundColor = pointBackgroundColor;
-        datasets[0].pointBorderColor = pointBorderColor;
+        datasets[0].pointBackgroundColor = pointBg;
+        datasets[0].pointBorderColor = pointBc;
         datasets[0].pointStyle = pointStyle;
 
         myChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labels,
+                labels: allLabels.slice(),
                 datasets: datasets
             },
             options: {
@@ -173,10 +176,155 @@ async function updateDashboard() {
                 scales: scales
             }
         });
+
+        // --- Navigator (mini range slider) ---
+        initNavigator(allLabels, allMoodData);
+
     } catch (error) {
         console.error('Chart failed to load:', error);
         if (counterElement) counterElement.innerText = "Error loading data";
     }
+}
+
+function initNavigator(labels, moodData) {
+    const navigatorEl = document.getElementById('chartNavigator');
+    const navCanvas = document.getElementById('navigatorCanvas');
+    const handleL = document.getElementById('navHandleLeft');
+    const handleR = document.getElementById('navHandleRight');
+    const selection = document.getElementById('navSelection');
+    if (!navigatorEl || !navCanvas) return;
+
+    if (navChart) { navChart.destroy(); navChart = null; }
+
+    // Create mini line chart
+    const navCtx = navCanvas.getContext('2d');
+    navChart = new Chart(navCtx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: moodData,
+                borderColor: 'rgba(0, 212, 255, 0.5)',
+                backgroundColor: 'rgba(0, 212, 255, 0.05)',
+                borderWidth: 1.5,
+                pointRadius: 0,
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            scales: {
+                x: { display: false },
+                y: { display: false, min: 0, max: 6 }
+            },
+            events: []
+        }
+    });
+
+    leftIndex = 0;
+    rightIndex = Math.max(0, labels.length - 1);
+    updateNavSelection();
+    setupHandleDrag(handleL, true, navigatorEl);
+    setupHandleDrag(handleR, false, navigatorEl);
+}
+
+function setupHandleDrag(handle, isLeft, navEl) {
+    handle.addEventListener('mousedown', startDrag);
+    handle.addEventListener('touchstart', startDrag, { passive: false });
+
+    function startDrag(e) {
+        e.preventDefault();
+        const startClientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const startLeft = parseFloat(handle.style.left) || 0;
+        const navWidth = navEl.offsetWidth;
+        const handleW = 10;
+
+        function onMove(e) {
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const dx = clientX - startClientX;
+            let newLeft = startLeft + dx;
+            newLeft = Math.max(0, Math.min(navWidth - handleW, newLeft));
+            handle.style.left = newLeft + 'px';
+
+            // Convert pixel to index
+            const ratio = newLeft / (navWidth - handleW);
+            const idx = Math.round(ratio * (allLabels.length - 1));
+
+            if (isLeft) {
+                leftIndex = Math.min(idx, rightIndex - 1);
+            } else {
+                rightIndex = Math.max(idx, leftIndex + 1);
+            }
+            updateNavSelection();
+            updateMainChartRange();
+        }
+
+        function onEnd() {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('touchend', onEnd);
+        }
+
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onEnd);
+    }
+}
+
+function updateNavSelection() {
+    const navEl = document.getElementById('chartNavigator');
+    const handleL = document.getElementById('navHandleLeft');
+    const handleR = document.getElementById('navHandleRight');
+    const selection = document.getElementById('navSelection');
+    if (!navEl) return;
+
+    const navWidth = navEl.offsetWidth;
+    const handleW = 10;
+    const usable = navWidth - handleW;
+    const maxIdx = Math.max(allLabels.length - 1, 1);
+
+    const leftPx = (leftIndex / maxIdx) * usable;
+    const rightPx = (rightIndex / maxIdx) * usable;
+
+    handleL.style.left = leftPx + 'px';
+    handleR.style.left = rightPx + 'px';
+    selection.style.left = leftPx + 'px';
+    selection.style.width = Math.max(0, rightPx - leftPx + handleW) + 'px';
+}
+
+function updateMainChartRange() {
+    if (!myChart) return;
+    const slicedLabels = allLabels.slice(leftIndex, rightIndex + 1);
+    const slicedMood = allMoodData.slice(leftIndex, rightIndex + 1);
+
+    myChart.data.labels = slicedLabels;
+    myChart.data.datasets[0].data = slicedMood;
+
+    if (myChart.data.datasets[1] && allTelemetryData.length) {
+        myChart.data.datasets[1].data = allTelemetryData.slice(leftIndex, rightIndex + 1);
+    }
+
+    // Rebuild milestone point styles for sliced labels
+    const milestoneDates = new Set(JSON.parse(document.getElementById('moodChart').dataset.milestones || '[]').map(m => m.date));
+    myChart.data.datasets[0].pointRadius = slicedLabels.map(l => milestoneDates.has(l) ? 9 : 5);
+    myChart.data.datasets[0].pointHoverRadius = slicedLabels.map(l => milestoneDates.has(l) ? 11 : 7);
+    myChart.data.datasets[0].pointBackgroundColor = slicedLabels.map(l => milestoneDates.has(l) ? '#f59e0b' : '#ffffff');
+    myChart.data.datasets[0].pointBorderColor = slicedLabels.map(l => milestoneDates.has(l) ? '#f59e0b' : '#00D4FF');
+    myChart.data.datasets[0].pointStyle = slicedLabels.map(l => milestoneDates.has(l) ? 'star' : 'circle');
+
+    myChart.update('none');
+}
+
+function resetZoom() {
+    leftIndex = 0;
+    rightIndex = Math.max(0, allLabels.length - 1);
+    updateNavSelection();
+    updateMainChartRange();
 }
 
 // Auto-Initialize strictly in the correct order on page load
@@ -205,7 +353,11 @@ function initMoodSlider() {
     const label = document.getElementById('moodValueLabel');
     if (!slider || !label) return;
     const labels = {1:'Terrible', 2:'Bad', 3:'Neutral', 4:'Good', 5:'Great'};
-    const update = () => { label.textContent = labels[slider.value] || 'Neutral'; };
+    const colors = {1:'#dc3545', 2:'#e8672c', 3:'#ffc107', 4:'#28a745', 5:'#1a9e3f'};
+    const update = () => {
+        label.textContent = labels[slider.value] || 'Neutral';
+        label.style.color = colors[slider.value] || '#94a3b8';
+    };
     slider.addEventListener('input', update);
     update();
 }
@@ -319,6 +471,7 @@ function initViewToggle() {
     const chartBtn = document.getElementById('viewChartBtn');
     const calendarView = document.getElementById('calendarView');
     const chartCanvas = document.getElementById('moodChart');
+    const navigator = document.getElementById('chartNavigator');
     if (!calendarBtn || !chartBtn) return;
 
     calendarBtn.addEventListener('click', () => {
@@ -327,6 +480,7 @@ function initViewToggle() {
         chartBtn.classList.remove('active');
         if (calendarView) calendarView.classList.remove('d-none');
         if (chartCanvas) chartCanvas.classList.add('d-none');
+        if (navigator) navigator.classList.add('d-none');
     });
 
     chartBtn.addEventListener('click', () => {
@@ -335,6 +489,7 @@ function initViewToggle() {
         calendarBtn.classList.remove('active');
         if (calendarView) calendarView.classList.add('d-none');
         if (chartCanvas) chartCanvas.classList.remove('d-none');
+        if (navigator && allLabels.length > 1) navigator.classList.remove('d-none');
     });
 
     // Default to calendar
