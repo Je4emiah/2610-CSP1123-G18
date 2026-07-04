@@ -173,12 +173,14 @@ MILESTONE_BADGES = [
 def calculate_current_streak_dates(log_dates, username=None, freezes=0):
     log_date_set = {d for d in log_dates if d}
 
+    frozen_dates_from_db = set()
     if username:
         db = get_db()
         frozen_rows = db.execute('''
             SELECT frozen_date FROM streak_freezes WHERE username = %s
         ''', (username,)).fetchall()
         for row in frozen_rows:
+            frozen_dates_from_db.add(row['frozen_date'])
             log_date_set.add(row['frozen_date'])
 
     today = datetime.date.today()
@@ -186,28 +188,21 @@ def calculate_current_streak_dates(log_dates, username=None, freezes=0):
     today_str = today.strftime('%Y-%m-%d')
     yesterday_str = yesterday.strftime('%Y-%m-%d')
 
-    if today_str not in log_date_set and yesterday_str not in log_date_set and freezes > 0:
-        valid_dates = [d for d in log_date_set if d]
-        if valid_dates:
-            last_date = datetime.datetime.strptime(max(valid_dates), '%Y-%m-%d').date()
-            current = last_date + datetime.timedelta(days=1)
-            while current.strftime('%Y-%m-%d') <= today_str:
-                log_date_set.add(current.strftime('%Y-%m-%d'))
-                current += datetime.timedelta(days=1)
+    is_frozen_today = (today_str not in {d for d in log_dates if d}) and (today_str in frozen_dates_from_db)
 
     if today_str in log_date_set:
         current_date = today
     elif yesterday_str in log_date_set:
         current_date = yesterday
     else:
-        return []
+        return [], is_frozen_today
 
     streak_dates = []
     while current_date.strftime('%Y-%m-%d') in log_date_set:
         streak_dates.append(current_date.strftime('%Y-%m-%d'))
         current_date -= datetime.timedelta(days=1)
 
-    return streak_dates
+    return streak_dates, is_frozen_today
 
 
 def build_milestone_progress(streak_dates):
@@ -390,8 +385,9 @@ def inject_user():
             log_dates = [row['log_date'] for row in rows]
             user_freezes = db.execute('SELECT freezes FROM users WHERE username = %s', (username,)).fetchone()
             data['freezes'] = user_freezes['freezes'] if user_freezes else 0
-            streak_dates = calculate_current_streak_dates(log_dates, username, data['freezes'])
+            streak_dates, is_frozen_today = calculate_current_streak_dates(log_dates, username, data['freezes'])
             data['streak'] = len(streak_dates)
+            data['streak_frozen'] = is_frozen_today
 
             frozen_rows = db.execute('''
                 SELECT frozen_date FROM streak_freezes WHERE username = %s
@@ -404,12 +400,14 @@ def inject_user():
         except Exception:
             data['streak'] = 0
             data['freezes'] = 0
+            data['streak_frozen'] = False
             data['freeze_used'] = False
             data['frozen_count'] = 0
             data['last_frozen_date'] = None
     else:
         data['streak'] = 0
         data['freezes'] = 0
+        data['streak_frozen'] = False
     return data
 
 # --- ROUTES ---
@@ -594,7 +592,7 @@ def profile():
 
     freeze_row = db.execute('SELECT freezes FROM users WHERE username = %s', (username,)).fetchone()
     profile_freezes = freeze_row['freezes'] if freeze_row else 0
-    streak_dates = calculate_current_streak_dates(log_dates, username, profile_freezes)
+    streak_dates, _ = calculate_current_streak_dates(log_dates, username, profile_freezes)
     streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges = build_milestone_progress(streak_dates)
 
     logs_cursor = db.execute("SELECT COUNT(*) as log_count, AVG(mood_score) as avg_score FROM mood_logs WHERE username = %s", (username,))
@@ -886,7 +884,7 @@ def dashboard():
     user_row = db.execute('SELECT freezes, last_freeze_streak FROM users WHERE username = %s', (username,)).fetchone()
     freezes = user_row['freezes'] if user_row else 0
     last_freeze_streak = user_row['last_freeze_streak'] if user_row else 0
-    streak_dates = calculate_current_streak_dates(log_dates, username, freezes)
+    streak_dates, _ = calculate_current_streak_dates(log_dates, username, freezes)
     streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges = build_milestone_progress(streak_dates)
     if streak > 0 and streak % 7 == 0 and streak > last_freeze_streak and freezes < 2:
         db.execute('UPDATE users SET freezes = freezes + 1, last_freeze_streak = %s WHERE username = %s',

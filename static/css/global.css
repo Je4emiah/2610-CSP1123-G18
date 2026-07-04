@@ -71,6 +71,7 @@
     --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
 
     /* --- Radius --- */
+    --radius-card: 16px;
     --radius-standard: 12px;
     --radius-interactive: 8px;
 
@@ -512,17 +513,19 @@ body {
     font-weight: 600;
     text-align: center;
     text-decoration: none;
-    border-radius: var(--radius-interactive);
+    border-radius: var(--radius-card);
     cursor: pointer;
-    transition: all 0.2s ease;
-    background: var(--accent);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--gradient-hero-btn);
     color: #ffffff;
     border: none;
+    box-shadow: 0 4px 24px rgba(108, 92, 231, 0.35);
 }
 
 .action-btn:hover,
 .btn-auth:hover {
-    background: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(108, 92, 231, 0.5);
 }
 
 .block-btn {
@@ -536,12 +539,12 @@ body {
     border: 1px solid var(--border);
     color: var(--text-muted);
     padding: 8px 16px;
-    border-radius: var(--radius-interactive);
+    border-radius: var(--radius-card);
     cursor: pointer;
     font-weight: 600;
     text-decoration: none;
     font-size: 0.85rem;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     white-space: nowrap;
 }
 
@@ -551,6 +554,7 @@ body {
     border-color: var(--accent);
     color: var(--accent);
     background: var(--accent-light);
+    transform: translateY(-1px);
 }
 
 .nav-item-btn:disabled {
@@ -593,15 +597,17 @@ body {
     color: #ffffff;
     border: none;
     padding: 0.65rem 1.25rem;
-    border-radius: var(--radius-interactive);
+    border-radius: var(--radius-card);
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-danger:hover {
     background: var(--color-danger-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35);
 }
 
 .btn-danger--rounded {
@@ -612,6 +618,7 @@ body {
 .auth-submit-btn {
     width: 100%;
     margin-top: 1rem;
+    border-radius: var(--radius-card);
 }
 
 .auth-submit-btn--success {
@@ -633,19 +640,36 @@ body {
    ========================================================================== */
 .content-panel,
 .data-card,
-.auth-card {
+.auth-card,
+.profile-panel {
     background: var(--bg-panel);
     padding: 2rem;
-    border-radius: var(--radius-standard);
+    border-radius: var(--radius-card);
     border: 1px solid var(--border);
     box-shadow: var(--shadow-card);
     width: 100%;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.content-panel:hover,
+.data-card:hover,
+.auth-card:hover,
+.profile-panel:hover {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+}
+
+[data-bs-theme="dark"] .content-panel:hover,
+[data-bs-theme="dark"] .data-card:hover,
+[data-bs-theme="dark"] .auth-card:hover,
+[data-bs-theme="dark"] .profile-panel:hover {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
 .auth-panel,
 .auth-card,
 .data-card {
-    max-width: 420px;
+    max-width: 460px;
     margin: 0 auto;
 }
 
@@ -719,7 +743,7 @@ body {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--accent);
+    color: var(--accent-purple);
     margin-bottom: 0.5rem;
 }
 

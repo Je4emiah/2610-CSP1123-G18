@@ -15,12 +15,16 @@
 
         {# Streak Banner #}
         {% if streak > 0 %}
-          <div class="streak-banner streak-active">
+          <div class="streak-banner streak-active{% if streak_frozen %} streak-frozen{% endif %}">
             <div class="streak-content">
-              <div class="streak-emoji">🔥</div>
+              <div class="streak-emoji">{% if streak_frozen %}❄️{% else %}🔥{% endif %}</div>
               <div class="streak-details">
-                <h6 class="streak-title">{{ streak }}-Day Streak</h6>
-                <small class="streak-subtitle">You're doing amazing. Keep building this tracking habit daily!</small>
+                <h6 class="streak-title">{{ streak }}-Day Streak{% if streak_frozen %} (Frozen){% endif %}</h6>
+                {% if streak_frozen %}
+                  <small class="streak-subtitle">Your streak is frozen! Log today to continue building your habit.</small>
+                {% else %}
+                  <small class="streak-subtitle">You're doing amazing. Keep building this tracking habit daily!</small>
+                {% endif %}
                 <div class="freeze-status-line">
                   {% if freeze_used %}
                     <span class="freeze-indicator">❄️ Freeze used{% if last_frozen_date %} on {{ last_frozen_date }}{% endif %}</span>
@@ -36,7 +40,7 @@
                 </div>
               </div>
             </div>
-            <span class="streak-badge status-active">ACTIVE</span>
+            <span class="streak-badge status-active{% if streak_frozen %} status-frozen{% endif %}">{% if streak_frozen %}FROZEN{% else %}ACTIVE{% endif %}</span>
           </div>
         {% else %}
           <div class="streak-banner streak-inactive">
