@@ -3,20 +3,94 @@
    ========================================================================== */
 
 /* ==========================================================================
-   1. CORE VARIABLES & CUSTOM DESIGN TOKENS
+   1. CORE VARIABLES & DESIGN TOKENS
    ========================================================================== */
 :root {
+    /* --- Background & Surface --- */
     --bg-main: #f8fafc;
     --bg-panel: #ffffff;
+
+    /* --- Text --- */
     --text-main: #1e293b;
     --text-muted: #64748b;
+
+    /* --- Accent (Primary) --- */
     --accent: #2563eb;
     --accent-hover: #1d4ed8;
+    --accent-light: rgba(37, 99, 235, 0.08);
+    --accent-border: rgba(37, 99, 235, 0.16);
+
+    /* --- Semantic Colors --- */
+    --color-success: #16a34a;
+    --color-success-hover: #15803d;
+    --color-success-light: rgba(22, 163, 74, 0.1);
+
+    --color-danger: #ef4444;
+    --color-danger-hover: #dc2626;
+    --color-danger-dark: #991b1b;
+    --color-danger-light: #fef2f2;
+    --color-danger-border: rgba(239, 68, 68, 0.3);
+
+    --color-warning: #ffc107;
+    --color-warning-hover: #fab005;
+    --color-warning-text: #856404;
+    --color-warning-light: #fff3cd;
+
+    --color-info: #0f766e;
+    --color-info-light: rgba(15, 118, 110, 0.1);
+    --color-info-text: #0f766e;
+
+    /* --- Mood Semantic Colors --- */
+    --mood-good: #28a745;
+    --mood-good-light: rgba(40, 167, 69, 0.2);
+    --mood-good-light-dk: rgba(40, 167, 69, 0.25);
+
+    --mood-neutral: #ffc107;
+    --mood-neutral-light: rgba(255, 193, 7, 0.2);
+    --mood-neutral-light-dk: rgba(255, 193, 7, 0.25);
+
+    --mood-bad: #dc3545;
+    --mood-bad-light: rgba(220, 53, 69, 0.2);
+    --mood-bad-light-dk: rgba(220, 53, 69, 0.25);
+
+    /* --- Accent Variants --- */
+    --accent-purple: #7c3aed;
+    --accent-cyan: #00D4FF;
+    --accent-teal: #0f766e;
+    --accent-teal-light: rgba(15, 118, 110, 0.12);
+
+    /* --- Gradients --- */
+    --gradient-hero-title: linear-gradient(135deg, var(--text-main) 0%, #a78bfa 40%, #6ee7b7 100%);
+    --gradient-hero-btn: linear-gradient(135deg, #6c5ce7, #a78bfa);
+    --gradient-milestone-bg: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(14, 165, 233, 0.04));
+
+    /* --- Border & Shadow --- */
     --border: #e2e8f0;
+    --border-light: #e2e8f0;
     --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+
+    /* --- Radius --- */
     --radius-standard: 12px;
     --radius-interactive: 8px;
+
+    /* --- Spacing Scale --- */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+    --space-3xl: 4rem;
+
+    /* --- Typography Scale --- */
+    --text-xs: 0.75rem;
+    --text-sm: 0.85rem;
+    --text-base: 0.95rem;
+    --text-lg: 1.15rem;
+    --text-xl: 1.5rem;
+    --text-2xl: 2rem;
+    --text-3xl: 3rem;
 }
 
 /* ==========================================================================
@@ -28,6 +102,24 @@
     --text-main: #f8fafc;
     --text-muted: #94a3b8;
     --border: #334155;
+    --border-light: #475569;
+    --accent-light: rgba(96, 165, 250, 0.12);
+    --accent-border: rgba(96, 165, 250, 0.2);
+
+    --color-success-light: rgba(22, 163, 74, 0.15);
+    --color-danger-dark: #fca5a5;
+    --color-danger-light: rgba(239, 68, 68, 0.08);
+    --color-danger-border: rgba(239, 68, 68, 0.2);
+    --color-warning-text: #ffe69c;
+    --color-warning-light: #3d2e00;
+    --color-info-light: rgba(94, 234, 212, 0.1);
+
+    --mood-good-light: rgba(40, 167, 69, 0.25);
+    --mood-neutral-light: rgba(255, 193, 7, 0.25);
+    --mood-bad-light: rgba(220, 53, 69, 0.25);
+
+    --gradient-milestone-bg: linear-gradient(135deg, rgba(96, 165, 250, 0.1), rgba(14, 165, 233, 0.06));
+
     background-color: var(--bg-main) !important;
 }
 
@@ -55,13 +147,13 @@
 [data-bs-theme="dark"] .profile-form-input,
 [data-bs-theme="dark"] .form-input,
 [data-bs-theme="dark"] select {
-    background-color: #1e293b;
-    color: #e2e8f0;
-    border-color: #475569;
+    background-color: var(--bg-panel);
+    color: var(--text-main);
+    border-color: var(--border-light);
 }
 
 [data-bs-theme="dark"] .mood-slider-wrapper input[type="range"] {
-    background: #475569;
+    background: var(--border-light);
 }
 
 [data-bs-theme="dark"] .mood-value-label {
@@ -69,26 +161,16 @@
 }
 
 [data-bs-theme="dark"] .dropdown-menu {
-    background-color: #1e293b !important;
-    border-color: #475569 !important;
+    background-color: var(--bg-panel) !important;
+    border-color: var(--border) !important;
 }
 
 [data-bs-theme="dark"] .dropdown-item {
-    color: #f8fafc !important;
+    color: var(--text-main) !important;
 }
 
 [data-bs-theme="dark"] .dropdown-item:hover {
     background-color: #334155 !important;
-}
-
-[data-bs-theme="dark"] .badge-round.streak-badge {
-    background: #5c4b00;
-    color: #ffe69c;
-}
-
-[data-bs-theme="dark"] .badge-round.freeze-badge {
-    background: #1a4731;
-    color: #a3d9b1;
 }
 
 /* Privacy Shield — blur sensitive content, nav stays functional */
@@ -204,13 +286,23 @@ body {
 }
 
 .badge-round.streak-badge {
-    background: #fff3cd;
-    color: #856404;
+    background: var(--color-warning-light);
+    color: var(--color-warning-text);
 }
 
 .badge-round.freeze-badge {
-    background: #d4edda;
-    color: #155724;
+    background: var(--color-success-light);
+    color: var(--color-info-text);
+}
+
+[data-bs-theme="dark"] .badge-round.streak-badge {
+    background: var(--color-warning-light);
+    color: var(--color-warning-text);
+}
+
+[data-bs-theme="dark"] .badge-round.freeze-badge {
+    background: #1a4731;
+    color: #a3d9b1;
 }
 
 .content-wrapper {
@@ -262,8 +354,10 @@ body {
     color: var(--text-muted);
 }
 
+/* Unified input field class */
 .form-input,
-.input-field {
+.input-field,
+.profile-form-input {
     width: 100%;
     padding: 0.75rem 1rem;
     background-color: var(--bg-main);
@@ -276,10 +370,17 @@ body {
 }
 
 .form-input:focus,
-.input-field:focus {
+.input-field:focus,
+.profile-form-input:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
     outline: none;
+}
+
+.static-input {
+    background-color: var(--bg-main) !important;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
 /* Mood slider */
@@ -328,7 +429,7 @@ body {
 .mood-slider-labels {
     display: flex;
     justify-content: space-between;
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     color: var(--text-muted);
     margin-top: 0.3rem;
     padding: 0 1px;
@@ -397,7 +498,11 @@ body {
     resize: vertical;
 }
 
-/* Base Semantic Actions */
+/* ==========================================================================
+   4B. UNIFIED BUTTON SYSTEM
+   ========================================================================== */
+
+/* Primary CTA button */
 .action-btn,
 .btn-auth {
     display: inline-block;
@@ -424,7 +529,7 @@ body {
     width: 100%;
 }
 
-/* Navigation & Header Actions */
+/* Secondary / outline button */
 .nav-item,
 .nav-item-btn {
     background: var(--bg-panel);
@@ -445,7 +550,7 @@ body {
 .nav-item-btn:hover {
     border-color: var(--accent);
     color: var(--accent);
-    background: rgba(37, 99, 235, 0.04);
+    background: var(--accent-light);
 }
 
 .nav-item-btn:disabled {
@@ -455,8 +560,71 @@ body {
     color: var(--text-muted);
 }
 
+/* Ghost / transparent button */
+.btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.btn-ghost:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+.btn-ghost--danger {
+    color: var(--color-danger);
+    font-size: 0.9rem;
+}
+
+.btn-ghost--danger:hover {
+    color: var(--color-danger-hover);
+}
+
+/* Danger button */
+.btn-danger {
+    background: var(--color-danger);
+    color: #ffffff;
+    border: none;
+    padding: 0.65rem 1.25rem;
+    border-radius: var(--radius-interactive);
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.btn-danger:hover {
+    background: var(--color-danger-hover);
+}
+
+.btn-danger--rounded {
+    border-radius: 999px;
+}
+
+/* Auth-specific submit */
+.auth-submit-btn {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.auth-submit-btn--success {
+    background: var(--color-success);
+}
+
+.auth-submit-btn--success:hover {
+    background: var(--color-success-hover);
+}
+
+/* Dropdown danger item */
 .dropdown-item--danger {
-    color: #ef4444;
+    color: var(--color-danger);
     font-weight: 600;
 }
 
@@ -547,7 +715,7 @@ body {
 }
 
 .section-label {
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -556,7 +724,7 @@ body {
 }
 
 .main-title {
-    font-size: 3rem;
+    font-size: var(--text-3xl);
     font-weight: 800;
     letter-spacing: -0.03em;
     margin-bottom: 0.5rem;
@@ -588,10 +756,16 @@ body {
     line-height: 1.6;
 }
 
+.section-title {
+    font-size: var(--text-2xl);
+    color: var(--text-main);
+    margin-bottom: 10px;
+}
+
 /* Styling for the permanent note below the field */
 .field-instruction-note {
     font-size: 0.825rem;
-    color: #64748b;
+    color: var(--text-muted);
     margin-top: 0.4rem;
     margin-bottom: 0.6rem;
     line-height: 1.4;
@@ -599,9 +773,9 @@ body {
 
 /* Premium Inline Error Banner Design */
 .error-banner {
-    background-color: #fef2f2;
-    border-left: 4px solid #ef4444;
-    color: #991b1b;
+    background-color: var(--color-danger-light);
+    border-left: 4px solid var(--color-danger);
+    color: var(--color-danger-dark);
     padding: 0.75rem 1rem;
     border-radius: 6px;
     font-size: 0.85rem;
@@ -634,7 +808,7 @@ body {
 }
 
 /* ==========================================================================
-   9. FREEZE INDICATORS (dashboard streak banner)
+   7. FREEZE INDICATORS (dashboard streak banner)
    ========================================================================== */
 .freeze-status-line {
     display: flex;
@@ -646,8 +820,8 @@ body {
 
 .freeze-indicator {
     font-size: 0.78rem;
-    color: #0f766e;
-    background: rgba(15, 118, 110, 0.1);
+    color: var(--color-info-text);
+    background: var(--color-info-light);
     padding: 0.1rem 0.5rem;
     border-radius: 4px;
     font-weight: 600;
@@ -674,4 +848,151 @@ body {
 
 .freeze-info-icon:hover {
     opacity: 1;
+}
+
+/* ==========================================================================
+   8. PASSWORD TOGGLE (shared across auth + profile)
+   ========================================================================== */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.password-wrapper .form-input,
+.password-wrapper .profile-form-input,
+.password-wrapper .input-field {
+    padding-right: 45px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    pointer-events: auto;
+    z-index: 10;
+    user-select: none;
+    font-size: 1.1rem;
+    line-height: 1;
+    display: inline-block;
+}
+
+/* ==========================================================================
+   9. MOBILE HAMBURGER NAVIGATION
+   ========================================================================== */
+.nav-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    z-index: 1030;
+}
+
+.nav-toggle-bar {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--text-main);
+    margin: 5px 0;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.nav-toggle.active .nav-toggle-bar:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.nav-toggle.active .nav-toggle-bar:nth-child(2) {
+    opacity: 0;
+}
+
+.nav-toggle.active .nav-toggle-bar:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -5px);
+}
+
+@media (max-width: 768px) {
+    .nav-toggle {
+        display: block;
+    }
+
+    .nav-links {
+        position: fixed;
+        top: 70px;
+        left: 0;
+        right: 0;
+        background: var(--bg-panel);
+        border-bottom: 1px solid var(--border);
+        box-shadow: var(--shadow-card);
+        flex-direction: column;
+        align-items: stretch;
+        padding: 1rem 2rem;
+        gap: 0.75rem;
+        transform: translateY(-100%);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+        z-index: 1019;
+    }
+
+    .nav-links.open {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .nav-links .nav-item,
+    .nav-links .nav-item-btn {
+        width: 100%;
+        text-align: left;
+    }
+
+    .header-badges {
+        justify-content: flex-start;
+    }
+
+    .dropdown-menu {
+        position: static !important;
+        transform: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: transparent !important;
+        padding: 0;
+    }
+
+    .dropdown-menu .dropdown-item {
+        padding: 0.5rem 0;
+    }
+
+    .primary-nav {
+        padding: 0 1rem;
+    }
+}
+
+/* ==========================================================================
+   10. TABLE SCROLL WRAPPER (for overflow tables)
+   ========================================================================== */
+.table-scroll-wrapper {
+    overflow-x: auto;
+}
+
+/* ==========================================================================
+   11. UTILITY CLASSES
+   ========================================================================== */
+.mt-0 { margin-top: 0 !important; }
+.mt-1 { margin-top: 0.25rem !important; }
+.mt-2 { margin-top: 0.5rem !important; }
+.mt-3 { margin-top: 1rem !important; }
+.mb-0 { margin-bottom: 0 !important; }
+.mb-1 { margin-bottom: 0.25rem !important; }
+.mb-2 { margin-bottom: 0.5rem !important; }
+.mb-3 { margin-bottom: 1rem !important; }
+
+.profile-input-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
 }

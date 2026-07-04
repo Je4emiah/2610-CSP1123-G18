@@ -30,9 +30,9 @@
         <input type="hidden" name="full_name" value="{{ user.name if user and user.name else session.user_id }}">
       </form>
 
-<form action="{{ url_for('delete_profile_pic') }}" method="POST" class="mt-2" 
+      <form action="{{ url_for('delete_profile_pic') }}" method="POST" class="mt-2"
             onsubmit="return confirm('Are you sure you want to remove your profile picture?');">
-        <button type="submit" class="btn btn-sm btn-outline-danger style-delete-pic-btn" style="border: none; background: transparent; color: #dc3545; font-size: 0.9rem; cursor: pointer;">
+        <button type="submit" class="btn-ghost btn-ghost--danger style-delete-pic-btn">
           Remove Picture
         </button>
       </form>
@@ -94,15 +94,15 @@
       <div class="profile-panel">
         <h4 class="profile-section-heading">Profile Details</h4>
 
-<form action="{{ url_for('profile') }}" method="POST" id="passwordUpdateForm">
+        <form action="{{ url_for('profile') }}" method="POST" id="profileDetailsForm">
           <div class="profile-form-group">
             <label class="profile-form-label">Active Account Identifier</label>
-            <input type="text" class="profile-form-input static-input" value="{{ session.user_id }}" readonly />
+            <input type="text" class="input-field static-input" value="{{ session.user_id }}" readonly />
           </div>
 
           <div class="profile-form-group">
             <label class="profile-form-label" for="full_name">Display Name</label>
-            <input type="text" id="full_name" name="full_name" class="profile-form-input"
+            <input type="text" id="full_name" name="full_name" class="input-field"
               value="{{ user.name if user and user.name else '' }}" placeholder="Enter your full name" required />
           </div>
 
@@ -112,50 +112,50 @@
         </form>
       </div>
 
-{# Credentials Control #}
+      {# Credentials Control #}
       <div class="profile-panel">
         <h4 class="profile-section-heading">Credentials Control</h4>
-        <form action="{{ url_for('profile') }}" method="POST" id="passwordUpdateForm">
+        <form action="{{ url_for('profile') }}" method="POST" id="credentialsUpdateForm">
           <input type="hidden" name="username" value="{{ session['user_id'] }}">
 
           <div class="profile-form-group">
             <label class="profile-form-label">1. First pet's name?</label>
-            <input type="text" name="q1" class="profile-form-input" placeholder="Answer" required>
+            <input type="text" name="q1" class="input-field" placeholder="Answer" required>
           </div>
           <div class="profile-form-group">
             <label class="profile-form-label">2. Mother's maiden name?</label>
-            <input type="text" name="q2" class="profile-form-input" placeholder="Answer" required>
+            <input type="text" name="q2" class="input-field" placeholder="Answer" required>
           </div>
           <div class="profile-form-group">
             <label class="profile-form-label">3. Primary school name?</label>
-            <input type="text" name="q3" class="profile-form-input" placeholder="Answer" required>
+            <input type="text" name="q3" class="input-field" placeholder="Answer" required>
           </div>
 
           <hr class="profile-security-divider">
 
-<div class="profile-form-group">
-  <label class="profile-form-label" for="current_password">Current Password</label>
-  <div class="password-wrapper">
-    <input type="password" id="current_password" name="current_password" class="profile-form-input" placeholder="••••••••">
-    <span class="password-toggle">👁️</span>
-  </div>
-</div>
+          <div class="profile-form-group">
+            <label class="profile-form-label" for="current_password">Current Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="current_password" name="current_password" class="input-field" placeholder="••••••••">
+              <span class="password-toggle">👁️</span>
+            </div>
+          </div>
 
-<div class="profile-form-group">
-  <label class="profile-form-label" for="new_password">New Password</label>
-  <div class="password-wrapper">
-    <input type="password" id="new_password" name="new_password" class="profile-form-input" placeholder="••••••••">
-    <span class="password-toggle">👁️</span>
-  </div>
-</div>
+          <div class="profile-form-group">
+            <label class="profile-form-label" for="new_password">New Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="new_password" name="new_password" class="input-field" placeholder="••••••••">
+              <span class="password-toggle">👁️</span>
+            </div>
+          </div>
 
-<div class="profile-form-group">
-  <label class="profile-form-label" for="confirm_password">Confirm New Password</label>
-  <div class="password-wrapper">
-    <input type="password" id="confirm_password" name="confirm_password" class="profile-form-input" placeholder="••••••••">
-    <span class="password-toggle">👁️</span>
-  </div>
-</div>
+          <div class="profile-form-group">
+            <label class="profile-form-label" for="confirm_password">Confirm New Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="confirm_password" name="confirm_password" class="input-field" placeholder="••••••••">
+              <span class="password-toggle">👁️</span>
+            </div>
+          </div>
 
           <button type="submit" class="profile-action-btn profile-block-btn">Verify &amp; Update Credentials</button>
         </form>
@@ -169,7 +169,7 @@
       <p class="profile-notice-text profile-notice-text--spaced">Purging completely drops user records and clears all tracking entries from the dataset permanently.</p>
       <form action="{{ url_for('delete_account') }}" method="POST"
         onsubmit="return confirm('CRITICAL PROMPT: Confirm permanent deletion? This action is non-reversible.');">
-        <button type="submit" class="profile-delete-btn profile-delete-btn--rounded">Delete Account &amp; Logs</button>
+        <button type="submit" class="btn-danger btn-danger--rounded profile-delete-btn">Delete Account &amp; Logs</button>
       </form>
       <a href="{{ url_for('dashboard') }}" class="profile-secondary-link profile-secondary-link--small profile-back-link">
         Back to Dashboard
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    const passwordForm = document.getElementById('passwordUpdateForm');
+    const passwordForm = document.getElementById('credentialsUpdateForm');
     if (passwordForm) {
         passwordForm.onsubmit = function (event) {
             const currentPassword = document.getElementById('current_password').value;

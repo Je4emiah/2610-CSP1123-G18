@@ -115,24 +115,34 @@ def save_mood_entry(username, score, thought):
             if days_since > 1:
                 user = db.execute('SELECT freezes FROM users WHERE username = %s', (username,)).fetchone()
                 available = user['freezes'] if user else 0
-                missed_days = days_since - 1
-                to_consume = min(missed_days, available)
-                if to_consume > 0:
-                    for i in range(to_consume):
-                        freeze_date = last_date + datetime.timedelta(days=i + 1)
+
+                existing = db.execute('''
+                    SELECT frozen_date FROM streak_freezes
+                    WHERE username = %s AND frozen_date > %s AND frozen_date < %s
+                ''', (username, last_str, today.strftime('%Y-%m-%d'))).fetchall()
+                already_frozen = {row['frozen_date'] for row in existing}
+
+                unfrozen_days = []
+                for i in range(1, days_since):
+                    check_date = (last_date + datetime.timedelta(days=i)).strftime('%Y-%m-%d')
+                    if check_date not in already_frozen:
+                        unfrozen_days.append(check_date)
+
+                if unfrozen_days and available > 0:
+                    for freeze_date in unfrozen_days:
                         if db._is_sqlite:
                             db.execute('''
                                 INSERT OR REPLACE INTO streak_freezes (username, frozen_date, consumed_at)
                                 VALUES (?, ?, ?)
-                            ''', (username, freeze_date.strftime('%Y-%m-%d'), datetime.datetime.now().isoformat()))
+                            ''', (username, freeze_date, datetime.datetime.now().isoformat()))
                         else:
                             db.execute('''
                                 INSERT INTO streak_freezes (username, frozen_date, consumed_at)
                                 VALUES (%s, %s, %s)
                                 ON CONFLICT (username, frozen_date) DO UPDATE SET consumed_at = EXCLUDED.consumed_at
-                            ''', (username, freeze_date.strftime('%Y-%m-%d'), datetime.datetime.now().isoformat()))
-                    db.execute('UPDATE users SET freezes = freezes - %s WHERE username = %s',
-                               (to_consume, username))
+                            ''', (username, freeze_date, datetime.datetime.now().isoformat()))
+                    db.execute('UPDATE users SET freezes = freezes - 1 WHERE username = %s',
+                               (username,))
 
         db.commit()
         return True
@@ -180,11 +190,10 @@ def calculate_current_streak_dates(log_dates, username=None, freezes=0):
         valid_dates = [d for d in log_date_set if d]
         if valid_dates:
             last_date = datetime.datetime.strptime(max(valid_dates), '%Y-%m-%d').date()
-            for i in range(1, freezes + 1):
-                virtual_date = last_date + datetime.timedelta(days=i)
-                virtual_str = virtual_date.strftime('%Y-%m-%d')
-                if virtual_str <= today_str:
-                    log_date_set.add(virtual_str)
+            current = last_date + datetime.timedelta(days=1)
+            while current.strftime('%Y-%m-%d') <= today_str:
+                log_date_set.add(current.strftime('%Y-%m-%d'))
+                current += datetime.timedelta(days=1)
 
     if today_str in log_date_set:
         current_date = today

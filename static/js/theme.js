@@ -27,7 +27,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 3. Privacy Shield toggle
+    // 3. Mobile hamburger menu toggle
+    const navToggle = document.getElementById('navToggle');
+    const navLinks = document.getElementById('navLinks');
+
+    if (navToggle && navLinks) {
+        navToggle.addEventListener('click', () => {
+            navToggle.classList.toggle('active');
+            navLinks.classList.toggle('open');
+        });
+
+        // Close menu when clicking a nav link
+        navLinks.querySelectorAll('.nav-item, .dropdown-item').forEach(link => {
+            link.addEventListener('click', () => {
+                navToggle.classList.remove('active');
+                navLinks.classList.remove('open');
+            });
+        });
+
+        // Close menu on outside click
+        document.addEventListener('click', (e) => {
+            if (!navToggle.contains(e.target) && !navLinks.contains(e.target)) {
+                navToggle.classList.remove('active');
+                navLinks.classList.remove('open');
+            }
+        });
+    }
+
+    // 4. Privacy Shield toggle
     const shieldToggle = document.getElementById('privacyShieldToggle');
     const shieldIcon = document.getElementById('privacyShieldIcon');
     const body = document.body;

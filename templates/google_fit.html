@@ -20,7 +20,7 @@
         <button class="profile-action-btn profile-block-btn" disabled title="Coming soon">
           Connect Google Fit
         </button>
-        <p class="profile-notice-text" style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+        <p class="profile-input-hint mt-3">
           OAuth integration is under development. You can still enter data manually below.
         </p>
       </div>
@@ -30,7 +30,7 @@
         <form action="{{ url_for('google_fit') }}" method="POST">
           <div class="profile-form-group">
             <label class="profile-form-label" for="metric_type">Metric Type</label>
-            <select id="metric_type" name="metric_type" class="profile-form-input" required>
+            <select id="metric_type" name="metric_type" class="input-field" required>
               <option value="">-- Select --</option>
               <option value="steps">Step Count</option>
               <option value="active_hours">Active Hours</option>
@@ -40,13 +40,13 @@
 
           <div class="profile-form-group">
             <label class="profile-form-label" for="value">Value</label>
-            <input type="number" id="value" name="value" class="profile-form-input"
+            <input type="number" id="value" name="value" class="input-field"
                    step="any" min="0" placeholder="e.g. 8000" required>
           </div>
 
           <div class="profile-form-group">
             <label class="profile-form-label" for="entry_date">Date (optional, defaults to today)</label>
-            <input type="date" id="entry_date" name="entry_date" class="profile-form-input"
+            <input type="date" id="entry_date" name="entry_date" class="input-field"
                    value="{{ today }}">
           </div>
 
@@ -55,11 +55,11 @@
       </div>
     </div>
 
-    <div class="profile-panel" style="margin-top: 0;">
+    <div class="profile-panel mt-0">
       <h4 class="profile-section-heading">Recent Entries</h4>
       {% if entries %}
-        <div style="overflow-x: auto;">
-          <table class="table" style="margin-bottom: 0;">
+        <div class="table-scroll-wrapper">
+          <table class="table mb-0">
             <thead>
               <tr>
                 <th>Metric</th>
