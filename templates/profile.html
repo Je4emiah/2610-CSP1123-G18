@@ -94,7 +94,8 @@
       <div class="profile-panel">
         <h4 class="profile-section-heading">Profile Details</h4>
 
-        <form action="{{ url_for('profile') }}" method="POST" id="profileDetailsForm">
+        <form action="{{ url_for('profile') }}" method="POST" id="profileDetailsForm"
+              onsubmit="return confirm('Save changes to your display name?');">
           <div class="profile-form-group">
             <label class="profile-form-label">Active Account Identifier</label>
             <input type="text" class="input-field static-input" value="{{ session.user_id }}" readonly />

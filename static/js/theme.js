@@ -1,4 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Delete Account handler (must be outside early-return guard)
+    window.handleDelete = function () {
+        if (confirm('Are you sure you want to permanently delete your account? This cannot be undone.')) {
+            var deleteForm = document.getElementById('deleteForm');
+            if (deleteForm) deleteForm.submit();
+        }
+    };
+
     const themeToggle = document.getElementById('themeToggle');
     const htmlElement = document.documentElement;
     const themeIcon = document.getElementById('themeIcon');

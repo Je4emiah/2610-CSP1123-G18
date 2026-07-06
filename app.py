@@ -129,18 +129,19 @@ def save_mood_entry(username, score, thought):
                         unfrozen_days.append(check_date)
 
                 if unfrozen_days and available > 0:
+                    now_iso = datetime.datetime.now().isoformat()
                     for freeze_date in unfrozen_days:
                         if db._is_sqlite:
                             db.execute('''
                                 INSERT OR REPLACE INTO streak_freezes (username, frozen_date, consumed_at)
                                 VALUES (?, ?, ?)
-                            ''', (username, freeze_date, datetime.datetime.now().isoformat()))
+                            ''', (username, freeze_date, now_iso))
                         else:
                             db.execute('''
                                 INSERT INTO streak_freezes (username, frozen_date, consumed_at)
                                 VALUES (%s, %s, %s)
                                 ON CONFLICT (username, frozen_date) DO UPDATE SET consumed_at = EXCLUDED.consumed_at
-                            ''', (username, freeze_date, datetime.datetime.now().isoformat()))
+                            ''', (username, freeze_date, now_iso))
                     db.execute('UPDATE users SET freezes = freezes - 1 WHERE username = %s',
                                (username,))
 
@@ -172,6 +173,7 @@ MILESTONE_BADGES = [
 
 def calculate_current_streak_dates(log_dates, username=None, freezes=0):
     log_date_set = {d for d in log_dates if d}
+    last_actual_log = max(log_date_set) if log_date_set else None
 
     frozen_dates_from_db = set()
     if username:
@@ -187,6 +189,28 @@ def calculate_current_streak_dates(log_dates, username=None, freezes=0):
     yesterday = today - datetime.timedelta(days=1)
     today_str = today.strftime('%Y-%m-%d')
     yesterday_str = yesterday.strftime('%Y-%m-%d')
+
+    if last_actual_log and frozen_dates_from_db:
+        latest_frozen = max(frozen_dates_from_db)
+        last_actual_log_date = datetime.datetime.strptime(last_actual_log, '%Y-%m-%d').date()
+        latest_frozen_date = datetime.datetime.strptime(latest_frozen, '%Y-%m-%d').date()
+        if latest_frozen_date < last_actual_log_date:
+            bridge_date = latest_frozen_date + datetime.timedelta(days=1)
+            while bridge_date <= last_actual_log_date:
+                log_date_set.add(bridge_date.strftime('%Y-%m-%d'))
+                bridge_date += datetime.timedelta(days=1)
+        elif latest_frozen_date >= last_actual_log_date:
+            bridge_date = last_actual_log_date + datetime.timedelta(days=1)
+            while bridge_date.strftime('%Y-%m-%d') <= today_str:
+                log_date_set.add(bridge_date.strftime('%Y-%m-%d'))
+                bridge_date += datetime.timedelta(days=1)
+
+    if freezes > 0 and today_str not in log_date_set and yesterday_str not in log_date_set:
+        if last_actual_log:
+            bridge_date = datetime.datetime.strptime(last_actual_log, '%Y-%m-%d').date() + datetime.timedelta(days=1)
+            while bridge_date.strftime('%Y-%m-%d') <= today_str:
+                log_date_set.add(bridge_date.strftime('%Y-%m-%d'))
+                bridge_date += datetime.timedelta(days=1)
 
     is_frozen_today = (today_str not in {d for d in log_dates if d}) and (today_str in frozen_dates_from_db)
 
@@ -1286,7 +1310,7 @@ def init_db():
             username TEXT NOT NULL,
             frozen_date TEXT NOT NULL,
             consumed_at TEXT NOT NULL,
-            PRIMARY KEY (username, frozen_date)
+            PRIMARY KEY (username, frozen_date) 
         )''')
     db.commit()
     print("Database schemas initialized.")
