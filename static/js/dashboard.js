@@ -62,7 +62,7 @@ async function updateDashboard() {
             counterElement.style.color = count === 0 ? "#ef4444" : "#94a3b8";
         }
 
-        // Render calendar with mood colors and frozen indicators
+        // Render calendar with mood colors
         renderCalendar(data);
 
         // Cleanup checking if an existing canvas chart component is active
@@ -423,8 +423,6 @@ function renderCalendar(data) {
         }
     });
 
-    const frozenSet = new Set(data.frozen_dates || []);
-
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -440,7 +438,6 @@ function renderCalendar(data) {
     for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const score = moodByDay[day];
-        const isFrozen = frozenSet.has(dateStr);
         const isToday = dateStr === todayStr;
 
         let moodClass = '';
@@ -452,14 +449,11 @@ function renderCalendar(data) {
 
         let classes = 'cal-cell';
         if (moodClass) classes += ` ${moodClass}`;
-        if (isFrozen) classes += ' cal-frozen';
         if (isToday) classes += ' cal-today';
 
         const scoreText = score !== undefined ? `Mood: ${score.toFixed(1)}` : 'No entry';
-        const freezeText = isFrozen ? ' ❄️ Frozen' : '';
-        const frozenIcon = isFrozen ? '❄️' : '';
 
-        html += `<div class="${classes}" title="${scoreText}${freezeText}"><span class="cal-day-num">${day}</span>${frozenIcon ? `<span class="cal-frozen-icon">${frozenIcon}</span>` : ''}</div>`;
+        html += `<div class="${classes}" title="${scoreText}"><span class="cal-day-num">${day}</span></div>`;
     }
 
     html += '</div>';

@@ -291,19 +291,9 @@ body {
     color: var(--color-warning-text);
 }
 
-.badge-round.freeze-badge {
-    background: var(--color-success-light);
-    color: var(--color-info-text);
-}
-
 [data-bs-theme="dark"] .badge-round.streak-badge {
     background: var(--color-warning-light);
     color: var(--color-warning-text);
-}
-
-[data-bs-theme="dark"] .badge-round.freeze-badge {
-    background: #1a4731;
-    color: #a3d9b1;
 }
 
 .content-wrapper {
@@ -832,50 +822,7 @@ body {
 }
 
 /* ==========================================================================
-   7. FREEZE INDICATORS (dashboard streak banner)
-   ========================================================================== */
-.freeze-status-line {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 0.3rem;
-    flex-wrap: wrap;
-}
-
-.freeze-indicator {
-    font-size: 0.78rem;
-    color: var(--color-info-text);
-    background: var(--color-info-light);
-    padding: 0.1rem 0.5rem;
-    border-radius: 4px;
-    font-weight: 600;
-}
-
-[data-bs-theme="dark"] .freeze-indicator {
-    color: #5eead4;
-    background: rgba(94, 234, 212, 0.1);
-}
-
-.freeze-count-label {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    font-weight: 500;
-}
-
-.freeze-info-icon {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    cursor: help;
-    opacity: 0.6;
-    transition: opacity 0.2s;
-}
-
-.freeze-info-icon:hover {
-    opacity: 1;
-}
-
-/* ==========================================================================
-   8. PASSWORD TOGGLE (shared across auth + profile)
+   7. PASSWORD TOGGLE (shared across auth + profile)
    ========================================================================== */
 .password-wrapper {
     position: relative;

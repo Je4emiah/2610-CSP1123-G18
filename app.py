@@ -91,60 +91,13 @@ def close_connection(exception):
         db.close()
 
 def save_mood_entry(username, score, thought):
-    """Inserts a single mood log record and auto-consumes freezes for missed days."""
+    """Inserts a single mood log record."""
     try:
         db = get_db()
-
-        last_row = db.execute('''
-            SELECT DATE(timestamp) as log_date FROM mood_logs
-            WHERE username = %s AND DATE(timestamp) < CURRENT_DATE
-            ORDER BY timestamp DESC LIMIT 1
-        ''', (username,)).fetchone()
-
         db.execute('''
             INSERT INTO mood_logs (username, mood_score, thought_text, timestamp)
             VALUES (%s, %s, %s, NOW())
         ''', (username, score, thought))
-
-        if last_row and last_row['log_date']:
-            last_str = str(last_row['log_date'])
-            last_date = datetime.datetime.strptime(last_str, '%Y-%m-%d').date()
-            today = datetime.date.today()
-            days_since = (today - last_date).days
-
-            if days_since > 1:
-                user = db.execute('SELECT freezes FROM users WHERE username = %s', (username,)).fetchone()
-                available = user['freezes'] if user else 0
-
-                existing = db.execute('''
-                    SELECT frozen_date FROM streak_freezes
-                    WHERE username = %s AND frozen_date > %s AND frozen_date < %s
-                ''', (username, last_str, today.strftime('%Y-%m-%d'))).fetchall()
-                already_frozen = {row['frozen_date'] for row in existing}
-
-                unfrozen_days = []
-                for i in range(1, days_since):
-                    check_date = (last_date + datetime.timedelta(days=i)).strftime('%Y-%m-%d')
-                    if check_date not in already_frozen:
-                        unfrozen_days.append(check_date)
-
-                if unfrozen_days and available > 0:
-                    now_iso = datetime.datetime.now().isoformat()
-                    for freeze_date in unfrozen_days:
-                        if db._is_sqlite:
-                            db.execute('''
-                                INSERT OR REPLACE INTO streak_freezes (username, frozen_date, consumed_at)
-                                VALUES (?, ?, ?)
-                            ''', (username, freeze_date, now_iso))
-                        else:
-                            db.execute('''
-                                INSERT INTO streak_freezes (username, frozen_date, consumed_at)
-                                VALUES (%s, %s, %s)
-                                ON CONFLICT (username, frozen_date) DO UPDATE SET consumed_at = EXCLUDED.consumed_at
-                            ''', (username, freeze_date, now_iso))
-                    db.execute('UPDATE users SET freezes = freezes - 1 WHERE username = %s',
-                               (username,))
-
         db.commit()
         return True
     except Exception as e:
@@ -171,47 +124,22 @@ MILESTONE_BADGES = [
 ]
 
 
-def calculate_current_streak_dates(log_dates, username=None, freezes=0):
+def calculate_current_streak_dates(log_dates):
     log_date_set = {d for d in log_dates if d}
     if not log_date_set:
-        return [], False
-
-    frozen_dates_from_db = set()
-    if username:
-        db = get_db()
-        frozen_rows = db.execute('''
-            SELECT frozen_date FROM streak_freezes WHERE username = %s
-        ''', (username,)).fetchall()
-        for row in frozen_rows:
-            frozen_dates_from_db.add(row['frozen_date'])
+        return []
 
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(days=1)
     today_str = today.strftime('%Y-%m-%d')
     yesterday_str = yesterday.strftime('%Y-%m-%d')
 
-    is_frozen_today = (today_str not in log_date_set) and (today_str in frozen_dates_from_db)
-
     if today_str in log_date_set:
         current_date = today
     elif yesterday_str in log_date_set:
         current_date = yesterday
-    elif is_frozen_today:
-        current_date = today
     else:
-        last_actual_log = max(log_date_set)
-        last_log_date = datetime.datetime.strptime(last_actual_log, '%Y-%m-%d').date()
-        check_date = last_log_date + datetime.timedelta(days=1)
-        gap_fully_frozen = True
-        while check_date < today:
-            if check_date.strftime('%Y-%m-%d') not in frozen_dates_from_db:
-                gap_fully_frozen = False
-                break
-            check_date += datetime.timedelta(days=1)
-        if gap_fully_frozen and frozen_dates_from_db:
-            current_date = last_log_date
-        else:
-            return [], is_frozen_today
+        return []
 
     streak_dates = []
     while True:
@@ -219,12 +147,10 @@ def calculate_current_streak_dates(log_dates, username=None, freezes=0):
         if current_str in log_date_set:
             streak_dates.append(current_str)
             current_date -= datetime.timedelta(days=1)
-        elif current_str in frozen_dates_from_db:
-            current_date -= datetime.timedelta(days=1)
         else:
             break
 
-    return streak_dates, is_frozen_today
+    return streak_dates
 
 
 def build_milestone_progress(streak_dates):
@@ -405,31 +331,12 @@ def inject_user():
                 WHERE username = %s ORDER BY log_date DESC
             ''', (username,)).fetchall()
             log_dates = [row['log_date'] for row in rows]
-            user_freezes = db.execute('SELECT freezes FROM users WHERE username = %s', (username,)).fetchone()
-            data['freezes'] = user_freezes['freezes'] if user_freezes else 0
-            streak_dates, is_frozen_today = calculate_current_streak_dates(log_dates, username, data['freezes'])
+            streak_dates = calculate_current_streak_dates(log_dates)
             data['streak'] = len(streak_dates)
-            data['streak_frozen'] = is_frozen_today
-
-            frozen_rows = db.execute('''
-                SELECT frozen_date FROM streak_freezes WHERE username = %s
-            ''', (username,)).fetchall()
-            frozen_date_set = {row['frozen_date'] for row in frozen_rows}
-            frozen_in_streak = sorted(frozen_date_set.intersection(streak_dates))
-            data['freeze_used'] = len(frozen_in_streak) > 0
-            data['frozen_count'] = len(frozen_date_set)
-            data['last_frozen_date'] = frozen_in_streak[-1] if frozen_in_streak else None
         except Exception:
             data['streak'] = 0
-            data['freezes'] = 0
-            data['streak_frozen'] = False
-            data['freeze_used'] = False
-            data['frozen_count'] = 0
-            data['last_frozen_date'] = None
     else:
         data['streak'] = 0
-        data['freezes'] = 0
-        data['streak_frozen'] = False
     return data
 
 # --- ROUTES ---
@@ -611,10 +518,7 @@ def profile():
         ORDER BY log_date DESC
     ''', (username,)).fetchall()
     log_dates = [row['log_date'] for row in date_rows]
-
-    freeze_row = db.execute('SELECT freezes FROM users WHERE username = %s', (username,)).fetchone()
-    profile_freezes = freeze_row['freezes'] if freeze_row else 0
-    streak_dates, _ = calculate_current_streak_dates(log_dates, username, profile_freezes)
+    streak_dates = calculate_current_streak_dates(log_dates)
     streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges = build_milestone_progress(streak_dates)
 
     logs_cursor = db.execute("SELECT COUNT(*) as log_count, AVG(mood_score) as avg_score FROM mood_logs WHERE username = %s", (username,))
@@ -903,15 +807,8 @@ def dashboard():
         ORDER BY log_date DESC
     ''', (username,)).fetchall()
     log_dates = [row['log_date'] for row in date_rows]
-    user_row = db.execute('SELECT freezes, last_freeze_streak FROM users WHERE username = %s', (username,)).fetchone()
-    freezes = user_row['freezes'] if user_row else 0
-    last_freeze_streak = user_row['last_freeze_streak'] if user_row else 0
-    streak_dates, _ = calculate_current_streak_dates(log_dates, username, freezes)
+    streak_dates = calculate_current_streak_dates(log_dates)
     streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges = build_milestone_progress(streak_dates)
-    if streak > 0 and streak % 7 == 0 and streak > last_freeze_streak and freezes < 2:
-        db.execute('UPDATE users SET freezes = freezes + 1, last_freeze_streak = %s WHERE username = %s',
-                   (streak, username))
-        freezes += 1
 
     # Calculate metrics over a sliding 7-day window
     row = db.execute('''
@@ -940,7 +837,6 @@ def dashboard():
                            entry_count=entry_count, 
                            avg_score=avg_score,
                            streak=streak,
-                           freezes=freezes,
                            milestone_badges=milestone_badges,
                            next_milestone=next_milestone,
                            milestone_markers=milestone_markers,
@@ -1059,15 +955,6 @@ def api_telemetry_data(username):
             tele_val = telemetry_by_day.get(day_str)
             telemetry_data.append(round(tele_val, 2) if tele_val is not None else None)
 
-    # --- Frozen dates for the requested month ---
-    frozen_dates = []
-    if not is_global:
-        frozen_rows = db.execute('''
-            SELECT frozen_date FROM streak_freezes
-            WHERE username = %s AND frozen_date LIKE %s
-        ''', (username, f"{year}-{month:02d}%")).fetchall()
-        frozen_dates = [row['frozen_date'] for row in frozen_rows]
-
     # --- Raw individual entries for scatter plotting (shows multiple entries per day) ---
     mood_entries = []
     if not is_global:
@@ -1091,7 +978,6 @@ def api_telemetry_data(username):
         "labels": labels,
         "mood_data": mood_data,
         "mood_entries": mood_entries,
-        "frozen_dates": frozen_dates,
     }
     if metric_type != 'none':
         response_data["telemetry_data"] = telemetry_data
@@ -1177,23 +1063,16 @@ def api_export():
         ORDER BY timestamp ASC
     ''', (username,)).fetchall()
 
-    freeze_rows = db.execute('''
-        SELECT frozen_date, consumed_at
-        FROM streak_freezes
-        WHERE username = %s
-    ''', (username,)).fetchall()
-
     user_row = db.execute('''
-        SELECT name, gender, freezes FROM users WHERE username = %s
+        SELECT name, gender FROM users WHERE username = %s
     ''', (username,)).fetchone()
 
     return jsonify({
         "exported_at": datetime.datetime.now().isoformat(),
         "user_id": username,
-        "user": {"name": user_row['name'], "gender": user_row['gender'], "freezes": user_row['freezes']} if user_row else {},
+        "user": {"name": user_row['name'], "gender": user_row['gender']} if user_row else {},
         "mood_logs": _rows_to_dicts(mood_logs),
         "telemetry_logs": _rows_to_dicts(telemetry_logs),
-        "streak_freezes": _rows_to_dicts(freeze_rows),
     })
 
 
@@ -1207,8 +1086,8 @@ def api_import():
         return jsonify({"error": "No data provided"}), 400
 
     db = get_db()
-    imported = {"mood_logs": 0, "telemetry_logs": 0, "streak_freezes": 0}
-    skipped = {"mood_logs": 0, "telemetry_logs": 0, "streak_freezes": 0}
+    imported = {"mood_logs": 0, "telemetry_logs": 0}
+    skipped = {"mood_logs": 0, "telemetry_logs": 0}
 
     for entry in data.get('mood_logs', []):
         try:
@@ -1229,27 +1108,6 @@ def api_import():
             imported['telemetry_logs'] += 1
         except Exception:
             skipped['telemetry_logs'] += 1
-
-    for entry in data.get('streak_freezes', []):
-        try:
-            if db._is_sqlite:
-                db.execute('''
-                    INSERT OR REPLACE INTO streak_freezes (username, frozen_date, consumed_at)
-                    VALUES (?, ?, ?)
-                ''', (username, entry['frozen_date'], entry['consumed_at']))
-            else:
-                db.execute('''
-                    INSERT INTO streak_freezes (username, frozen_date, consumed_at)
-                    VALUES (%s, %s, %s)
-                    ON CONFLICT (username, frozen_date) DO UPDATE SET consumed_at = EXCLUDED.consumed_at
-                ''', (username, entry['frozen_date'], entry['consumed_at']))
-            imported['streak_freezes'] += 1
-        except Exception:
-            skipped['streak_freezes'] += 1
-
-    freeze_count = data.get('user', {}).get('freezes')
-    if freeze_count is not None:
-        db.execute('UPDATE users SET freezes = %s WHERE username = %s', (freeze_count, username))
 
     db.commit()
     return jsonify({"imported": imported, "skipped": skipped})
@@ -1276,9 +1134,7 @@ def init_db():
             profile_pic TEXT,
             q1_answer TEXT,
             q2_answer TEXT,
-            q3_answer TEXT,
-            freezes INTEGER DEFAULT 1,
-            last_freeze_streak INTEGER DEFAULT 0
+            q3_answer TEXT
         )''')
         db.execute('''CREATE TABLE IF NOT EXISTS telemetry_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1294,12 +1150,6 @@ def init_db():
             review TEXT NOT NULL,
             generated_at TEXT NOT NULL,
             PRIMARY KEY (username, cached_date)
-        )''')
-        db.execute('''CREATE TABLE IF NOT EXISTS streak_freezes (
-            username TEXT NOT NULL,
-            frozen_date TEXT NOT NULL,
-            consumed_at TEXT NOT NULL,
-            PRIMARY KEY (username, frozen_date)
         )''')
     else:
         db.execute('''CREATE TABLE IF NOT EXISTS mood_logs (
@@ -1318,9 +1168,7 @@ def init_db():
             profile_pic TEXT,
             q1_answer TEXT,
             q2_answer TEXT,
-            q3_answer TEXT,
-            freezes INTEGER DEFAULT 1,
-            last_freeze_streak INTEGER DEFAULT 0
+            q3_answer TEXT
         )''')
         db.execute('''CREATE TABLE IF NOT EXISTS telemetry_logs (
             id SERIAL PRIMARY KEY,
@@ -1336,12 +1184,6 @@ def init_db():
             review TEXT NOT NULL,
             generated_at TEXT NOT NULL,
             PRIMARY KEY (username, cached_date)
-        )''')
-        db.execute('''CREATE TABLE IF NOT EXISTS streak_freezes (
-            username TEXT NOT NULL,
-            frozen_date TEXT NOT NULL,
-            consumed_at TEXT NOT NULL,
-            PRIMARY KEY (username, frozen_date) 
         )''')
     db.commit()
     print("Database schemas initialized.")

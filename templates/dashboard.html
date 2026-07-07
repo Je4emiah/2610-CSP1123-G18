@@ -15,32 +15,15 @@
 
         {# Streak Banner #}
         {% if streak > 0 %}
-          <div class="streak-banner streak-active{% if streak_frozen %} streak-frozen{% endif %}">
+          <div class="streak-banner streak-active">
             <div class="streak-content">
-              <div class="streak-emoji">{% if streak_frozen %}❄️{% else %}🔥{% endif %}</div>
+              <div class="streak-emoji">🔥</div>
               <div class="streak-details">
-                <h6 class="streak-title">{{ streak }}-Day Streak{% if streak_frozen %} (Frozen){% endif %}</h6>
-                {% if streak_frozen %}
-                  <small class="streak-subtitle">Your streak is frozen! Log today to continue building your habit.</small>
-                {% else %}
-                  <small class="streak-subtitle">You're doing amazing. Keep building this tracking habit daily!</small>
-                {% endif %}
-                <div class="freeze-status-line">
-                  {% if freeze_used %}
-                    <span class="freeze-indicator">❄️ Freeze used{% if last_frozen_date %} on {{ last_frozen_date }}{% endif %}</span>
-                  {% endif %}
-                  <span class="freeze-count-label">
-                    {% if freezes > 0 %}
-                      ❄️ {{ freezes }}/2 freezes remaining
-                    {% else %}
-                      ⚠️ No freezes remaining
-                    {% endif %}
-                  </span>
-                  <span class="freeze-info-icon" title="One freeze protects your entire streak until you log again. You earn one every 7-day milestone (max 2).">ⓘ</span>
-                </div>
+                <h6 class="streak-title">{{ streak }}-Day Streak</h6>
+                <small class="streak-subtitle">You're doing amazing. Keep building this tracking habit daily!</small>
               </div>
             </div>
-            <span class="streak-badge status-active{% if streak_frozen %} status-frozen{% endif %}">{% if streak_frozen %}FROZEN{% else %}ACTIVE{% endif %}</span>
+            <span class="streak-badge status-active">ACTIVE</span>
           </div>
         {% else %}
           <div class="streak-banner streak-inactive">
@@ -49,16 +32,6 @@
               <div class="streak-details">
                 <h6 class="streak-title">Start a New Streak</h6>
                 <small class="streak-subtitle">Log your thoughts today to start your streak counter chain!</small>
-                <div class="freeze-status-line">
-                  <span class="freeze-count-label">
-                    {% if freezes > 0 %}
-                      ❄️ {{ freezes }}/2 freezes available
-                    {% else %}
-                      ❄️ No freezes available
-                    {% endif %}
-                  </span>
-                  <span class="freeze-info-icon" title="One freeze protects your entire streak until you log again. You earn one every 7-day milestone (max 2).">ⓘ</span>
-                </div>
               </div>
             </div>
           </div>

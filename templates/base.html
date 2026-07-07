@@ -36,8 +36,7 @@
             <a class="nav-item" href="{{ url_for('dashboard') }}">Dashboard</a>
 
             <span class="header-badges">
-              <span class="badge-round streak-badge{% if streak_frozen %} streak-frozen{% endif %}">{% if streak_frozen %}❄️{% else %}🔥{% endif %} {{ streak }}</span>
-              <span class="badge-round freeze-badge" title="Freezes remaining (earn 1 per 7-day streak, max 2. Auto-used if you miss one day.)">❄️ {{ freezes }}</span>
+              <span class="badge-round streak-badge">🔥 {{ streak }}</span>
             </span>
 
             <div class="dropdown">

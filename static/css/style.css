@@ -748,23 +748,6 @@
     background: var(--mood-bad-light-dk);
 }
 
-.cal-frozen {
-    background: rgba(56, 189, 248, 0.15) !important;
-}
-
-[data-bs-theme="dark"] .cal-frozen {
-    background: rgba(56, 189, 248, 0.2) !important;
-}
-
-.cal-frozen-icon {
-    font-size: 0.6rem;
-    line-height: 1;
-    position: absolute;
-    top: 2px;
-    right: 3px;
-    opacity: 0.8;
-}
-
 .cal-day-num {
     line-height: 1;
 }
@@ -893,16 +876,6 @@
     color: #212529;
 }
 
-.status-frozen {
-    background-color: var(--color-info);
-    color: #fff;
-}
-
-.streak-frozen {
-    background-color: var(--color-info-light);
-    color: var(--color-info-text);
-}
-
 /* Inactive state */
 .streak-inactive {
     background-color: var(--bg-panel);
@@ -922,16 +895,6 @@
 [data-bs-theme="dark"] .status-active {
     background-color: #8a6d00;
     color: #fff3cd;
-}
-
-[data-bs-theme="dark"] .status-frozen {
-    background-color: #0c5460;
-    color: #d1ecf1;
-}
-
-[data-bs-theme="dark"] .streak-frozen {
-    background-color: #0c5460;
-    color: #d1ecf1;
 }
 
 [data-bs-theme="dark"] .streak-inactive {
