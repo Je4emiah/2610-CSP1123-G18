@@ -203,7 +203,7 @@ def calculate_current_streak_dates(log_dates, username=None, freezes=0):
         last_log_date = datetime.datetime.strptime(last_actual_log, '%Y-%m-%d').date()
         check_date = last_log_date + datetime.timedelta(days=1)
         gap_fully_frozen = True
-        while check_date <= today:
+        while check_date < today:
             if check_date.strftime('%Y-%m-%d') not in frozen_dates_from_db:
                 gap_fully_frozen = False
                 break
