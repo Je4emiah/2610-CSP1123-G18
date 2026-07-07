@@ -1292,6 +1292,15 @@
     background: rgba(15, 23, 42, 0.6);
 }
 
+.profile-achievement-card--locked {
+    opacity: 0.5;
+    border-style: dashed;
+}
+
+.profile-achievement-card--locked .profile-achievement-emoji {
+    background: var(--bg-main);
+}
+
 .profile-achievement-emoji {
     width: 2.5rem;
     height: 2.5rem;

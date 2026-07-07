@@ -56,18 +56,22 @@
 
     <div class="profile-panel profile-achievements-panel">
       <div class="profile-achievements-header">
-        <h4 class="profile-section-heading">Achievements Collected</h4>
-        <span class="profile-achievements-count">{{ milestone_badges|length }} unlocked</span>
+        <h4 class="profile-section-heading">Achievements</h4>
+        <span class="profile-achievements-count">{{ all_badges|selectattr('unlocked')|list|length }}/{{ all_badges|length }} unlocked</span>
       </div>
 
-      {% if milestone_badges %}
+      {% if all_badges %}
         <div class="profile-achievements-grid">
-          {% for badge in milestone_badges %}
-            <article class="profile-achievement-card" title="{{ badge.description }}">
-              <div class="profile-achievement-emoji">{{ badge.emoji }}</div>
+          {% for badge in all_badges %}
+            <article class="profile-achievement-card{% if not badge.unlocked %} profile-achievement-card--locked{% endif %}" title="{{ badge.description }}">
+              <div class="profile-achievement-emoji">{% if badge.unlocked %}{{ badge.emoji }}{% else %}🔒{% endif %}</div>
               <div class="profile-achievement-copy">
                 <h5>{{ badge.label }}</h5>
-                <p>Unlocked on {{ badge.achievement_date }}</p>
+                {% if badge.unlocked %}
+                  <p>Unlocked on {{ badge.achievement_date }}</p>
+                {% else %}
+                  <p>{{ badge.days_remaining }} more day{{ 's' if badge.days_remaining != 1 }} needed ({{ badge.days }} total)</p>
+                {% endif %}
               </div>
             </article>
           {% endfor %}

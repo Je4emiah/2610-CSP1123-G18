@@ -131,14 +131,24 @@ def calculate_current_streak_dates(log_dates):
 def build_milestone_progress(streak_dates):
     streak = len(streak_dates)
     earned_badges = []
+    all_badges = []
     sorted_dates = sorted(streak_dates)
 
     for badge in MILESTONE_BADGES:
         if streak >= badge["days"]:
-            earned_badges.append({
+            entry = {
                 **badge,
                 "unlocked": True,
                 "achievement_date": sorted_dates[badge["days"] - 1],
+            }
+            earned_badges.append(entry)
+            all_badges.append(entry)
+        else:
+            all_badges.append({
+                **badge,
+                "unlocked": False,
+                "days_remaining": badge["days"] - streak,
+                "achievement_date": None,
             })
 
     next_badge = next((badge for badge in MILESTONE_BADGES if streak < badge["days"]), None)
@@ -167,7 +177,7 @@ def build_milestone_progress(streak_dates):
         for badge in earned_badges
     ]
 
-    return streak, earned_badges, next_badge, milestone_markers, upcoming_badges
+    return streak, earned_badges, next_badge, milestone_markers, upcoming_badges, all_badges
 
 
 def build_weekly_insight_prompt(recent_logs):
@@ -495,7 +505,7 @@ def profile():
     ''', (username,)).fetchall()
     log_dates = [row['log_date'] for row in date_rows]
     streak_dates = calculate_current_streak_dates(log_dates)
-    streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges = build_milestone_progress(streak_dates)
+    streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges, all_badges = build_milestone_progress(streak_dates)
 
     logs_cursor = db.execute("SELECT COUNT(*) as log_count, AVG(mood_score) as avg_score FROM mood_logs WHERE username = %s", (username,))
     stats = logs_cursor.fetchone()
@@ -507,7 +517,7 @@ def profile():
                            entry_count=entry_count, 
                            avg_score=avg_score, 
                            streak=streak, 
-                           milestone_badges=milestone_badges, 
+                           all_badges=all_badges, 
                            next_milestone=next_milestone)
 
 @app.route('/google_fit', methods=['GET', 'POST'])
@@ -784,7 +794,7 @@ def dashboard():
     ''', (username,)).fetchall()
     log_dates = [row['log_date'] for row in date_rows]
     streak_dates = calculate_current_streak_dates(log_dates)
-    streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges = build_milestone_progress(streak_dates)
+    streak, milestone_badges, next_milestone, milestone_markers, upcoming_badges, all_badges = build_milestone_progress(streak_dates)
 
     # Calculate metrics over a sliding 7-day window
     row = db.execute('''
