@@ -183,48 +183,33 @@ def calculate_current_streak_dates(log_dates, username=None, freezes=0):
         ''', (username,)).fetchall()
         for row in frozen_rows:
             frozen_dates_from_db.add(row['frozen_date'])
-            log_date_set.add(row['frozen_date'])
 
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(days=1)
     today_str = today.strftime('%Y-%m-%d')
     yesterday_str = yesterday.strftime('%Y-%m-%d')
 
-    if last_actual_log and frozen_dates_from_db:
-        latest_frozen = max(frozen_dates_from_db)
-        last_actual_log_date = datetime.datetime.strptime(last_actual_log, '%Y-%m-%d').date()
-        latest_frozen_date = datetime.datetime.strptime(latest_frozen, '%Y-%m-%d').date()
-        if latest_frozen_date < last_actual_log_date:
-            bridge_date = latest_frozen_date + datetime.timedelta(days=1)
-            while bridge_date <= last_actual_log_date:
-                log_date_set.add(bridge_date.strftime('%Y-%m-%d'))
-                bridge_date += datetime.timedelta(days=1)
-        elif latest_frozen_date >= last_actual_log_date:
-            bridge_date = last_actual_log_date + datetime.timedelta(days=1)
-            while bridge_date.strftime('%Y-%m-%d') <= today_str:
-                log_date_set.add(bridge_date.strftime('%Y-%m-%d'))
-                bridge_date += datetime.timedelta(days=1)
-
-    if freezes > 0 and today_str not in log_date_set and yesterday_str not in log_date_set:
-        if last_actual_log:
-            bridge_date = datetime.datetime.strptime(last_actual_log, '%Y-%m-%d').date() + datetime.timedelta(days=1)
-            while bridge_date.strftime('%Y-%m-%d') <= today_str:
-                log_date_set.add(bridge_date.strftime('%Y-%m-%d'))
-                bridge_date += datetime.timedelta(days=1)
-
-    is_frozen_today = (today_str not in {d for d in log_dates if d}) and (today_str in frozen_dates_from_db)
+    is_frozen_today = (today_str not in log_date_set) and (today_str in frozen_dates_from_db)
 
     if today_str in log_date_set:
         current_date = today
     elif yesterday_str in log_date_set:
         current_date = yesterday
+    elif is_frozen_today or (freezes > 0 and last_actual_log):
+        current_date = datetime.datetime.strptime(last_actual_log, '%Y-%m-%d').date()
     else:
         return [], is_frozen_today
 
     streak_dates = []
-    while current_date.strftime('%Y-%m-%d') in log_date_set:
-        streak_dates.append(current_date.strftime('%Y-%m-%d'))
-        current_date -= datetime.timedelta(days=1)
+    while True:
+        current_str = current_date.strftime('%Y-%m-%d')
+        if current_str in log_date_set:
+            streak_dates.append(current_str)
+            current_date -= datetime.timedelta(days=1)
+        elif current_str in frozen_dates_from_db:
+            current_date -= datetime.timedelta(days=1)
+        else:
+            break
 
     return streak_dates, is_frozen_today
 
