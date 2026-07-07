@@ -131,13 +131,14 @@ def calculate_current_streak_dates(log_dates):
 def build_milestone_progress(streak_dates):
     streak = len(streak_dates)
     earned_badges = []
+    sorted_dates = sorted(streak_dates)
 
     for badge in MILESTONE_BADGES:
         if streak >= badge["days"]:
             earned_badges.append({
                 **badge,
                 "unlocked": True,
-                "achievement_date": streak_dates[badge["days"] - 1],
+                "achievement_date": sorted_dates[badge["days"] - 1],
             })
 
     next_badge = next((badge for badge in MILESTONE_BADGES if streak < badge["days"]), None)
