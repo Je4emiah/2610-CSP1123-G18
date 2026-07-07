@@ -96,6 +96,7 @@ async function updateDashboard() {
             pointRadius: 5,
             tension: 0.4,
             fill: true,
+            spanGaps: true,
             yAxisID: 'y'
         }];
 
@@ -119,6 +120,7 @@ async function updateDashboard() {
                 pointRadius: 4,
                 tension: 0.4,
                 fill: false,
+                spanGaps: true,
                 yAxisID: 'y1'
             });
         }
