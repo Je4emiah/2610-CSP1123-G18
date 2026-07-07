@@ -173,7 +173,8 @@ MILESTONE_BADGES = [
 
 def calculate_current_streak_dates(log_dates, username=None, freezes=0):
     log_date_set = {d for d in log_dates if d}
-    last_actual_log = max(log_date_set) if log_date_set else None
+    if not log_date_set:
+        return [], False
 
     frozen_dates_from_db = set()
     if username:
@@ -195,10 +196,22 @@ def calculate_current_streak_dates(log_dates, username=None, freezes=0):
         current_date = today
     elif yesterday_str in log_date_set:
         current_date = yesterday
-    elif is_frozen_today or (freezes > 0 and last_actual_log):
-        current_date = datetime.datetime.strptime(last_actual_log, '%Y-%m-%d').date()
+    elif is_frozen_today:
+        current_date = today
     else:
-        return [], is_frozen_today
+        last_actual_log = max(log_date_set)
+        last_log_date = datetime.datetime.strptime(last_actual_log, '%Y-%m-%d').date()
+        check_date = last_log_date + datetime.timedelta(days=1)
+        gap_fully_frozen = True
+        while check_date <= today:
+            if check_date.strftime('%Y-%m-%d') not in frozen_dates_from_db:
+                gap_fully_frozen = False
+                break
+            check_date += datetime.timedelta(days=1)
+        if gap_fully_frozen and frozen_dates_from_db:
+            current_date = last_log_date
+        else:
+            return [], is_frozen_today
 
     streak_dates = []
     while True:
