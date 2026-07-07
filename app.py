@@ -125,32 +125,7 @@ MILESTONE_BADGES = [
 
 
 def calculate_current_streak_dates(log_dates):
-    log_date_set = {d for d in log_dates if d}
-    if not log_date_set:
-        return []
-
-    today = datetime.date.today()
-    yesterday = today - datetime.timedelta(days=1)
-    today_str = today.strftime('%Y-%m-%d')
-    yesterday_str = yesterday.strftime('%Y-%m-%d')
-
-    if today_str in log_date_set:
-        current_date = today
-    elif yesterday_str in log_date_set:
-        current_date = yesterday
-    else:
-        return []
-
-    streak_dates = []
-    while True:
-        current_str = current_date.strftime('%Y-%m-%d')
-        if current_str in log_date_set:
-            streak_dates.append(current_str)
-            current_date -= datetime.timedelta(days=1)
-        else:
-            break
-
-    return streak_dates
+    return [d for d in log_dates if d]
 
 
 def build_milestone_progress(streak_dates):
