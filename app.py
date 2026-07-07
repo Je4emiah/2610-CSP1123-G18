@@ -1179,11 +1179,23 @@ def api_export():
         ORDER BY timestamp ASC
     ''', (username,)).fetchall()
 
+    freeze_rows = db.execute('''
+        SELECT frozen_date, consumed_at
+        FROM streak_freezes
+        WHERE username = %s
+    ''', (username,)).fetchall()
+
+    user_row = db.execute('''
+        SELECT name, gender, freezes FROM users WHERE username = %s
+    ''', (username,)).fetchone()
+
     return jsonify({
         "exported_at": datetime.datetime.now().isoformat(),
         "user_id": username,
+        "user": {"name": user_row['name'], "gender": user_row['gender'], "freezes": user_row['freezes']} if user_row else {},
         "mood_logs": _rows_to_dicts(mood_logs),
         "telemetry_logs": _rows_to_dicts(telemetry_logs),
+        "streak_freezes": _rows_to_dicts(freeze_rows),
     })
 
 
@@ -1197,8 +1209,8 @@ def api_import():
         return jsonify({"error": "No data provided"}), 400
 
     db = get_db()
-    imported = {"mood_logs": 0, "telemetry_logs": 0}
-    skipped = {"mood_logs": 0, "telemetry_logs": 0}
+    imported = {"mood_logs": 0, "telemetry_logs": 0, "streak_freezes": 0}
+    skipped = {"mood_logs": 0, "telemetry_logs": 0, "streak_freezes": 0}
 
     for entry in data.get('mood_logs', []):
         try:
@@ -1219,6 +1231,27 @@ def api_import():
             imported['telemetry_logs'] += 1
         except Exception:
             skipped['telemetry_logs'] += 1
+
+    for entry in data.get('streak_freezes', []):
+        try:
+            if db._is_sqlite:
+                db.execute('''
+                    INSERT OR REPLACE INTO streak_freezes (username, frozen_date, consumed_at)
+                    VALUES (?, ?, ?)
+                ''', (username, entry['frozen_date'], entry['consumed_at']))
+            else:
+                db.execute('''
+                    INSERT INTO streak_freezes (username, frozen_date, consumed_at)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (username, frozen_date) DO UPDATE SET consumed_at = EXCLUDED.consumed_at
+                ''', (username, entry['frozen_date'], entry['consumed_at']))
+            imported['streak_freezes'] += 1
+        except Exception:
+            skipped['streak_freezes'] += 1
+
+    freeze_count = data.get('user', {}).get('freezes')
+    if freeze_count is not None:
+        db.execute('UPDATE users SET freezes = %s WHERE username = %s', (freeze_count, username))
 
     db.commit()
     return jsonify({"imported": imported, "skipped": skipped})
